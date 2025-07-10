@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weather</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #2980B9, #6DD5FA, #FFFFFF);
+      background-size: cover;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .weather-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .weather-box {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #temperature {
+      font-size: 60px;
+      margin: 0;
+      color: #34495E;
+    }
+
+    #condition, #location {
+      font-size: 22px;
+      margin: 5px 0;
+      color: #2C3E50;
+    }
+
+    input[type="text"] {
+      width: 250px;
+      padding: 12px;
+      margin-right: 10px;
+      border-radius: 30px;
+      border: 1px solid #3498DB;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: #2980B9;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    button {
+      padding: 12px 25px;
+      border-radius: 30px;
+      border: none;
+      background-color: #3498DB;
+      color: #FFFFFF;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2980B9;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      background-color: #1A5276;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+
+  </style>
+</head>
+<body>
+  <div class="weather-container">
+    <div class="weather-box">
+      <h2 id="temperature">24°C</h2>
+      <p id="condition">Sunny</p>
+      <p id="location">San Francisco, CA</p>
+    </div>
+    <input type="text" placeholder="Enter a location" id="search-bar">
+    <button id="search-btn">Search</button>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacob Pérez Wibe - Useful Tools</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Always Visible Navigation Bar -->
+    <header class="title-box">
+        <h1>Jacob Pérez Wibe</h1>
+    </header>
+
+    <!-- Always Visible Navigation Bar -->
+    <div class="nav-bar">
+        <nav>
+            <ul>
+                <li><a href="index.html">Welcome</a></li>
+                <li><a href="about.html">About Me</a></li>
+                <li><a href="creations.html">Creations</a></li>
+                <li><a href="useful.html" class="active">Useful</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Useful Tools Section -->
+    <main class="useful-section">
+        <div class="tool-box neon-blue-box">
+            <h2>Password Generator</h2>
+            <label for="passwordLength">Choose password length (max. 20): </label>
+            <input type="number" id="passwordLength" name="passwordLength" min="1" max="20" value="12">
+            <button onclick="displayGeneratedPassword()">Generate Password</button>
+            <p id="generatedPassword"></p>
+        </div>
+    </main>
+
+    <script src="theme-switch.js"></script>
+    <script src="app.js"></script> <!-- for the password generator script -->
+</body>
+</html>

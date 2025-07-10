@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacob Pérez Wibe - Contact</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Always Visible Navigation Bar -->
+    <header class="title-box">
+        <h1>Jacob Pérez Wibe</h1>
+    </header>
+
+    <div class="nav-bar">
+        <nav>
+            <ul>
+                <li><a href="index.html">Welcome</a></li>
+                <li><a href="about.html">About Me</a></li>
+                <li><a href="creations.html">Creations</a></li>
+                <li><a href="useful.html">Useful</a></li>
+                <li><a href="contact.html" class="active">Contact</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Contact Section -->
+    <main class="contact-section">
+        <div class="contact-box neon-purple-box" onclick="copyToClipboard()">
+            <img src="images/mail.png" alt="Email Icon" />
+        </div>
+        <div id="copy-notification" class="copy-notification">Email copied to clipboard!</div>        
+        <div class="contact-box neon-purple-box">
+            <!-- Placeholder for social media icons -->
+            <img src="images/linkedin.png" alt="LinkedIn" onclick="goToLink('https://www.linkedin.com/in/jacob-p%C3%A9rez-wibe-3641721b6/')" />
+        </div>
+        <div class="contact-box neon-purple-box">
+            <img src="images/github.png" alt="GitHub" onclick="goToLink('https://github.com/Tortri')" />
+        </div>
+        <div class="contact-box neon-purple-box">
+            <img src="images/instagram.png" alt="Instagram" onclick="goToLink('https://github.com/yourprofile')" />
+        </div>
+        <!-- Add more boxes as needed -->
+    </main>
+
+    <script>
+        function goToLink(url) {
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>

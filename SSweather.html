@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Satellite Live Location and Weather</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #F5F5F5;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .location-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #FFFFFF;
+            border-radius: 10px;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        #satellite-info {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        #weather-box {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #temperature {
+            font-size: 50px;
+            margin: 0;
+        }
+
+        #condition {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        #location {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        #weather-description {
+            font-size: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="satellite-info" class="location-box">
+            <h2>Satellite Information</h2>
+            <p>Loading satellite location...</p>
+        </div>
+        <div id="weather-box" class="location-box">
+            <h2>Weather Information</h2>
+            <h2 id="temperature"></h2>
+            <p id="condition"></p>
+            <p id="location"></p>
+            <p id="weather-description"></p> <!-- Added weather description element -->
+        </div>
+    </div>
+    <script>
+        function getSatelliteLocation() {
+            const apiUrl = 'satpos.php';
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.info.satname) {
+                        const satName = data.info.satname;
+                        const satLat = data.positions[0].satlatitude;
+                        const satLong = data.positions[0].satlongitude;
+                        const satAlt = data.positions[0].sataltitude;
+
+                        const satelliteInfo = document.getElementById('satellite-info');
+                        satelliteInfo.innerHTML = `
+                            <h2>Satellite Information</h2>
+                            <p>${satName}</p>
+                            <p>Latitude: ${satLat}°</p>
+                            <p>Longitude: ${satLong}°</p>
+                            <p>Altitude: ${satAlt} km</p>
+                        `;
+
+                        // Fetch weather data based on satellite's latitude and longitude
+                        fetchWeather(satLat, satLong);
+                    } else {
+                        console.error('Satellite data not found.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching satellite data:', error);
+                });
+        }
+
+        function fetchWeather(latitude, longitude) {
+            const apiKey = "452a37930b3c429384e160439230210"; // Replace with your API key
+            const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${latitude},${longitude}&aqi=no`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(weatherData => {
+                    const temperature = weatherData.current.temp_c;
+                    const condition = weatherData.current.condition.text;
+                    const location = weatherData.location.name;
+
+                    const weatherBox = document.getElementById('weather-box');
+                    const temperatureElement = document.getElementById('temperature');
+                    const conditionElement = document.getElementById('condition');
+                    const locationElement = document.getElementById('location');
+                    const weatherDescriptionElement = document.getElementById('weather-description');
+
+                    temperatureElement.textContent = `${temperature}°C`;
+                    conditionElement.textContent = condition;
+                    locationElement.textContent = location;
+
+                    // Call the setWeatherBackgroundImage function to set the background image
+                    setWeatherBackgroundImage(condition);
+
+                    // Display weather-specific descriptions
+                    const weatherDescriptions = {
+                        "Clear": "Clear skies are ideal for satellite communication with minimal interference.",
+                        "Partly cloudy": "Partly cloudy conditions may have minor effects on signal quality.",
+                        "Cloudy": "Cloudy conditions can scatter and absorb signals, affecting signal strength.",
+                        "Rain": "Rain can lead to signal attenuation, especially in heavy rain (rain fade).",
+                        "Snow": "Snow accumulation can block or distort signals.",
+                        "Fog": "Fog and high atmospheric moisture can lead to signal attenuation.",
+                        "Thunderstorm": "Thunderstorms can disrupt satellite communication due to electromagnetic interference.",
+                        // Add more conditions and descriptions as needed
+                    };
+
+                    if (weatherDescriptions.hasOwnProperty(condition)) {
+                        weatherDescriptionElement.textContent = `Weather Description: ${weatherDescriptions[condition]}`;
+                    } else {
+                        weatherDescriptionElement.textContent = "Weather condition is good for communications.";
+                    }
+
+                    weatherBox.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error fetching weather data:', error);
+                });
+            }   
+
+        // Fetch satellite location on page load
+        window.addEventListener('load', getSatelliteLocation);
+
+        function setWeatherBackgroundImage(condition) {
+            const body = document.body;
+            let backgroundImageUrl;
+
+            // Define the mapping of weather conditions to image filenames
+            const weatherConditionImages = {
+                "Clear": "images/clear.jpg",
+                "Sunny": "images/clear.jpg",
+                "Partly cloudy": "images/partly-cloudy.png",
+                "Cloudy": "images/cloudy.jpg",
+                "Rain": "images/rainy.jpg",
+                "Showers": "images/rainy.jpg",
+                "Snow": "images/snow.jpeg",
+                "Sleet": "images/snow.jpeg",
+                "Freezing Rain": "images/snow.jpeg",
+                "Fog": "images/fog.jpg",
+                "Mist": "images/fog.jpg",
+                "Haze": "images/fog.jpg",
+                "Smoke": "images/fog.jpg",
+                "Thunderstorm": "images/thunderstorm.jpg",
+                "Overcast": "images/overcast.jpg",
+
+                // Add more conditions and image filenames as needed
+            };
+
+            // Check if an image is available for the current weather condition
+            if (weatherConditionImages.hasOwnProperty(condition)) {
+                backgroundImageUrl = weatherConditionImages[condition];
+            } else {
+                // Default background image when no match is found
+                backgroundImageUrl = "default.jpg";
+            }
+
+            // Set the background image
+            body.style.backgroundImage = `url(${backgroundImageUrl})`;
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+/* Google Fonts: Futuristic Font */
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Audiowide', sans-serif; /* Futuristic font */
+    background-color: #0f0e17; /* Dark background for cyberpunk feel */
+    color: #ffffff; /* Default white text */
+    overflow-x: hidden;
+}
+
+/* Neon colors for cyberpunk theme */
+:root {
+    --neon-blue: #00ffff; /* Futuristic neon blue */
+    --neon-pink: #ff00ff;
+    --neon-purple: #bb33ff;
+    --dark-yellow: #d4af37; /* Dark yellow for border color */
+    --dark-background: #0f0f2f; /* Background for dark sections */
+}
+
+/* Title Box - Clean Title without Borders */
+.title-box {
+    text-align: center;
+    margin: 40px auto 20px;
+    max-width: 800px;
+}
+
+.title-box h1 {
+    color: white;
+    text-transform: uppercase;
+    font-size: 90px;
+    text-shadow: 2px 2px 0 var(--neon-blue), -2px -2px 0 var(--neon-pink);
+    margin: 0;
+}
+
+/* Navigation Bar */
+.nav-bar {
+    display: flex;
+    flex-wrap: wrap; /* Allow menu items to wrap to new line if they don't fit */
+    justify-content: center;
+    align-items: center;
+    gap: 0px; /* No gap between yellow boxes */
+    margin: 20px auto;
+    max-width: 90%;
+    text-align: center;
+}
+
+.nav-bar nav ul {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap; /* Allow the menu items to move to the next line on smaller screens */
+    justify-content: center;
+    align-items: center;
+    gap: 0px; /* No gap between menu items */
+    margin: 0;
+}
+
+.nav-bar nav ul li {
+    display: inline-block;
+}
+
+.nav-bar nav ul li a {
+    text-decoration: none;
+    color: white; /* Keep links white */
+    font-size: 16px;
+    padding: 15px 20px;
+    border: 2px solid var(--dark-yellow); /* Dark yellow border */
+    border-radius: 0px; /* No rounding of corners */
+    transition: background-color 0.3s, color 0.3s, transform 0.3s;
+    display: inline-block;
+    box-shadow: inset 0 0 10px var(--dark-yellow); /* Glow effect on border */
+}
+
+.nav-bar nav ul li a:hover {
+    background-color: var(--dark-yellow); /* Dark yellow background on hover */
+    color: black; /* Text changes to black on hover */
+    transform: scale(1.1); /* Slight zoom on hover for effect */
+}
+
+/* Active page link */
+.nav-bar nav ul li a.active {
+    color: var(--dark-yellow); /* Dark yellow for active link */
+    border-bottom: 3px solid var(--dark-yellow);
+}
+
+/* Centered Neon Green Box for Welcome and About Me Pages */
+.neon-green-box {
+    border: 3px solid var(--neon-blue);
+    background-color: var(--dark-background); /* Dark background for contrast */
+    padding: 20px;
+    border-radius: 0px; /* Remove rounded edges */
+    max-width: 800px;
+    width: 80%; /* Limit width to keep the box visually appealing */
+    text-align: center;
+    box-shadow: 0 0 20px var(--neon-blue);
+    margin: 40px auto; /* Center the box horizontally and add spacing vertically */
+}
+
+/* Specific for About Me - Make Neon Green Box Taller */
+.about-cv-box {
+    height: 80vh; /* Use viewport height to make the box fill more of the screen */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.about-cv-box iframe {
+    border: none;
+}
+
+/* Container for Tool Boxes in Creations Page */
+.tool-boxes-container {
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    gap: 20px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+/* Tool Box for Each Useful or Creation Item */
+.tool-box {
+    background-color: var(--dark-background); /* Darker blue background for tool box */
+    border: 3px solid var(--neon-blue); /* Neon blue border */
+    padding: 20px;
+    margin: 20px;
+    border-radius: 0px; /* No rounded edges */
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 10px var(--neon-blue);
+}
+
+/* Input Section Styling for Creations Page */
+.input-section {
+    text-align: center;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center all items within the input section */
+    gap: 15px; /* Space between label, input, and button */
+}
+
+.input-section label,
+.input-section input,
+.input-section button {
+    font-family: 'Audiowide', sans-serif; /* Futuristic font */
+    color: white;
+}
+
+.input-section input {
+    padding: 10px;
+    font-size: 16px;
+    background-color: #0f0f2f;
+    color: white;
+    border: 2px solid var(--neon-blue);
+    border-radius: 10px;
+    text-align: center;
+    width: 200px; /* Adjust width for better appearance */
+}
+
+.input-section button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: var(--neon-blue);
+    color: black;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.input-section button:hover {
+    background-color: var(--neon-blue);
+    color: black;
+}
+
+/* Useful Section Styling */
+.useful-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 150px; /* Space for fixed navbar and title */
+    gap: 20px;
+}
+
+.tool-box h2,
+.tool-box h3 {
+    color: var(--neon-blue);
+    font-size: 24px;
+}
+
+/* Contact Section Styling */
+.contact-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    padding: 30px;
+}
+
+.contact-box {
+    background-color: #ffffff; /* Set background to white */
+    border: 3px solid var(--neon-purple); /* Neon purple border */
+    padding: 20px;
+    border-radius: 0px; /* No rounded edges */
+    width: 150px;
+    height: 150px;
+    text-align: center;
+    box-shadow: 0 0 10px var(--neon-purple); /* Neon purple shadow for effect */
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.contact-box:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--neon-purple); /* Increased shadow on hover */
+}
+
+.contact-box img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Copy Notification Styling */
+.copy-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #00ff00; /* Bright green color for the notification */
+    color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    box-shadow: 0 0 10px #00ff00;
+    z-index: 1000;
+}
