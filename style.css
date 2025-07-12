@@ -9,20 +9,19 @@ body {
     overflow-x: hidden;
 }
 
-/* Neon colors for cyberpunk theme */
 :root {
-    --neon-blue: #00ffff; /* Futuristic neon blue */
-    --neon-pink: #ff00ff;
-    --neon-purple: #bb33ff;
-    --dark-yellow: #d4af37; /* Dark yellow for border color */
-    --dark-background: #0f0f2f; /* Background for dark sections */
+    --primary-accent: #607d8b; /* Example: A muted blue-grey */
+    --secondary-accent: #a7a7a7; /* Example: A subtle light grey */
+    --border-color: #4a4a4a; /* Example: Dark grey for borders */
+    --dark-background-section: #1a1a1a; /* Slightly lighter black for sections */
 }
 
-/* Title Box - Clean Title without Borders */
-.title-box {
-    text-align: center;
-    margin: 40px auto 20px;
-    max-width: 800px;
+.title-box h1 {
+    color: white;
+    text-transform: uppercase;
+    font-size: 90px;
+    text-shadow: 2px 2px 0 var(--primary-accent), -2px -2px 0 var(--secondary-accent); /* Use new accent colors */
+    margin: 0;
 }
 
 .title-box h1 {
@@ -62,40 +61,39 @@ body {
 
 .nav-bar nav ul li a {
     text-decoration: none;
-    color: white; /* Keep links white */
+    color: white;
     font-size: 16px;
     padding: 15px 20px;
-    border: 2px solid var(--dark-yellow); /* Dark yellow border */
-    border-radius: 0px; /* No rounding of corners */
+    border: 2px solid var(--border-color); /* Use new border color */
+    border-radius: 0px;
     transition: background-color 0.3s, color 0.3s, transform 0.3s;
     display: inline-block;
-    box-shadow: inset 0 0 10px var(--dark-yellow); /* Glow effect on border */
+    box-shadow: inset 0 0 10px var(--border-color); /* Use new border color for glow */
 }
 
 .nav-bar nav ul li a:hover {
-    background-color: var(--dark-yellow); /* Dark yellow background on hover */
-    color: black; /* Text changes to black on hover */
-    transform: scale(1.1); /* Slight zoom on hover for effect */
+    background-color: var(--primary-accent); /* New hover background */
+    color: white; /* Keep text white or change to a dark color if preferred */
+    transform: scale(1.1);
 }
 
-/* Active page link */
 .nav-bar nav ul li a.active {
-    color: var(--dark-yellow); /* Dark yellow for active link */
-    border-bottom: 3px solid var(--dark-yellow);
+    color: var(--primary-accent); /* New active link color */
+    border-bottom: 3px solid var(--primary-accent);
 }
 
-/* Centered Neon Green Box for Welcome and About Me Pages */
-.neon-green-box {
-    border: 3px solid var(--neon-blue);
-    background-color: var(--dark-background); /* Dark background for contrast */
+.neon-green-box { /* Or any other box style */
+    border: 3px solid var(--primary-accent); /* Use new accent color */
+    background-color: var(--dark-background-section); /* New background for boxes */
     padding: 20px;
-    border-radius: 0px; /* Remove rounded edges */
+    border-radius: 0px;
     max-width: 800px;
-    width: 80%; /* Limit width to keep the box visually appealing */
+    width: 80%;
     text-align: center;
-    box-shadow: 0 0 20px var(--neon-blue);
-    margin: 40px auto; /* Center the box horizontally and add spacing vertically */
+    box-shadow: 0 0 20px var(--primary-accent); /* Use new accent color for shadow */
+    margin: 40px auto;
 }
+/* Apply similar changes to .tool-box and .contact-box using your new color variables */
 
 /* Specific for About Me - Make Neon Green Box Taller */
 .about-cv-box {

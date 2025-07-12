@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacob Pérez Wibe - Satellite Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Always Visible Navigation Bar -->
+    <header class="title-box">
+        <h1>Jacob Pérez Wibe</h1>
+    </header>
+
+    <div class="nav-bar">
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="projects.html">Other projects</a></li>
+                <li><a href="useful.html">Useful tools</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Satellite Tracker Section -->
+    <main class="projects-section">
+        <div class="tool-boxes-container">
+            <div class="tool-box neon-blue-box" onclick="goToLink('YOUR_SATELLITE_WEATHER_PROJECT_URL')">
+                <h3>Satellite and Weather Tracker</h3>
+                <p>An application to track satellite positions and display local weather conditions, now hosted in its own repository.</p>
+                <p>Click to view project.</p>
+            </div>
+    
+            <div class="tool-box neon-blue-box" onclick="goToLink('YOUR_OTHER_PROJECT_URL_1')">
+                <h3>Project Title 2</h3>
+                <p>A brief description of your second project.</p>
+                <p>Click to view project.</p>
+            </div>
+    
+            <div class="tool-box neon-blue-box" onclick="goToLink('YOUR_OTHER_PROJECT_URL_2')">
+                <h3>Project Title 3</h3>
+                <p>A brief description of your third project.</p>
+                <p>Click to view project.</p>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // This function will open the project URL in a new tab
+        function goToLink(url) {
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
