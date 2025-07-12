@@ -69,36 +69,64 @@ function generatePassword(length) {
   return password;
 }
 
-function copyToClipboard() {
-  // The email address to copy
-  const email = "jacob.p.wibe@gmail.com";
+// Existing app.js content (e.g., password generator if you still have it)
 
-  // Create a temporary textarea element to hold the email address
-  const tempTextArea = document.createElement("textarea");
-  tempTextArea.value = email;
+// Function to display temporary messages (reused from SatWeather project)
+function showMessageBox(message, type = 'info') {
+  const msgBox = document.getElementById('form-status'); // Target the form status div
+  if (!msgBox) return; // Exit if element not found
 
-  // Add the textarea to the document body and select the text
-  document.body.appendChild(tempTextArea);
-  tempTextArea.select();
+  msgBox.textContent = message;
+  msgBox.className = `message-box ${type}`; // Apply type class for styling
+  msgBox.style.opacity = '1';
 
-  try {
-      // Copy the text to clipboard
-      document.execCommand("copy");
-
-      // Notify the user that the email was copied
-      const notification = document.getElementById("copy-notification");
-      notification.style.opacity = "1"; // Show the notification
-
-      // Hide the notification after 2 seconds
-      setTimeout(() => {
-          notification.style.opacity = "0";
-      }, 2000);
-  } catch (err) {
-      console.error("Failed to copy the email address", err);
-  }
-
-  // Remove the temporary textarea
-  document.body.removeChild(tempTextArea);
+  setTimeout(() => {
+      msgBox.style.opacity = '0';
+  }, 3000); // Hide after 3 seconds
 }
+
+
+// Contact Form Submission Logic
+document.addEventListener('DOMContentLoaded', function() {
+  const contactForm = document.getElementById('contactForm');
+  const formStatus = document.getElementById('form-status');
+
+  if (contactForm) { // Ensure the form element exists on the page
+      contactForm.addEventListener('submit', async function(event) {
+          event.preventDefault(); // Prevent default form submission
+
+          // IMPORTANT: Replace 'YOUR_FORMSPREE_FORM_ID' with your actual Formspree ID
+          const formspreeUrl = 'https://formspree.io/f/YOUR_FORMSPREE_FORM_ID';
+
+          const formData = new FormData(contactForm);
+
+          try {
+              const response = await fetch(formspreeUrl, {
+                  method: 'POST',
+                  body: formData,
+                  headers: {
+                      'Accept': 'application/json'
+                  }
+              });
+
+              if (response.ok) {
+                  showMessageBox('Message sent successfully!', 'success');
+                  contactForm.reset(); // Clear the form fields
+              } else {
+                  const data = await response.json();
+                  if (data.errors) {
+                      showMessageBox(`Error: ${data.errors.map(error => error.message).join(', ')}`, 'error');
+                  } else {
+                      showMessageBox('Oops! There was an error sending your message.', 'error');
+                  }
+              }
+          } catch (error) {
+              console.error('Network or submission error:', error);
+              showMessageBox('Network error. Please try again later.', 'error');
+          }
+      });
+  }
+});
+
 
 

@@ -197,52 +197,197 @@ body {
     padding: 30px;
 }
 
-.contact-box {
-    background-color: #ffffff; /* Set background to white */
-    border: 3px solid var(--border-color); /* Neon purple border */
-    padding: 20px;
-    border-radius: 2px; /* No rounded edges */
-    width: 75px;
-    height: 75px;
-    text-align: center;
-    box-shadow: 0 0 10px var(--border-color); /* Neon purple shadow for effect */
-    cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
+/* Existing styles */
+
+/* Contact Section Container - New Grid Layout */
+.contact-section-container {
+    display: flex;
+    flex-direction: column; /* Stack contact info grid and form vertically */
+    align-items: center; /* Center content horizontally */
+    gap: 40px; /* Space between the info grid and the form */
+    padding: 30px 20px; /* Add padding around the whole section */
+    max-width: 1000px; /* Limit overall width */
+    margin: 40px auto; /* Center the container */
 }
 
-.contact-box:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 20px var(--border-color); /* Increased shadow on hover */
+.contact-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Responsive grid for boxes */
+    gap: 25px; /* Space between contact boxes */
+    width: 100%; /* Take full width of its parent */
+    justify-items: center; /* Center boxes within their grid cells */
+}
+
+/* Base Contact Box Styling */
+.contact-box {
+    background-color: var(--dark-background-section); /* Darker background for boxes */
+    border: 1px solid var(--border-color); /* Subtle border */
+    border-radius: 8px; /* Slightly rounded corners */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); /* Soft shadow */
+    padding: 20px;
+    display: flex;
+    flex-direction: column; /* Stack icon and text/link vertically */
+    align-items: center; /* Center content horizontally */
+    justify-content: center;
+    text-align: center;
+    min-height: 140px; /* Ensure consistent height */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box; /* Include padding in dimensions */
 }
 
 .contact-box img {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 80px; /* Adjust icon size */
+    max-height: 80px;
+    margin-bottom: 10px; /* Space between icon and text/link */
 }
 
-/* Copy Notification Styling */
-.copy-notification {
+.contact-box p {
+    font-size: 0.95em; /* Smaller text for contact details */
+    color: var(--secondary-accent);
+    margin: 0;
+    word-break: break-word; /* Ensure long emails/numbers wrap */
+}
+
+/* Styling for Clickable Boxes (LinkedIn, GitHub) */
+.contact-box.clickable-box {
+    cursor: pointer;
+    /* You can add specific hover effects here if desired */
+}
+
+.contact-box.clickable-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Styling for Display Boxes (Email, WhatsApp) - these also have hover if clickable */
+.contact-box.contact-display-box {
+    /* Inherits base contact-box styles */
+    cursor: default; /* Not primarily a click target for navigation, but can still have hover */
+}
+/* If WhatsApp is clickable, it should also have the clickable-box hover effect */
+.contact-box.contact-display-box[onclick]:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+}
+
+
+/* Contact Form Container Styling */
+.contact-form-container {
+    width: 100%;
+    max-width: 600px; /* Limit width of the form for better readability */
+    padding: 30px;
+    text-align: left; /* Align form elements to the left */
+    box-sizing: border-box;
+    /* Inherits neon-green-box styles for border, background, shadow */
+}
+
+.contact-form-container h3 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 1.8em;
+    color: var(--primary-accent);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--secondary-accent);
+    font-size: 1em;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    background-color: #2a2a2a;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-color);
+    font-family: 'Audiowide', sans-serif;
+    font-size: 1em;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 8px rgba(96, 125, 139, 0.5);
+}
+
+.contact-form-container button[type="submit"] {
+    padding: 12px 30px;
+    font-size: 1.1em;
+    background-color: var(--primary-accent);
+    color: var(--text-color);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    display: block; /* Make it a block element */
+    margin: 20px auto 0; /* Center the button */
+}
+
+.contact-form-container button[type="submit"]:hover {
+    background-color: #455a64;
+    transform: translateY(-3px);
+}
+
+/* Message Box Styling (reused from SatWeather, ensure it's in your main style.css) */
+.message-box {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #00ff00; /* Bright green color for the notification */
-    color: black;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
     padding: 10px 20px;
     border-radius: 5px;
-    font-size: 14px;
+    font-size: 0.9em;
     text-align: center;
     opacity: 0;
     transition: opacity 0.5s ease-in-out;
-    box-shadow: 0 0 10px #00ff00;
     z-index: 1000;
+    min-width: 250px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-.copy-notification.show {
-    opacity: 1; /* Show the notification */
+.message-box.error {
+    background-color: var(--error-color); /* Define --error-color in :root */
 }
 
-/* Existing styles */
+.message-box.success {
+    background-color: var(--success-color); /* Define --success-color in :root */
+}
+
+/* Ensure these are defined in your :root if you use them */
+/*
+:root {
+    --error-color: #e74c3c;
+    --success-color: #2ecc71;
+}
+*/
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .contact-info-grid {
+        grid-template-columns: 1fr; /* Stack boxes vertically on smaller screens */
+    }
+
+    .contact-form-container {
+        padding: 20px;
+    }
+}
 
 /* New/Updated About Me Section Styles */
 .about-me-section .neon-green-box {
