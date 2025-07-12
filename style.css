@@ -21,7 +21,8 @@ body {
     text-transform: uppercase;
     font-size: 90px;
     text-shadow: 2px 2px 0 var(--primary-accent), -2px -2px 0 var(--secondary-accent); /* Use new accent colors */
-    margin: 0;
+    text-align: center;
+    margin: 40px auto 20px;
 }
 
 .title-box h1 {
@@ -202,20 +203,20 @@ body {
 
 .contact-box {
     background-color: #ffffff; /* Set background to white */
-    border: 3px solid var(--neon-purple); /* Neon purple border */
+    border: 3px solid var(--border-color); /* Neon purple border */
     padding: 20px;
-    border-radius: 0px; /* No rounded edges */
-    width: 150px;
-    height: 150px;
+    border-radius: 2px; /* No rounded edges */
+    width: 75px;
+    height: 75px;
     text-align: center;
-    box-shadow: 0 0 10px var(--neon-purple); /* Neon purple shadow for effect */
+    box-shadow: 0 0 10px var(--border-color); /* Neon purple shadow for effect */
     cursor: pointer;
     transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .contact-box:hover {
     transform: scale(1.1);
-    box-shadow: 0 0 20px var(--neon-purple); /* Increased shadow on hover */
+    box-shadow: 0 0 20px var(--border-color); /* Increased shadow on hover */
 }
 
 .contact-box img {
