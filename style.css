@@ -17,20 +17,14 @@ body {
 }
 
 .title-box h1 {
+    text-align: center;
+    margin: 40px auto 20px;
     color: white;
     text-transform: uppercase;
     font-size: 90px;
     text-shadow: 2px 2px 0 var(--primary-accent), -2px -2px 0 var(--secondary-accent); /* Use new accent colors */
-    text-align: center;
-    margin: 40px auto 20px;
-}
-
-.title-box h1 {
-    color: white;
-    text-transform: uppercase;
-    font-size: 90px;
-    text-shadow: 2px 2px 0 var(--neon-blue), -2px -2px 0 var(--neon-pink);
-    margin: 0;
+    max-width: 800px; /* Keep this to control the maximum width of the box */
+    width: 100%;
 }
 
 /* Navigation Bar */
@@ -39,7 +33,7 @@ body {
     flex-wrap: wrap; /* Allow menu items to wrap to new line if they don't fit */
     justify-content: center;
     align-items: center;
-    gap: 0px; /* No gap between yellow boxes */
+    gap: 0px; 
     margin: 20px auto;
     max-width: 90%;
     text-align: center;
@@ -64,7 +58,7 @@ body {
     text-decoration: none;
     color: white;
     font-size: 16px;
-    padding: 15px 20px;
+    padding: 9px 20px;
     border: 2px solid var(--border-color); /* Use new border color */
     border-radius: 0px;
     transition: background-color 0.3s, color 0.3s, transform 0.3s;
