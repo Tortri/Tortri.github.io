@@ -241,15 +241,106 @@ body {
     opacity: 1; /* Show the notification */
 }
 
+/* Existing styles */
+
+/* New/Updated About Me Section Styles */
+.about-me-section .neon-green-box {
+    /* Adjust padding for the overall container if needed, might need more for boxes */
+    padding: 30px; /* Example: slightly more internal padding */
+}
+
+.about-me-grid-container {
+    display: grid;
+    /* Define grid columns for side-by-side boxes */
+    /* Example: Two columns, adjust percentages/fr units as needed for desired width distribution */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid columns */
+    gap: 20px; /* Space between the boxes */
+    margin-top: 20px; /* Space below the main H2 */
+}
+
+.about-me-box {
+    background-color: var(--dark-background-section); /* Use a consistent dark background for internal boxes */
+    border: 1px solid var(--border-color); /* Subtle border for each box */
+    padding: 25px; /* Padding inside each box */
+    border-radius: 8px; /* Slightly rounded corners for a modern feel */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); /* Soft shadow for depth */
+    display: flex; /* Use flex for internal alignment within boxes */
+    flex-direction: column;
+    justify-content: flex-start; /* Align content to the top */
+}
+
+/* Specific styling for the photo and welcome message box */
+.photo-welcome-box {
+    align-items: center; /* Center content horizontally */
+    flex-direction: row; /* Make picture and text side by side */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    justify-content: center;
+    gap: 20px;
+    grid-column: span 2; /* Make this box span two columns if grid allows, or remove if not desired */
+}
+
 .profile-picture-container {
-    text-align: center; /* Center the image within its container */
-    margin-bottom: 20px; /* Space below the picture */
+    flex-shrink: 0; /* Prevent picture from shrinking */
+    text-align: center;
 }
 
 .profile-picture {
-    border-radius: 50%; /* Makes the image circular */
-    max-width: 200px; /* Adjust size as needed */
+    border-radius: 8px; /* Square with slight rounded corners */
+    max-width: 150px; /* Adjust size as needed */
     height: auto;
-    border: 3px solid var(--primary-accent); /* A subtle border using your chosen accent color */
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4); /* Soft shadow */
+    border: 3px solid var(--primary-accent);
+    box-shadow: 0 0 10px rgba(96, 125, 139, 0.5); /* Subtle glow */
 }
+
+.welcome-message-container {
+    flex-grow: 1; /* Allow text container to take available space */
+    text-align: center;
+    font-size: 1.8em; /* Significantly bigger text */
+    color: var(--text-color);
+    min-width: 150px; /* Ensure space for the text */
+    padding: 10px;
+}
+
+/* General text sizing (adjust 'em' values as needed) */
+.about-me-box h3 {
+    font-size: 1.6em; /* Bigger heading */
+    color: var(--primary-accent);
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.about-me-box h4 {
+    font-size: 1.2em; /* Bigger sub-heading */
+    color: var(--secondary-accent);
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+
+.about-me-box p,
+.about-me-box ul li {
+    font-size: 1.1em; /* Bigger paragraph and list text */
+    line-height: 1.6;
+    color: var(--secondary-accent); /* Soften text color */
+}
+
+.about-me-box strong {
+    color: var(--text-color); /* Ensure strong text stands out */
+}
+
+/* Responsive Adjustments for Grid */
+@media (max-width: 768px) {
+    .about-me-grid-container {
+        grid-template-columns: 1fr; /* Stack all boxes vertically on smaller screens */
+    }
+
+    .photo-welcome-box {
+        flex-direction: column; /* Stack photo and welcome message vertically */
+        text-align: center;
+    }
+
+    .welcome-message-container {
+        font-size: 1.5em; /* Adjust welcome message size for mobile */
+        margin-top: 15px;
+    }
+}
+
