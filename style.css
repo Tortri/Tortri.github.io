@@ -10,6 +10,7 @@ body {
 }
 
 :root {
+    --white: #ffffff; /* White color for text */
     --primary-accent: #607d8b; /* Example: A muted blue-grey */
     --secondary-accent: #a7a7a7; /* Example: A subtle light grey */
     --border-color: #4a4a4a; /* Example: Dark grey for borders */
@@ -86,7 +87,7 @@ body {
     max-width: 800px;
     width: 80%;
     text-align: center;
-    box-shadow: 0 0 20px var(--primary-accent); /* Use new accent color for shadow */
+    box-shadow: 0 0 20px var(--secondary-accent); /* Use new accent color for shadow */
     margin: 40px auto;
 }
 /* Apply similar changes to .tool-box and .contact-box using your new color variables */
@@ -295,7 +296,7 @@ body {
 .welcome-message-container {
     flex-grow: 1; /* Allow text container to take available space */
     text-align: center;
-    font-size: 1.8em; /* Significantly bigger text */
+    font-size: 3em; /* Significantly bigger text */
     color: var(--text-color);
     min-width: 150px; /* Ensure space for the text */
     padding: 10px;
@@ -303,14 +304,14 @@ body {
 
 /* General text sizing (adjust 'em' values as needed) */
 .about-me-box h3 {
-    font-size: 1.6em; /* Bigger heading */
+    font-size: 2.5em; /* Bigger heading */
     color: var(--primary-accent);
     margin-top: 0;
     margin-bottom: 15px;
 }
 
 .about-me-box h4 {
-    font-size: 1.2em; /* Bigger sub-heading */
+    font-size: 2.5em; /* Bigger sub-heading */
     color: var(--secondary-accent);
     margin-top: 20px;
     margin-bottom: 5px;
@@ -320,7 +321,7 @@ body {
 .about-me-box ul li {
     font-size: 1.1em; /* Bigger paragraph and list text */
     line-height: 1.6;
-    color: var(--secondary-accent); /* Soften text color */
+    color: var(--white);
 }
 
 .about-me-box strong {
