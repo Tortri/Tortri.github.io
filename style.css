@@ -236,3 +236,20 @@ body {
     box-shadow: 0 0 10px #00ff00;
     z-index: 1000;
 }
+
+.copy-notification.show {
+    opacity: 1; /* Show the notification */
+}
+
+.profile-picture-container {
+    text-align: center; /* Center the image within its container */
+    margin-bottom: 20px; /* Space below the picture */
+}
+
+.profile-picture {
+    border-radius: 50%; /* Makes the image circular */
+    max-width: 200px; /* Adjust size as needed */
+    height: auto;
+    border: 3px solid var(--primary-accent); /* A subtle border using your chosen accent color */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4); /* Soft shadow */
+}
