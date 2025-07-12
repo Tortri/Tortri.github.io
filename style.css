@@ -34,7 +34,7 @@ body {
     justify-content: center;
     align-items: center;
     gap: 0px; 
-    margin: 20px auto;
+    margin: 17px auto;
     max-width: 90%;
     text-align: center;
 }
@@ -58,7 +58,8 @@ body {
     text-decoration: none;
     color: white;
     font-size: 16px;
-    padding: 5px 15px;
+    padding: 10px 17px;
+    line-height: 1; 
     border: 2px solid var(--border-color); /* Use new border color */
     border-radius: 0px;
     transition: background-color 0.3s, color 0.3s, transform 0.3s;
