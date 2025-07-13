@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
           event.preventDefault(); // Prevent default form submission
 
           // IMPORTANT: Replace 'YOUR_FORMSPREE_FORM_ID' with your actual Formspree ID
-          const formspreeUrl = 'https://formspree.io/f/YOUR_FORMSPREE_FORM_ID';
+          const formspreeUrl = 'https://formspree.io/f/mblkrleq';
 
           const formData = new FormData(contactForm);
 
