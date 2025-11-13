@@ -3,79 +3,501 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jacob Pérez Wibe - Website</title>
-    <!-- Link to the stylesheet -->
-    <link rel="stylesheet" href="style.css">
-    <!-- Import futuristic font from Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
-    <!-- Add favicon link -->
+    <title>Jacob Pérez Wibe</title>
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-image: url('images/background.png');
+            background-repeat: repeat;
+            background-color: #1a1a2e;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            max-height: 600px;
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 150px;
+        }
+        
+        .nav-button {
+            background: #16213e;
+            border: 4px solid #0f3460;
+            color: #e94560;
+            padding: 20px 15px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.1s;
+            image-rendering: pixelated;
+            box-shadow: 4px 4px 0 #000;
+        }
+        
+        .nav-button:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #000;
+        }
+        
+        .nav-button.active {
+            background: #0f3460;
+            border-color: #533483;
+            color: #fff;
+        }
+        
+        .content-box {
+            flex: 1;
+            background: #16213e;
+            border: 6px solid #0f3460;
+            padding: 30px;
+            overflow-y: auto;
+            box-shadow: 8px 8px 0 #000;
+            image-rendering: pixelated;
+        }
+        
+        .content-box::-webkit-scrollbar {
+            width: 12px;
+        }
+        
+        .content-box::-webkit-scrollbar-track {
+            background: #0f3460;
+        }
+        
+        .content-box::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border: 2px solid #0f3460;
+        }
+        
+        .content-section {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        h2 {
+            color: #e94560;
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        h3 {
+            color: #00d9ff;
+            font-size: 14px;
+            margin: 20px 0 10px 0;
+        }
+        
+        p, label {
+            font-size: 10px;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            color: #e0e0e0;
+        }
+        
+        .profile-section {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border: 4px solid #e94560;
+            image-rendering: pixelated;
+            box-shadow: 4px 4px 0 #000;
+        }
+        
+        .welcome-text {
+            font-size: 24px;
+            color: #00d9ff;
+            text-shadow: 3px 3px 0 #000;
+        }
+        
+        .project-box {
+            background: #0f3460;
+            border: 4px solid #533483;
+            padding: 20px;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 4px 4px 0 #000;
+        }
+        
+        .project-box:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #000;
+            background: #533483;
+        }
+        
+        .project-box h3 {
+            margin-top: 0;
+        }
+        
+        .tool-section {
+            background: #0f3460;
+            border: 4px solid #533483;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 4px 4px 0 #000;
+        }
+        
+        input[type="number"],
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            width: 100%;
+            background: #1a1a2e;
+            border: 3px solid #e94560;
+            color: #fff;
+            padding: 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            margin: 10px 0;
+            box-shadow: 3px 3px 0 #000;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background: #e94560;
+            border: 4px solid #533483;
+            color: #fff;
+            padding: 15px 25px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.1s;
+            box-shadow: 4px 4px 0 #000;
+        }
+        
+        button:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #000;
+            background: #533483;
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .contact-item {
+            background: #0f3460;
+            border: 3px solid #533483;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 3px 3px 0 #000;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        .contact-item:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 #000;
+            background: #533483;
+        }
+        
+        .contact-item img {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+            image-rendering: pixelated;
+        }
+        
+        .message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #e94560;
+            border: 4px solid #000;
+            padding: 15px 25px;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 4px 4px 0 #000;
+            z-index: 1000;
+        }
+        
+        .message-box.show {
+            opacity: 1;
+        }
+        
+        .message-box.success {
+            background: #00ff88;
+            color: #000;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                overflow: auto;
+            }
+            
+            .container {
+                flex-direction: column;
+                height: auto;
+                max-height: none;
+                padding: 20px 0;
+            }
+            
+            .sidebar {
+                flex-direction: row;
+                min-width: auto;
+                width: 100%;
+                justify-content: space-around;
+            }
+            
+            .nav-button {
+                flex: 1;
+                padding: 15px 10px;
+                font-size: 8px;
+            }
+            
+            .content-box {
+                min-height: 60vh;
+            }
+            
+            h2 {
+                font-size: 14px;
+            }
+            
+            .welcome-text {
+                font-size: 16px;
+            }
+            
+            .profile-section {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
-
 <body>
-    <!-- Always Visible Navigation Bar -->
-    <header class="title-box">
-        <h1>Jacob Pérez Wibe</h1>
-    </header>
-
-    <div class="nav-bar">
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="projects.html">Other projects</a></li>
-                <li><a href="useful.html">Useful tools</a></li>
-                <li><a href="contact.html">Contact</a></li>
-            </ul>
-        </nav>
-    </div>
-
-  
-    <div class="neon-green-box" id="about-me-content">
-        <h2>About Me</h2>
-
-        <div class="about-me-grid-container">
-            <div class="about-me-box photo-welcome-box">
-                <div class="profile-picture-container">
+    <div class="container">
+        <div class="sidebar">
+            <button class="nav-button active" onclick="showSection('home')">HOME</button>
+            <button class="nav-button" onclick="showSection('projects')">PROJECTS</button>
+            <button class="nav-button" onclick="showSection('contact')">CONTACT</button>
+        </div>
+        
+        <div class="content-box">
+            <!-- HOME SECTION -->
+            <div id="home" class="content-section active">
+                <h2>ABOUT ME</h2>
+                <div class="profile-section">
                     <img src="images/me.png" alt="Jacob Pérez Wibe" class="profile-picture">
+                    <div class="welcome-text" id="welcome-text-rotator">Welcome!</div>
                 </div>
-                <div class="welcome-message-container">
-                    <p id="welcome-text-rotator"></p>
+                <h3>HEY!</h3>
+                <p>Nice to see you here, let me introduce you to my page.</p>
+            </div>
+            
+            <!-- PROJECTS SECTION -->
+            <div id="projects" class="content-section">
+                <h2>PROJECTS & TOOLS</h2>
+                
+                <div class="project-box" onclick="window.open('SatWeather', '_blank')">
+                    <h3>SATELLITE & WEATHER TRACKER</h3>
+                    <p>An application to track satellite positions and display local weather conditions.</p>
+                    <p style="color: #00ff88;">CLICK TO VIEW PROJECT</p>
+                </div>
+                
+                <div class="tool-section">
+                    <h3>PASSWORD GENERATOR</h3>
+                    <label for="passwordLength">CHOOSE LENGTH (MAX 20):</label>
+                    <input type="number" id="passwordLength" min="1" max="20" value="12">
+                    <button onclick="displayGeneratedPassword()">GENERATE PASSWORD</button>
+                    <p id="generatedPassword" style="color: #00ff88; word-break: break-all;"></p>
                 </div>
             </div>
-
-            <div class="about-me-box summary-box">
-                <h3>Hey!</h3>
-                <p> Nice to see you here, let me introduce you to my page. </p>
+            
+            <!-- CONTACT SECTION -->
+            <div id="contact" class="content-section">
+                <h2>CONTACT ME</h2>
+                
+                <div class="tool-section">
+                    <h3>SEND A MESSAGE</h3>
+                    <form id="contactForm" onsubmit="handleSubmit(event)">
+                        <label for="name">NAME:</label>
+                        <input type="text" id="name" name="name" required>
+                        
+                        <label for="email">EMAIL:</label>
+                        <input type="email" id="email" name="_replyto" required>
+                        
+                        <label for="message">MESSAGE:</label>
+                        <textarea id="message" name="message" required></textarea>
+                        
+                        <button type="submit">SEND MESSAGE</button>
+                    </form>
+                </div>
+                
+                <div class="contact-grid">
+                    <div class="contact-item">
+                        <img src="images/mail.png" alt="Email">
+                        <p>jacob.p.wibe@gmail.com</p>
+                    </div>
+                    
+                    <div class="contact-item" onclick="window.open('https://wa.me/4915739452254', '_blank')">
+                        <img src="images/whatsapp.png" alt="WhatsApp">
+                        <p>+49 15739452254</p>
+                    </div>
+                    
+                    <div class="contact-item" onclick="window.open('https://www.linkedin.com/in/jacob-p%C3%A9rez-wibe-3641721b6/', '_blank')">
+                        <img src="images/linkedin.png" alt="LinkedIn">
+                        <p>LINKEDIN</p>
+                    </div>
+                    
+                    <div class="contact-item" onclick="window.open('https://github.com/Tortri', '_blank')">
+                        <img src="images/github.png" alt="GitHub">
+                        <p>GITHUB</p>
+                    </div>
+                </div>
             </div>
-
-
-        </div> </div>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const welcomeMessages = [
-                    "Welcome!",      // English
-                    "Willkommen!",   // German
-                    "Velkommen!",    // Norwegian
-                    "¡Bienvenido!",   // Spanish
-                    "Bienvenue!"     // French
-                ];
-                let currentMessageIndex = 0;
-                const welcomeTextElement = document.getElementById('welcome-text-rotator');
+        </div>
+    </div>
     
-                function updateWelcomeMessage() {
-                    welcomeTextElement.textContent = welcomeMessages[currentMessageIndex];
-                    currentMessageIndex = (currentMessageIndex + 1) % welcomeMessages.length;
-                }
+    <div id="form-status" class="message-box"></div>
     
-                // Initial message display
-                updateWelcomeMessage();
-    
-                // Change message every 2 seconds (2000 milliseconds)
-                setInterval(updateWelcomeMessage, 2000);
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
             });
-        </script>
+            
+            // Remove active from all buttons
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Highlight active button
+            event.target.classList.add('active');
+        }
+        
+        // Welcome message rotation
+        const welcomeMessages = [
+            "Welcome!",      // English
+            "Willkommen!",   // German
+            "Velkommen!",    // Norwegian
+            "¡Bienvenido!",  // Spanish
+            "Bienvenue!"     // French
+        ];
+        let currentMessageIndex = 0;
+        
+        function updateWelcomeMessage() {
+            document.getElementById('welcome-text-rotator').textContent = welcomeMessages[currentMessageIndex];
+            currentMessageIndex = (currentMessageIndex + 1) % welcomeMessages.length;
+        }
+        
+        setInterval(updateWelcomeMessage, 2000);
+        
+        // Password Generator
+        function displayGeneratedPassword() {
+            const passwordLength = document.getElementById("passwordLength").value;
+            const generatedPassword = generatePassword(passwordLength);
+            document.getElementById("generatedPassword").innerText = generatedPassword;
+        }
+        
+        function generatePassword(length) {
+            if (length < 1 || length > 20) {
+                length = 12;
+            }
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const symbols = '_!)(&';
+            let password = '';
+            
+            password += symbols.charAt(Math.floor(Math.random() * symbols.length));
+            length--;
+            
+            for (let i = 0; i < length; i++) {
+                password += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            
+            password = password.split('').sort(() => 0.5 - Math.random()).join('');
+            return password;
+        }
+        
+        // Contact Form
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const formspreeUrl = 'https://formspree.io/f/mblkrleq';
+            const formData = new FormData(event.target);
+            
+            try {
+                const response = await fetch(formspreeUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    showMessageBox('MESSAGE SENT!', 'success');
+                    event.target.reset();
+                } else {
+                    showMessageBox('ERROR SENDING MESSAGE', 'error');
+                }
+            } catch (error) {
+                showMessageBox('NETWORK ERROR', 'error');
+            }
+        }
+        
+        function showMessageBox(message, type) {
+            const msgBox = document.getElementById('form-status');
+            msgBox.textContent = message;
+            msgBox.className = `message-box ${type} show`;
+            
+            setTimeout(() => {
+                msgBox.classList.remove('show');
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
