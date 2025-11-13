@@ -331,7 +331,7 @@
                 <h2>HEY!</h2>
                 <p>Nice to see you here, let me introduce you to my page. This page is actually just a fun side project I sometimes work on and it's not even completely finished yet. It might seem like I coded everything myself, but thats not entirely the case. I did configure everything with the domain and also code the projects myself though! </p>
                 <h2>A LITTLE ABOUT MYSELF</h2>
-                <p> I recently finished my Bachelor's degree in Electrical/Electronics Engineering and am currently studying leadership. In the future I would like to study Computer Engineering or Cybersecurity, as it interests me a lot. The reason I have those changing languages there is because I speak all of them fluently, except for french... But in the future I want to learn that too! </p>
+                <p> I recently finished my Bachelor's degree in Electrical/Electronics Engineering and am currently studying leadership. In the future I would like to study Computer Engineering or Cybersecurity, as it interests me a lot. The reason I have the welcome up there in changing languages (English, German, Norwegian, Spanish, French) is because I speak all of them fluently, except for French... But in the future I want to learn that too! </p>
             </div>
             
             <!-- PROJECTS SECTION -->
@@ -376,7 +376,8 @@
                 <div class="contact-grid">
                     <div class="contact-item">
                         <img src="images/mail.png" alt="Email">
-                        <p>jacob.p.wibe@gmail.com</p>
+                        <p>jacob.p.wibe</p>
+                        <p>@gmail.com</p>
                     </div>
                     
                     <div class="contact-item" onclick="window.open('https://wa.me/4915739452254', '_blank')">
@@ -445,21 +446,35 @@
         }
         
         function generatePassword(length) {
-            if (length < 1 || length > 20) {
-                length = 12;
+            if (length < 4) {
+                length = 4; // Minimum 4 to fit all requirements
             }
-            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_!)(&';
+            if (length > 20) {
+                length = 20;
+            }
+            
+            const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+            const numbers = '0123456789';
             const symbols = '_!)(&';
+            const allCharacters = uppercase + lowercase + numbers + symbols;
+            
             let password = '';
             
+            // Ensure at least one of each required type
+            password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+            password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+            password += numbers.charAt(Math.floor(Math.random() * numbers.length));
             password += symbols.charAt(Math.floor(Math.random() * symbols.length));
-            length--;
             
-            for (let i = 0; i < length; i++) {
-                password += characters.charAt(Math.floor(Math.random() * characters.length));
+            // Fill the rest with random characters
+            for (let i = password.length; i < length; i++) {
+                password += allCharacters.charAt(Math.floor(Math.random() * allCharacters.length));
             }
             
+            // Shuffle the password to mix the guaranteed characters
             password = password.split('').sort(() => 0.5 - Math.random()).join('');
+            
             return password;
         }
         
