@@ -16,6 +16,7 @@
         .cell { flex: 1; height: 100%; background: white; border-left: 1px solid #e2e8f0; cursor: pointer; user-select: none; }
         .cell.selected { background: #2563eb !important; }
         .tip { margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; color: #475569; }
+        .counter { font-size: 13px; color: #64748b; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -24,6 +25,7 @@
     <div class="auth">
         <input type="text" id="user" placeholder="Enter Name" style="padding:6px; width:150px;">
         <button onclick="login()" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Edit Grid</button>
+        <div class="counter" id="user-count">Active users: 0 / 100</div>
     </div>
     <div class="grid-flex" id="layout">
         <div class="pane">
@@ -38,6 +40,9 @@
     </div>
 </div>
 <script>
+    // Replace with your real Cloudflare worker URL structure once deployed
+    const WORKER_URL = "https://your-worker-name.your-subdomain.workers.dev"; 
+
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
     for(let h=8; h<22; h++) {
         for(let m=0; m<60; m+=5) {
@@ -54,17 +59,84 @@
             g.innerHTML += `<div class="row"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
         });
     }
-    function login() {
+
+    async function login() {
         name = document.getElementById('user').value.trim();
         if(!name) return alert("Enter a name");
+
+        // Validate room availability and check-in user
+        try {
+            const res = await fetch(`${WORKER_URL}?user=${encodeURIComponent(name)}`);
+            if (res.status === 503) {
+                const errData = await res.json();
+                return alert(errData.error);
+            }
+            const json = await res.json();
+            
+            // Map remote server state sets
+            data = {};
+            for (let u in json.data) {
+                data[u] = new Set(json.data[u]);
+            }
+        } catch (e) {
+            console.error("Cloudflare sync failed on login", e);
+        }
+
         if(!data[name]) data[name] = new Set();
         document.getElementById('title').innerText = `${name}'s Grid`;
         document.getElementById('layout').classList.add('active');
+        
         document.querySelectorAll('#u-grid .cell').forEach(c => {
             c.classList.toggle('selected', data[name].has(c.getAttribute('data-time')));
         });
+        
         drawMap();
+        
+        // Start live sync interval loop (fetches data every 3 seconds)
+        setInterval(syncWithCloud, 3000);
     }
+
+    // Fetch master calendar modifications from Cloudflare
+    async function syncWithCloud() {
+        try {
+            const res = await fetch(`${WORKER_URL}?user=${encodeURIComponent(name)}`);
+            const json = await res.json();
+            
+            document.getElementById('user-count').innerText = `Active users: ${json.userCount} / 100`;
+
+            // Merge everyone else's schedule edits, retain local client changes
+            for (let u in json.data) {
+                if (u !== name) {
+                    data[u] = new Set(json.data[u]);
+                }
+            }
+            // Remove users that dropped off the remote backend list
+            for (let u in data) {
+                if (!json.data[u] && u !== name) delete data[u];
+            }
+            drawMap();
+        } catch(e) {
+            console.error("Sync fetch error", e);
+        }
+    }
+
+    // Save configuration states to Cloudflare KV
+    async function saveToCloud() {
+        if (!name) return;
+        try {
+            await fetch(WORKER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: name,
+                    selectedSlots: Array.from(data[name])
+                })
+            });
+        } catch (e) {
+            console.error("Failed pushing updates to Cloudflare KV", e);
+        }
+    }
+
     function startDrag(e) {
         if(!name || !e.target.classList.contains('cell')) return;
         dragging = true;
@@ -73,12 +145,21 @@
         e.preventDefault();
     }
     function doDrag(e) { if(dragging && e.target.classList.contains('cell')) toggle(e.target); }
-    document.addEventListener('mouseup', () => { if(dragging) { dragging = false; drawMap(); } });
+    
+    document.addEventListener('mouseup', () => { 
+        if(dragging) { 
+            dragging = false; 
+            drawMap(); 
+            saveToCloud(); // Save state immediately when user lets go of dragging 
+        } 
+    });
+
     function toggle(c) {
         let t = c.getAttribute('data-time');
         c.classList.toggle('selected', drawing);
         drawing ? data[name].add(t) : data[name].delete(t);
     }
+
     function drawMap() {
         let total = Object.keys(data).length;
         document.querySelectorAll('.g-cell').forEach(c => {
@@ -88,6 +169,7 @@
             else c.style.background = `hsl(142, 70%, ${90 - ((count/total) * 50)}%)`;
         });
     }
+
     function show(t) {
         let hits = [];
         for(let u in data) if(data[u].has(t)) hits.push(u);
