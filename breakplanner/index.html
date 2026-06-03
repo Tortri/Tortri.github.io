@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>5-Min Scheduler (24h)</title>
+    <style>
+        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; color: #1e293b; }
+        .box { max-width: 950px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
+        .auth { background: #eff6ff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
+        .grid-flex { display: flex; gap: 20px; opacity: 0.4; pointer-events: none; }
+        .grid-flex.active { opacity: 1; pointer-events: auto; }
+        .pane { flex: 1; text-align: center; }
+        .scroll { max-height: 550px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px; }
+        .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; }
+        .lbl { width: 65px; font-size: 12px; color: #64748b; text-align: left; user-select: none; font-variant-numeric: tabular-nums; font-weight: 500; }
+        .cell { flex: 1; height: 100%; background: white; border-left: 1px solid #e2e8f0; cursor: pointer; user-select: none; }
+        .cell.selected { background: #2563eb !important; }
+        .tip { margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; color: #475569; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2 style="text-align:center; margin-top:0;">5-Minute Interval Scheduler (08:00 - 22:00)</h2>
+    <div class="auth">
+        <input type="text" id="user" placeholder="Enter Name" style="padding:6px; width:150px;">
+        <button onclick="login()" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Edit Grid</button>
+    </div>
+    <div class="grid-flex" id="layout">
+        <div class="pane">
+            <h3 id="title">Your Availability</h3>
+            <div class="scroll" id="u-grid" onmousedown="startDrag(event)" onmouseover="doDrag(event)"></div>
+        </div>
+        <div class="pane">
+            <h3>Group Heatmap</h3>
+            <div class="scroll" id="g-grid"></div>
+            <div class="tip" id="tip">Hover over the heatmap to view data</div>
+        </div>
+    </div>
+</div>
+<script>
+    let name = "", dragging = false, drawing = true, data = {}, slots = [];
+    for(let h=8; h<22; h++) {
+        for(let m=0; m<60; m+=5) {
+            slots.push(`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`);
+        }
+    }
+    slots.push("22:00");
+
+    function build() {
+        const u = document.getElementById('u-grid'), g = document.getElementById('g-grid');
+        u.innerHTML = ''; g.innerHTML = '';
+        slots.forEach((t) => {
+            u.innerHTML += `<div class="row"><div class="lbl">${t}</div><div class="cell" data-time="${t}"></div></div>`;
+            g.innerHTML += `<div class="row"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
+        });
+    }
+    function login() {
+        name = document.getElementById('user').value.trim();
+        if(!name) return alert("Enter a name");
+        if(!data[name]) data[name] = new Set();
+        document.getElementById('title').innerText = `${name}'s Grid`;
+        document.getElementById('layout').classList.add('active');
+        document.querySelectorAll('#u-grid .cell').forEach(c => {
+            c.classList.toggle('selected', data[name].has(c.getAttribute('data-time')));
+        });
+        drawMap();
+    }
+    function startDrag(e) {
+        if(!name || !e.target.classList.contains('cell')) return;
+        dragging = true;
+        drawing = !e.target.classList.contains('selected');
+        toggle(e.target);
+        e.preventDefault();
+    }
+    function doDrag(e) { if(dragging && e.target.classList.contains('cell')) toggle(e.target); }
+    document.addEventListener('mouseup', () => { if(dragging) { dragging = false; drawMap(); } });
+    function toggle(c) {
+        let t = c.getAttribute('data-time');
+        c.classList.toggle('selected', drawing);
+        drawing ? data[name].add(t) : data[name].delete(t);
+    }
+    function drawMap() {
+        let total = Object.keys(data).length;
+        document.querySelectorAll('.g-cell').forEach(c => {
+            let t = c.getAttribute('data-time'), count = 0;
+            for(let u in data) if(data[u].has(t)) count++;
+            if(count === 0 || total === 0) c.style.background = 'white';
+            else c.style.background = `hsl(142, 70%, ${90 - ((count/total) * 50)}%)`;
+        });
+    }
+    function show(t) {
+        let hits = [];
+        for(let u in data) if(data[u].has(t)) hits.push(u);
+        document.getElementById('tip').innerHTML = `${t}: ${hits.length} active (${hits.join(', ') || 'none'})`;
+    }
+    function hide() { document.getElementById('tip').innerText = "Hover over the heatmap to view data"; }
+    build();
+</script>
+</body>
+</html>
