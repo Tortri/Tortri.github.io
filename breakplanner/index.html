@@ -25,6 +25,7 @@
     <div class="auth">
         <input type="text" id="user" placeholder="Enter Name" style="padding:6px; width:150px;">
         <button onclick="login()" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Edit Grid</button>
+        <button id="save-btn" onclick="manualSave()" style="padding:6px 12px; background:#10b981; color:white; border:none; border-radius:4px; cursor:pointer; margin-left: 10px; display: none;">Save Changes</button>
         <div class="counter" id="user-count">Active users: 0 / 100</div>
     </div>
     <div class="grid-flex" id="layout">
@@ -40,7 +41,7 @@
     </div>
 </div>
 <script>
-    // Replace with your real Cloudflare worker URL structure once deployed
+    // CRUCIAL: Replace this with your actual live Cloudflare worker URL link
     const WORKER_URL = "https://breakplanner-backend.tortrix03.workers.dev"; 
 
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
@@ -64,7 +65,6 @@
         name = document.getElementById('user').value.trim();
         if(!name) return alert("Enter a name");
 
-        // Validate room availability and check-in user
         try {
             const res = await fetch(`${WORKER_URL}?user=${encodeURIComponent(name)}`);
             if (res.status === 503) {
@@ -73,7 +73,6 @@
             }
             const json = await res.json();
             
-            // Map remote server state sets
             data = {};
             for (let u in json.data) {
                 data[u] = new Set(json.data[u]);
@@ -86,17 +85,17 @@
         document.getElementById('title').innerText = `${name}'s Grid`;
         document.getElementById('layout').classList.add('active');
         
+        // Show the green Save Changes button right after login
+        document.getElementById('save-btn').style.display = 'inline-block';
+        
         document.querySelectorAll('#u-grid .cell').forEach(c => {
             c.classList.toggle('selected', data[name].has(c.getAttribute('data-time')));
         });
         
         drawMap();
-        
-        // Start live sync interval loop (fetches data every 3 seconds)
         setInterval(syncWithCloud, 3000);
     }
 
-    // Fetch master calendar modifications from Cloudflare
     async function syncWithCloud() {
         try {
             const res = await fetch(`${WORKER_URL}?user=${encodeURIComponent(name)}`);
@@ -104,13 +103,11 @@
             
             document.getElementById('user-count').innerText = `Active users: ${json.userCount} / 100`;
 
-            // Merge everyone else's schedule edits, retain local client changes
             for (let u in json.data) {
                 if (u !== name) {
                     data[u] = new Set(json.data[u]);
                 }
             }
-            // Remove users that dropped off the remote backend list
             for (let u in data) {
                 if (!json.data[u] && u !== name) delete data[u];
             }
@@ -120,20 +117,41 @@
         }
     }
 
-    // Save configuration states to Cloudflare KV
     async function saveToCloud() {
         if (!name) return;
+        await fetch(WORKER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                username: name,
+                selectedSlots: Array.from(data[name])
+            })
+        });
+    }
+
+    async function manualSave() {
+        if (!name) return;
+        
+        const saveBtn = document.getElementById('save-btn');
+        saveBtn.innerText = "Saving...";
+        saveBtn.style.opacity = "0.7";
+
         try {
-            await fetch(WORKER_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: name,
-                    selectedSlots: Array.from(data[name])
-                })
-            });
+            await saveToCloud();
+            await syncWithCloud();
+            
+            saveBtn.innerText = "Saved!";
+            saveBtn.style.background = "#059669";
+            
+            setTimeout(() => {
+                saveBtn.innerText = "Save Changes";
+                saveBtn.style.background = "#10b981";
+                saveBtn.style.opacity = "1";
+            }, 1500);
+
         } catch (e) {
-            console.error("Failed pushing updates to Cloudflare KV", e);
+            alert("Error saving your schedule. Please try again.");
+            saveBtn.innerText = "Save Changes";
         }
     }
 
@@ -144,13 +162,13 @@
         toggle(e.target);
         e.preventDefault();
     }
+    
     function doDrag(e) { if(dragging && e.target.classList.contains('cell')) toggle(e.target); }
     
     document.addEventListener('mouseup', () => { 
         if(dragging) { 
             dragging = false; 
             drawMap(); 
-            saveToCloud(); // Save state immediately when user lets go of dragging 
         } 
     });
 
@@ -175,6 +193,7 @@
         for(let u in data) if(data[u].has(t)) hits.push(u);
         document.getElementById('tip').innerHTML = `${t}: ${hits.length} active (${hits.join(', ') || 'none'})`;
     }
+    
     function hide() { document.getElementById('tip').innerText = "Hover over the heatmap to view data"; }
     build();
 </script>
