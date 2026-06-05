@@ -7,14 +7,24 @@
         body { font-family: sans-serif; background: #f1f5f9; padding: 20px; color: #1e293b; }
         .box { max-width: 950px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
         .auth { background: #eff6ff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
-        .grid-flex { display: flex; gap: 20px; opacity: 0.4; pointer-events: none; }
-        .grid-flex.active { opacity: 1; pointer-events: auto; }
+        
+        .grid-flex { display: flex; gap: 20px; }
         .pane { flex: 1; text-align: center; }
+        
+        #your-pane { display: none; }
+        .grid-flex.active #your-pane { display: block; }
+        
         .scroll { max-height: 550px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px; }
         .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; }
         .lbl { width: 65px; font-size: 12px; color: #64748b; text-align: left; user-select: none; font-variant-numeric: tabular-nums; font-weight: 500; }
-        .cell { flex: 1; height: 100%; background: white; border-left: 1px solid #e2e8f0; cursor: pointer; user-select: none; }
-        .cell.selected { background: #2563eb !important; }
+        
+        /* Cell styling optimized for displaying inline names text */
+        .cell { flex: 1; height: 100%; background: white; border-left: 1px solid #e2e8f0; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+        .cell.selected { background: #2563eb !important; color: white; }
+        
+        /* Specific rules for heatmap row labels so names fit neatly */
+        .g-cell { font-size: 11px; color: #1e293b; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
+        
         .tip { margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; color: #475569; }
         .counter { font-size: 13px; color: #64748b; margin-top: 5px; }
     </style>
@@ -24,16 +34,17 @@
     <h2 style="text-align:center; margin-top:0;">5-Minute Interval Scheduler (08:00 - 22:00)</h2>
     <div class="auth">
         <input type="text" id="user" placeholder="Enter Name" style="padding:6px; width:150px;">
-        <button onclick="login()" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Edit Grid</button>
+        <button id="login-btn" onclick="login()" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Edit Grid</button>
         <button id="save-btn" onclick="manualSave()" style="padding:6px 12px; background:#10b981; color:white; border:none; border-radius:4px; cursor:pointer; margin-left: 10px; display: none;">Save Changes</button>
         <div class="counter" id="user-count">Active users: 0 / 100</div>
     </div>
     <div class="grid-flex" id="layout">
-        <div class="pane">
+        <div class="pane" id="your-pane">
             <h3 id="title">Your Availability</h3>
             <div class="scroll" id="u-grid" onmousedown="startDrag(event)" onmouseover="doDrag(event)"></div>
         </div>
-        <div class="pane">
+        
+        <div class="pane" id="group-pane">
             <h3>Group Heatmap</h3>
             <div class="scroll" id="g-grid"></div>
             <div class="tip" id="tip">Hover over the heatmap to view data</div>
@@ -41,7 +52,6 @@
     </div>
 </div>
 <script>
-    // CRUCIAL: Replace this with your actual live Cloudflare worker URL link
     const WORKER_URL = "https://breakplanner-backend.tortrix03.workers.dev"; 
 
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
@@ -59,6 +69,21 @@
             u.innerHTML += `<div class="row"><div class="lbl">${t}</div><div class="cell" data-time="${t}"></div></div>`;
             g.innerHTML += `<div class="row"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
         });
+    }
+
+    async function initialLoad() {
+        try {
+            const res = await fetch(WORKER_URL);
+            const json = await res.json();
+            document.getElementById('user-count').innerText = `Active users: ${json.userCount} / 100`;
+            data = {};
+            for (let u in json.data) {
+                data[u] = new Set(json.data[u]);
+            }
+            drawMap();
+        } catch(e) {
+            console.error("Initial data load error", e);
+        }
     }
 
     async function login() {
@@ -83,17 +108,23 @@
 
         if(!data[name]) data[name] = new Set();
         document.getElementById('title').innerText = `${name}'s Grid`;
+        
         document.getElementById('layout').classList.add('active');
-        
-        // Show the green Save Changes button right after login
         document.getElementById('save-btn').style.display = 'inline-block';
+        document.getElementById('user').style.display = 'none';
+        document.getElementById('login-btn').style.display = 'none';
         
-        document.querySelectorAll('#u-grid .cell').forEach(c => {
-            c.classList.toggle('selected', data[name].has(c.getAttribute('data-time')));
-        });
-        
+        refreshUserGridLabels();
         drawMap();
-        setInterval(syncWithCloud, 3000);
+        
+        setInterval(syncWithCloud, 10000);
+    }
+
+    function refreshUserGridLabels() {
+        document.querySelectorAll('#u-grid .cell').forEach(c => {
+            const isSelected = data[name].has(c.getAttribute('data-time'));
+            c.classList.toggle('selected', isSelected);
+        });
     }
 
     async function syncWithCloud() {
@@ -174,17 +205,46 @@
 
     function toggle(c) {
         let t = c.getAttribute('data-time');
-        c.classList.toggle('selected', drawing);
-        drawing ? data[name].add(t) : data[name].delete(t);
+        if (drawing) {
+            data[name].add(t);
+            c.classList.add('selected');
+        } else {
+            data[name].delete(t);
+            c.classList.remove('selected');
+        }
     }
 
     function drawMap() {
         let total = Object.keys(data).length;
         document.querySelectorAll('.g-cell').forEach(c => {
-            let t = c.getAttribute('data-time'), count = 0;
-            for(let u in data) if(data[u].has(t)) count++;
-            if(count === 0 || total === 0) c.style.background = 'white';
-            else c.style.background = `hsl(142, 70%, ${90 - ((count/total) * 50)}%)`;
+            let t = c.getAttribute('data-time'), activeUsers = [];
+            
+            // Loop through data and grab the actual names of whoever selected this specific time
+            for(let u in data) {
+                if(data[u].has(t)) activeUsers.push(u);
+            }
+            
+            let count = activeUsers.length;
+            
+            if(count === 0 || total === 0) {
+                c.style.background = 'white';
+                c.innerText = ""; // Empty row stays clean
+            } else {
+                let ratio = count / total;
+                let color;
+                if (ratio <= 0.25) {
+                    color = `hsl(50, 100%, ${90 - (ratio * 40)}%)`; 
+                } else if (ratio <= 0.6) {
+                    color = `hsl(30, 100%, ${75 - ((ratio - 0.25) * 40)}%)`; 
+                } else {
+                    color = `hsl(0, 85%, ${65 - ((ratio - 0.6) * 40)}%)`; 
+                }
+                
+                c.style.background = color;
+                
+                // FIXED: Join all names together with commas and display them directly inside the cell!
+                c.innerText = activeUsers.join(", ");
+            }
         });
     }
 
@@ -195,7 +255,9 @@
     }
     
     function hide() { document.getElementById('tip').innerText = "Hover over the heatmap to view data"; }
+    
     build();
+    initialLoad();
 </script>
 </body>
 </html>
