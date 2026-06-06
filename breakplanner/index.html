@@ -8,20 +8,19 @@
         .box { max-width: 950px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
         .auth { background: #eff6ff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
         
+        /* Summary Box Styling */
+        .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; margin-bottom: 20px; text-align: left; }
+        .summary-title { font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .summary-list { font-size: 13px; color: #1e293b; line-height: 1.5; margin: 0; padding-left: 20px; }
+        .summary-empty { font-size: 13px; color: #94a3b8; italic; }
+
         .grid-flex { display: flex; gap: 20px; }
         .pane { flex: 1; text-align: center; display: flex; flex-direction: column; }
         
         #your-pane { display: none; }
-        
         .grid-flex.active #your-pane { display: block; }
-        .grid-flex.active .g-grid-container { display: block; }
-        
-        /* Bird's eye layout mode before login */
-        .g-grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         
         .scroll { max-height: 550px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px; }
-        .column-header { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: bold; margin-bottom: 6px; padding: 2px; background: #e2e8f0; border-radius: 4px; }
-        
         .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; position: relative; }
         .lbl { width: 65px; font-size: 12px; color: #64748b; text-align: left; user-select: none; font-variant-numeric: tabular-nums; font-weight: 500; }
         
@@ -45,23 +44,30 @@
 <body>
 <div class="box">
     <h2 style="text-align:center; margin-top:0;">5-Minute Interval Scheduler (08:00 - 22:00)</h2>
+    
     <div class="auth">
         <input type="text" id="user" placeholder="Enter Name" style="padding:6px; width:150px;">
         <button id="login-btn" onclick="login()" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Edit Grid</button>
         <button id="save-btn" onclick="manualSave()" style="padding:6px 12px; background:#10b981; color:white; border:none; border-radius:4px; cursor:pointer; margin-left: 10px; display: none;">Save Changes</button>
         <div class="counter" id="user-count">Active users: 0 / 100</div>
     </div>
+
+    <div class="summary-box">
+        <div class="summary-title">Daily Break Summary Overview</div>
+        <ul class="summary-list" id="summary-display">
+            <span class="summary-empty">No breaks scheduled yet today.</span>
+        </ul>
+    </div>
+
     <div class="grid-flex" id="layout">
         <div class="pane" id="your-pane">
-            <h3>Your Availability</h3>
+            <h3 id="title">Your Availability</h3>
             <div class="scroll" id="u-grid" onmousedown="startDrag(event)" onmouseover="doDrag(event)"></div>
         </div>
         
         <div class="pane" id="group-pane">
             <h3>Group Heatmap</h3>
-            <div class="g-grid-container" id="g-container">
-                <div class="scroll" id="g-grid"></div>
-            </div>
+            <div class="scroll" id="g-grid"></div>
             <div class="tip" id="tip">Hover over the heatmap to view data</div>
         </div>
     </div>
@@ -70,58 +76,22 @@
     const WORKER_URL = "https://breakplanner-backend.tortrix03.workers.dev"; 
 
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
-    let morningSlots = [], eveningSlots = [];
-
-    // Correctly build master array and split arrays according to your precise shifts
+    
+    // Solid 08:00 to 22:00 master list loops setup
     for(let h=8; h<22; h++) {
         for(let m=0; m<60; m+=5) {
-            const timeStr = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
-            slots.push(timeStr);
-            if (h < 16) {
-                morningSlots.push(timeStr);
-            } else {
-                eveningSlots.push(timeStr);
-            }
+            slots.push(`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`);
         }
     }
     slots.push("22:00");
-    eveningSlots.push("22:00");
 
-    // Rule Helper: Returns maximum allowed slots based on time range boundaries
+    // Capacity checker configuration boundaries mapping rules
     function getMaxAllowed(timeString) {
         const hour = parseInt(timeString.split(':')[0]);
         return (hour === 18) ? 1 : 3; 
     }
 
-    function buildOverviewLayout() {
-        const container = document.getElementById('g-container');
-        container.innerHTML = `
-            <div class="column-pane">
-                <div class="column-header">Morning Shift (08:00 - 16:00)</div>
-                <div class="scroll" id="g-grid-am"></div>
-            </div>
-            <div class="column-pane">
-                <div class="column-header">Evening Shift (16:00 - 22:00)</div>
-                <div class="scroll" id="g-grid-pm"></div>
-            </div>
-        `;
-        
-        const amGrid = document.getElementById('g-grid-am');
-        const pmGrid = document.getElementById('g-grid-pm');
-        
-        morningSlots.forEach(t => {
-            amGrid.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
-        });
-        eveningSlots.forEach(t => {
-            pmGrid.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
-        });
-        updateCurrentTimeMarker();
-    }
-
-    function buildEditingLayout() {
-        const container = document.getElementById('g-container');
-        container.innerHTML = `<div class="scroll" id="g-grid"></div>`;
-        
+    function build() {
         const u = document.getElementById('u-grid');
         const g = document.getElementById('g-grid');
         u.innerHTML = ''; g.innerHTML = '';
@@ -213,8 +183,6 @@
         if(!data[name]) data[name] = new Set();
         document.getElementById('title').innerText = `${name}'s Grid`;
         
-        buildEditingLayout();
-        
         document.getElementById('layout').classList.add('active');
         document.getElementById('save-btn').style.display = 'inline-block';
         document.getElementById('user').style.display = 'none';
@@ -298,9 +266,7 @@
         const maxLimit = getMaxAllowed(t);
         const isSelected = e.target.classList.contains('selected');
 
-        if (!isSelected && currentActive >= maxLimit) {
-            return; 
-        }
+        if (!isSelected && currentActive >= maxLimit) return; 
 
         dragging = true;
         drawing = !isSelected;
@@ -315,9 +281,7 @@
         const currentActive = countActiveUsersForSlot(t);
         const maxLimit = getMaxAllowed(t);
 
-        if (drawing && currentActive >= maxLimit && !data[name].has(t)) {
-            return; 
-        }
+        if (drawing && currentActive >= maxLimit && !data[name].has(t)) return; 
         toggle(e.target); 
     }
     
@@ -334,7 +298,42 @@
         }
     }
 
+    // Helper: Converts independent 5-min array string entries into structured unified text range clusters
+    function generateFormattedRanges(slotSet) {
+        if (!slotSet || slotSet.size === 0) return "No breaks registered";
+        
+        const sortedSlots = Array.from(slotSet).sort();
+        let ranges = [];
+        let start = null;
+        let expectedNext = null;
+
+        for (let i = 0; i < sortedSlots.length; i++) {
+            const current = sortedSlots[i];
+            const [h, m] = current.split(':').map(Number);
+            
+            if (start === null) {
+                start = current;
+            } else if (current !== expectedNext) {
+                ranges.push(`${start} - ${expectedNext}`);
+                start = current;
+            }
+
+            // Calculate when the next consecutive 5-minute block should sit
+            let nextM = m + 5;
+            let nextH = h;
+            if (nextM >= 60) { nextM = 0; nextH++; }
+            expectedNext = `${nextH.toString().padStart(2,'0')}:${nextM.toString().padStart(2,'0')}`;
+        }
+        
+        if (start !== null && expectedNext !== null) {
+            ranges.push(`${start} - ${expectedNext}`);
+        }
+        
+        return ranges.join("; ");
+    }
+
     function drawMap() {
+        // 1. Group Heatmap Render
         document.querySelectorAll('.g-cell').forEach(c => {
             let t = c.getAttribute('data-time'), activeUsers = [];
             for(let u in data) if(data[u].has(t)) activeUsers.push(u);
@@ -360,6 +359,7 @@
             }
         });
 
+        // 2. Personal Edit Grid Restrictions Render
         document.querySelectorAll('#u-grid .cell').forEach(c => {
             let t = c.getAttribute('data-time');
             let count = countActiveUsersForSlot(t);
@@ -376,6 +376,25 @@
                 c.innerText = "";
             }
         });
+
+        // 3. Render Text Summary Dashboard Elements
+        const summaryDisplay = document.getElementById('summary-display');
+        let summaryContent = "";
+        let entriesFound = false;
+
+        for (let user in data) {
+            if (data[user] && data[user].size > 0) {
+                entriesFound = true;
+                const rangesText = generateFormattedRanges(data[user]);
+                summaryContent += `<li><strong>${user}:</strong> ${rangesText}</li>`;
+            }
+        }
+
+        if (entriesFound) {
+            summaryDisplay.innerHTML = summaryContent;
+        } else {
+            summaryDisplay.innerHTML = `<span class="summary-empty">No breaks scheduled yet today.</span>`;
+        }
     }
 
     function show(t) {
@@ -387,7 +406,7 @@
     
     function hide() { document.getElementById('tip').innerText = "Hover over the heatmap to view data"; }
     
-    buildOverviewLayout();
+    build();
     initialLoad();
 </script>
 </body>
