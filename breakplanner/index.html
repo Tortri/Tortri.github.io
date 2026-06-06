@@ -25,14 +25,14 @@
         .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; position: relative; }
         .lbl { width: 65px; font-size: 12px; color: #64748b; text-align: left; user-select: none; font-variant-numeric: tabular-nums; font-weight: 500; }
         
-        /* Custom "Now" indicator line style */
+        /* "Now" indicator line style */
         .row.current-time::after { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; border: 2px dashed #ff2a2a; border-radius: 4px; pointer-events: none; z-index: 10; animation: blink 2s infinite; }
         @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
         .cell { flex: 1; height: 100%; background: white; border-left: 1px solid #e2e8f0; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
         .cell.selected { background: #2563eb !important; color: white; }
         
-        /* New warning rule state for fully booked grid blocks */
+        /* Warning rule state for fully booked grid blocks */
         .cell.full-capacity { background: #fee2e2 !important; color: #dc2626 !important; border-left: 4px solid #dc2626; cursor: not-allowed; }
         
         .g-cell { font-size: 11px; color: #1e293b; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
@@ -70,16 +70,22 @@
     const WORKER_URL = "https://breakplanner-backend.tortrix03.workers.dev"; 
 
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
+    let morningSlots = [], eveningSlots = [];
+
+    // Correctly build master array and split arrays according to your precise shifts
     for(let h=8; h<22; h++) {
         for(let m=0; m<60; m+=5) {
-            slots.push(`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`);
+            const timeStr = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+            slots.push(timeStr);
+            if (h < 16) {
+                morningSlots.push(timeStr);
+            } else {
+                eveningSlots.push(timeStr);
+            }
         }
     }
     slots.push("22:00");
-
-    const midpointIndex = Math.floor(slots.length / 2);
-    const morningSlots = slots.slice(0, midpointIndex);
-    const afternoonSlots = slots.slice(midpointIndex);
+    eveningSlots.push("22:00");
 
     // Rule Helper: Returns maximum allowed slots based on time range boundaries
     function getMaxAllowed(timeString) {
@@ -91,11 +97,11 @@
         const container = document.getElementById('g-container');
         container.innerHTML = `
             <div class="column-pane">
-                <div class="column-header">Morning (${slots[0]} - ${slots[midpointIndex-1]})</div>
+                <div class="column-header">Morning Shift (08:00 - 16:00)</div>
                 <div class="scroll" id="g-grid-am"></div>
             </div>
             <div class="column-pane">
-                <div class="column-header">Afternoon (${slots[midpointIndex]} - ${slots[slots.length-1]})</div>
+                <div class="column-header">Evening Shift (16:00 - 22:00)</div>
                 <div class="scroll" id="g-grid-pm"></div>
             </div>
         `;
@@ -106,7 +112,7 @@
         morningSlots.forEach(t => {
             amGrid.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
         });
-        afternoonSlots.forEach(t => {
+        eveningSlots.forEach(t => {
             pmGrid.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
         });
         updateCurrentTimeMarker();
@@ -145,7 +151,6 @@
         document.addEventListener('mouseup', clearActiveSource);
     }
 
-    // Dynamic Live Tracker: Highlights the closest row to the real world clock time
     function updateCurrentTimeMarker() {
         document.querySelectorAll('.row').forEach(r => r.classList.remove('current-time'));
         
@@ -164,7 +169,6 @@
     }
 
     async function initialLoad() {
-        // Load default local storage handle strings if present
         const savedName = localStorage.getItem('breakplanner_username');
         if (savedName) {
             document.getElementById('user').value = savedName;
@@ -188,7 +192,6 @@
         name = document.getElementById('user').value.trim();
         if(!name) return alert("Enter a name");
 
-        // Save username to prevent continuous repetitive re-typing loops
         localStorage.setItem('breakplanner_username', name);
 
         try {
@@ -219,7 +222,15 @@
         
         drawMap();
         setInterval(syncWithCloud, 10000);
-        setInterval(updateCurrentTimeMarker, 60000); // Track clock every minute
+        setInterval(updateCurrentTimeMarker, 60000);
+    }
+
+    function countActiveUsersForSlot(timeString) {
+        let count = 0;
+        for(let u in data) {
+            if(data[u].has(timeString)) count++;
+        }
+        return count;
     }
 
     async function syncWithCloud() {
@@ -287,7 +298,6 @@
         const maxLimit = getMaxAllowed(t);
         const isSelected = e.target.classList.contains('selected');
 
-        // Block selecting if attempting to add to a fully booked room slot profile
         if (!isSelected && currentActive >= maxLimit) {
             return; 
         }
@@ -313,14 +323,6 @@
     
     document.addEventListener('mouseup', () => { if(dragging) { dragging = false; drawMap(); } });
 
-    function countActiveUsersForSlot(timeString) {
-        let count = 0;
-        for(let u in data) {
-            if(data[u].has(timeString)) count++;
-        }
-        return count;
-    }
-
     function toggle(c) {
         let t = c.getAttribute('data-time');
         if (drawing) {
@@ -333,7 +335,6 @@
     }
 
     function drawMap() {
-        // First Pass: Render and calculate the Heatmap states
         document.querySelectorAll('.g-cell').forEach(c => {
             let t = c.getAttribute('data-time'), activeUsers = [];
             for(let u in data) if(data[u].has(t)) activeUsers.push(u);
@@ -347,20 +348,18 @@
                 c.style.background = 'white';
                 c.innerText = "";
             } else if (count >= maxLimit) {
-                // FIXED: Turns solid crimson red when max capacity boundary limits are crossed
                 c.classList.add('full-capacity');
                 c.innerText = `[FULL] ${activeUsers.join(", ")}`;
             } else {
                 let ratio = count / maxLimit; 
                 let color = ratio <= 0.5 
-                    ? `hsl(50, 100%, ${90 - (ratio * 20)}%)`   // Yellow gradients
-                    : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;  // Orange gradients
+                    ? `hsl(50, 100%, ${90 - (ratio * 20)}%)`   
+                    : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;  
                 c.style.background = color;
                 c.innerText = activeUsers.join(", ");
             }
         });
 
-        // Second Pass: Sync safety restrictions back down to your own editing view pane cells
         document.querySelectorAll('#u-grid .cell').forEach(c => {
             let t = c.getAttribute('data-time');
             let count = countActiveUsersForSlot(t);
@@ -370,7 +369,6 @@
             c.classList.remove('full-capacity');
             c.classList.toggle('selected', isSelected);
 
-            // FIXED: Turns red on your grid if it's full and you aren't the one occupying it
             if (!isSelected && count >= maxLimit) {
                 c.classList.add('full-capacity');
                 c.innerText = "Locked";
