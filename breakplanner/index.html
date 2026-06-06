@@ -9,23 +9,36 @@
         .auth { background: #eff6ff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
         
         .grid-flex { display: flex; gap: 20px; }
-        .pane { flex: 1; text-align: center; }
+        .pane { flex: 1; text-align: center; display: flex; flex-direction: column; }
         
         #your-pane { display: none; }
+        
         .grid-flex.active #your-pane { display: block; }
+        .grid-flex.active .g-grid-container { display: block; }
+        
+        /* Bird's eye layout mode before login */
+        .g-grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         
         .scroll { max-height: 550px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px; }
-        .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; }
+        .column-header { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: bold; margin-bottom: 6px; padding: 2px; background: #e2e8f0; border-radius: 4px; }
+        
+        .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; position: relative; }
         .lbl { width: 65px; font-size: 12px; color: #64748b; text-align: left; user-select: none; font-variant-numeric: tabular-nums; font-weight: 500; }
         
-        /* Cell styling optimized for displaying inline names text */
+        /* Custom "Now" indicator line style */
+        .row.current-time::after { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; border: 2px dashed #ff2a2a; border-radius: 4px; pointer-events: none; z-index: 10; animation: blink 2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
         .cell { flex: 1; height: 100%; background: white; border-left: 1px solid #e2e8f0; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
         .cell.selected { background: #2563eb !important; color: white; }
         
-        /* Specific rules for heatmap row labels so names fit neatly */
-        .g-cell { font-size: 11px; color: #1e293b; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
+        /* New warning rule state for fully booked grid blocks */
+        .cell.full-capacity { background: #fee2e2 !important; color: #dc2626 !important; border-left: 4px solid #dc2626; cursor: not-allowed; }
         
-        .tip { margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; color: #475569; }
+        .g-cell { font-size: 11px; color: #1e293b; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
+        .g-cell.full-capacity { background: #dc2626 !important; color: white !important; }
+
+        .tip { margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; color: #475569; text-align: center; }
         .counter { font-size: 13px; color: #64748b; margin-top: 5px; }
     </style>
 </head>
@@ -40,13 +53,15 @@
     </div>
     <div class="grid-flex" id="layout">
         <div class="pane" id="your-pane">
-            <h3 id="title">Your Availability</h3>
+            <h3>Your Availability</h3>
             <div class="scroll" id="u-grid" onmousedown="startDrag(event)" onmouseover="doDrag(event)"></div>
         </div>
         
         <div class="pane" id="group-pane">
             <h3>Group Heatmap</h3>
-            <div class="scroll" id="g-grid"></div>
+            <div class="g-grid-container" id="g-container">
+                <div class="scroll" id="g-grid"></div>
+            </div>
             <div class="tip" id="tip">Hover over the heatmap to view data</div>
         </div>
     </div>
@@ -62,16 +77,99 @@
     }
     slots.push("22:00");
 
-    function build() {
-        const u = document.getElementById('u-grid'), g = document.getElementById('g-grid');
+    const midpointIndex = Math.floor(slots.length / 2);
+    const morningSlots = slots.slice(0, midpointIndex);
+    const afternoonSlots = slots.slice(midpointIndex);
+
+    // Rule Helper: Returns maximum allowed slots based on time range boundaries
+    function getMaxAllowed(timeString) {
+        const hour = parseInt(timeString.split(':')[0]);
+        return (hour === 18) ? 1 : 3; 
+    }
+
+    function buildOverviewLayout() {
+        const container = document.getElementById('g-container');
+        container.innerHTML = `
+            <div class="column-pane">
+                <div class="column-header">Morning (${slots[0]} - ${slots[midpointIndex-1]})</div>
+                <div class="scroll" id="g-grid-am"></div>
+            </div>
+            <div class="column-pane">
+                <div class="column-header">Afternoon (${slots[midpointIndex]} - ${slots[slots.length-1]})</div>
+                <div class="scroll" id="g-grid-pm"></div>
+            </div>
+        `;
+        
+        const amGrid = document.getElementById('g-grid-am');
+        const pmGrid = document.getElementById('g-grid-pm');
+        
+        morningSlots.forEach(t => {
+            amGrid.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
+        });
+        afternoonSlots.forEach(t => {
+            pmGrid.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
+        });
+        updateCurrentTimeMarker();
+    }
+
+    function buildEditingLayout() {
+        const container = document.getElementById('g-container');
+        container.innerHTML = `<div class="scroll" id="g-grid"></div>`;
+        
+        const u = document.getElementById('u-grid');
+        const g = document.getElementById('g-grid');
         u.innerHTML = ''; g.innerHTML = '';
+        
         slots.forEach((t) => {
-            u.innerHTML += `<div class="row"><div class="lbl">${t}</div><div class="cell" data-time="${t}"></div></div>`;
-            g.innerHTML += `<div class="row"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
+            u.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell" data-time="${t}"></div></div>`;
+            g.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
+        });
+
+        setupSynchronizedScrolling(u, g);
+        updateCurrentTimeMarker();
+    }
+
+    function setupSynchronizedScrolling(leftPane, rightPane) {
+        let activeScrollSource = null;
+        leftPane.addEventListener('scroll', () => {
+            if (activeScrollSource === null) activeScrollSource = leftPane;
+            if (activeScrollSource === leftPane) rightPane.scrollTop = leftPane.scrollTop;
+        });
+        rightPane.addEventListener('scroll', () => {
+            if (activeScrollSource === null) activeScrollSource = rightPane;
+            if (activeScrollSource === rightPane) leftPane.scrollTop = rightPane.scrollTop;
+        });
+        const clearActiveSource = () => { activeScrollSource = null; };
+        leftPane.addEventListener('touchend', clearActiveSource);
+        rightPane.addEventListener('touchend', clearActiveSource);
+        document.addEventListener('mouseup', clearActiveSource);
+    }
+
+    // Dynamic Live Tracker: Highlights the closest row to the real world clock time
+    function updateCurrentTimeMarker() {
+        document.querySelectorAll('.row').forEach(r => r.classList.remove('current-time'));
+        
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+        
+        if (currentHour < 8 || currentHour >= 22) return; 
+        
+        const roundedMin = Math.floor(currentMin / 5) * 5;
+        const targetTimeString = `${currentHour.toString().padStart(2,'0')}:${roundedMin.toString().padStart(2,'0')}`;
+        
+        document.querySelectorAll(`.row[data-rowtime="${targetTimeString}"]`).forEach(r => {
+            r.classList.add('current-time');
         });
     }
 
     async function initialLoad() {
+        // Load default local storage handle strings if present
+        const savedName = localStorage.getItem('breakplanner_username');
+        if (savedName) {
+            document.getElementById('user').value = savedName;
+        }
+
         try {
             const res = await fetch(WORKER_URL);
             const json = await res.json();
@@ -89,6 +187,9 @@
     async function login() {
         name = document.getElementById('user').value.trim();
         if(!name) return alert("Enter a name");
+
+        // Save username to prevent continuous repetitive re-typing loops
+        localStorage.setItem('breakplanner_username', name);
 
         try {
             const res = await fetch(`${WORKER_URL}?user=${encodeURIComponent(name)}`);
@@ -109,22 +210,16 @@
         if(!data[name]) data[name] = new Set();
         document.getElementById('title').innerText = `${name}'s Grid`;
         
+        buildEditingLayout();
+        
         document.getElementById('layout').classList.add('active');
         document.getElementById('save-btn').style.display = 'inline-block';
         document.getElementById('user').style.display = 'none';
         document.getElementById('login-btn').style.display = 'none';
         
-        refreshUserGridLabels();
         drawMap();
-        
         setInterval(syncWithCloud, 10000);
-    }
-
-    function refreshUserGridLabels() {
-        document.querySelectorAll('#u-grid .cell').forEach(c => {
-            const isSelected = data[name].has(c.getAttribute('data-time'));
-            c.classList.toggle('selected', isSelected);
-        });
+        setInterval(updateCurrentTimeMarker, 60000); // Track clock every minute
     }
 
     async function syncWithCloud() {
@@ -162,7 +257,6 @@
 
     async function manualSave() {
         if (!name) return;
-        
         const saveBtn = document.getElementById('save-btn');
         saveBtn.innerText = "Saving...";
         saveBtn.style.opacity = "0.7";
@@ -179,7 +273,6 @@
                 saveBtn.style.background = "#10b981";
                 saveBtn.style.opacity = "1";
             }, 1500);
-
         } catch (e) {
             alert("Error saving your schedule. Please try again.");
             saveBtn.innerText = "Save Changes";
@@ -188,20 +281,45 @@
 
     function startDrag(e) {
         if(!name || !e.target.classList.contains('cell')) return;
+        
+        const t = e.target.getAttribute('data-time');
+        const currentActive = countActiveUsersForSlot(t);
+        const maxLimit = getMaxAllowed(t);
+        const isSelected = e.target.classList.contains('selected');
+
+        // Block selecting if attempting to add to a fully booked room slot profile
+        if (!isSelected && currentActive >= maxLimit) {
+            return; 
+        }
+
         dragging = true;
-        drawing = !e.target.classList.contains('selected');
+        drawing = !isSelected;
         toggle(e.target);
         e.preventDefault();
     }
     
-    function doDrag(e) { if(dragging && e.target.classList.contains('cell')) toggle(e.target); }
+    function doDrag(e) { 
+        if(!dragging || !e.target.classList.contains('cell')) return;
+        
+        const t = e.target.getAttribute('data-time');
+        const currentActive = countActiveUsersForSlot(t);
+        const maxLimit = getMaxAllowed(t);
+
+        if (drawing && currentActive >= maxLimit && !data[name].has(t)) {
+            return; 
+        }
+        toggle(e.target); 
+    }
     
-    document.addEventListener('mouseup', () => { 
-        if(dragging) { 
-            dragging = false; 
-            drawMap(); 
-        } 
-    });
+    document.addEventListener('mouseup', () => { if(dragging) { dragging = false; drawMap(); } });
+
+    function countActiveUsersForSlot(timeString) {
+        let count = 0;
+        for(let u in data) {
+            if(data[u].has(timeString)) count++;
+        }
+        return count;
+    }
 
     function toggle(c) {
         let t = c.getAttribute('data-time');
@@ -215,35 +333,49 @@
     }
 
     function drawMap() {
-        let total = Object.keys(data).length;
+        // First Pass: Render and calculate the Heatmap states
         document.querySelectorAll('.g-cell').forEach(c => {
             let t = c.getAttribute('data-time'), activeUsers = [];
-            
-            // Loop through data and grab the actual names of whoever selected this specific time
-            for(let u in data) {
-                if(data[u].has(t)) activeUsers.push(u);
-            }
+            for(let u in data) if(data[u].has(t)) activeUsers.push(u);
             
             let count = activeUsers.length;
+            let maxLimit = getMaxAllowed(t);
             
-            if(count === 0 || total === 0) {
+            c.classList.remove('full-capacity');
+
+            if(count === 0) {
                 c.style.background = 'white';
-                c.innerText = ""; // Empty row stays clean
+                c.innerText = "";
+            } else if (count >= maxLimit) {
+                // FIXED: Turns solid crimson red when max capacity boundary limits are crossed
+                c.classList.add('full-capacity');
+                c.innerText = `[FULL] ${activeUsers.join(", ")}`;
             } else {
-                let ratio = count / total;
-                let color;
-                if (ratio <= 0.25) {
-                    color = `hsl(50, 100%, ${90 - (ratio * 40)}%)`; 
-                } else if (ratio <= 0.6) {
-                    color = `hsl(30, 100%, ${75 - ((ratio - 0.25) * 40)}%)`; 
-                } else {
-                    color = `hsl(0, 85%, ${65 - ((ratio - 0.6) * 40)}%)`; 
-                }
-                
+                let ratio = count / maxLimit; 
+                let color = ratio <= 0.5 
+                    ? `hsl(50, 100%, ${90 - (ratio * 20)}%)`   // Yellow gradients
+                    : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;  // Orange gradients
                 c.style.background = color;
-                
-                // FIXED: Join all names together with commas and display them directly inside the cell!
                 c.innerText = activeUsers.join(", ");
+            }
+        });
+
+        // Second Pass: Sync safety restrictions back down to your own editing view pane cells
+        document.querySelectorAll('#u-grid .cell').forEach(c => {
+            let t = c.getAttribute('data-time');
+            let count = countActiveUsersForSlot(t);
+            let maxLimit = getMaxAllowed(t);
+            const isSelected = data[name]?.has(t);
+
+            c.classList.remove('full-capacity');
+            c.classList.toggle('selected', isSelected);
+
+            // FIXED: Turns red on your grid if it's full and you aren't the one occupying it
+            if (!isSelected && count >= maxLimit) {
+                c.classList.add('full-capacity');
+                c.innerText = "Locked";
+            } else {
+                c.innerText = "";
             }
         });
     }
@@ -251,12 +383,13 @@
     function show(t) {
         let hits = [];
         for(let u in data) if(data[u].has(t)) hits.push(u);
-        document.getElementById('tip').innerHTML = `${t}: ${hits.length} active (${hits.join(', ') || 'none'})`;
+        const max = getMaxAllowed(t);
+        document.getElementById('tip').innerHTML = `${t}: ${hits.length} / ${max} filled (${hits.join(', ') || 'none'})`;
     }
     
     function hide() { document.getElementById('tip').innerText = "Hover over the heatmap to view data"; }
     
-    build();
+    buildOverviewLayout();
     initialLoad();
 </script>
 </body>
