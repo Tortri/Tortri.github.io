@@ -5,20 +5,21 @@
     <title>5-Min Scheduler (24h)</title>
     <style>
         body { font-family: sans-serif; background: #f1f5f9; padding: 20px; color: #1e293b; }
-        .box { max-width: 950px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
+        .box { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
         .auth { background: #eff6ff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
         
         /* Summary Box Styling */
         .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; margin-bottom: 20px; text-align: left; }
         .summary-title { font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
         .summary-list { font-size: 13px; color: #1e293b; line-height: 1.5; margin: 0; padding-left: 20px; }
-        .summary-empty { font-size: 13px; color: #94a3b8; italic; }
+        .summary-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
 
         .grid-flex { display: flex; gap: 20px; }
-        .pane { flex: 1; text-align: center; display: flex; flex-direction: column; }
+        .pane { flex: 1; text-align: center; display: flex; flex-direction: column; min-width: 0; }
         
-        #your-pane { display: none; }
+        #your-pane, #admin-pane { display: none; }
         .grid-flex.active #your-pane { display: block; }
+        .grid-flex.admin-active #admin-pane { display: block; }
         
         .scroll { max-height: 550px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px; scroll-behavior: smooth; }
         .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; position: relative; }
@@ -31,11 +32,20 @@
         .cell { flex: 1; height: 100%; background: white; border-left: 1px solid #e2e8f0; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
         .cell.selected { background: #2563eb !important; color: white; }
         
+        /* Capacity Cell Modifiers */
+        .cell.limit-2 { background: #fef08a; color: #854d0e; }
+        .cell.limit-1 { background: #fed7aa; color: #9a3412; }
+        
         /* Warning rule state for fully booked grid blocks */
         .cell.full-capacity { background: #fee2e2 !important; color: #dc2626 !important; border-left: 4px solid #dc2626; cursor: not-allowed; }
         
         .g-cell { font-size: 11px; color: #1e293b; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
         .g-cell.full-capacity { background: #dc2626 !important; color: white !important; }
+
+        .pane-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; position: relative; }
+        .pane-header h3 { margin: 0; }
+        .admin-toggle-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .admin-toggle-btn:hover { background: #e2e8f0; }
 
         .tip { margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; color: #475569; text-align: center; }
         .counter { font-size: 13px; color: #64748b; margin-top: 5px; }
@@ -61,14 +71,22 @@
 
     <div class="grid-flex" id="layout">
         <div class="pane" id="your-pane">
-            <h3 id="title">Your Availability</h3>
+            <h3 style="margin-bottom: 14px;">Your Availability</h3>
             <div class="scroll" id="u-grid" onmousedown="startDrag(event)" onmouseover="doDrag(event)"></div>
         </div>
         
         <div class="pane" id="group-pane">
-            <h3>Group Heatmap</h3>
+            <div class="pane-header">
+                <h3>Group Heatmap</h3>
+                <button class="admin-toggle-btn" onclick="toggleAdminMode()" title="Modify Capacity Limits">⚙️</button>
+            </div>
             <div class="scroll" id="g-grid"></div>
             <div class="tip" id="tip">Hover over the heatmap to view data</div>
+        </div>
+
+        <div class="pane" id="admin-pane">
+            <h3 style="margin-bottom: 14px; color: #9a3412;">Modify Max Limits</h3>
+            <div class="scroll" id="a-grid" onmousedown="startAdminDrag(event)" onmouseover="doAdminDrag(event)"></div>
         </div>
     </div>
 </div>
@@ -76,6 +94,7 @@
     const WORKER_URL = "https://breakplanner-backend.tortrix03.workers.dev"; 
 
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
+    let adminDragging = false, adminTargetLimit = 2;
     
     for(let h=8; h<22; h++) {
         for(let m=0; m<60; m+=5) {
@@ -84,38 +103,44 @@
     }
     slots.push("22:00");
 
+    // Dynamic Rule Helper: Fetches custom slot limit variations or falls back to default 3
     function getMaxAllowed(timeString) {
-        const hour = parseInt(timeString.split(':')[0]);
-        return (hour === 18) ? 1 : 3; 
+        if (data["__limits__"]?.has(timeString + "-1")) return 1;
+        if (data["__limits__"]?.has(timeString + "-2")) return 2;
+        return 3; 
     }
 
     function build() {
         const u = document.getElementById('u-grid');
         const g = document.getElementById('g-grid');
-        u.innerHTML = ''; g.innerHTML = '';
+        const a = document.getElementById('a-grid');
+        u.innerHTML = ''; g.innerHTML = ''; a.innerHTML = '';
         
         slots.forEach((t) => {
             u.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell" data-time="${t}"></div></div>`;
             g.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
+            a.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell a-cell" data-time="${t}">3</div></div>`;
         });
 
-        setupSynchronizedScrolling(u, g);
+        setupSynchronizedScrolling(u, g, a);
         updateCurrentTimeMarker();
     }
 
-    function setupSynchronizedScrolling(leftPane, rightPane) {
+    function setupSynchronizedScrolling(leftPane, rightPane, adminPane) {
         let activeScrollSource = null;
-        leftPane.addEventListener('scroll', () => {
-            if (activeScrollSource === null) activeScrollSource = leftPane;
-            if (activeScrollSource === leftPane) rightPane.scrollTop = leftPane.scrollTop;
+        const panes = [leftPane, rightPane, adminPane];
+        
+        panes.forEach(pane => {
+            pane.addEventListener('scroll', () => {
+                if (activeScrollSource === null) activeScrollSource = pane;
+                if (activeScrollSource === pane) {
+                    panes.forEach(p => { if (p !== pane) p.scrollTop = pane.scrollTop; });
+                }
+            });
         });
-        rightPane.addEventListener('scroll', () => {
-            if (activeScrollSource === null) activeScrollSource = rightPane;
-            if (activeScrollSource === rightPane) leftPane.scrollTop = rightPane.scrollTop;
-        });
+        
         const clearActiveSource = () => { activeScrollSource = null; };
-        leftPane.addEventListener('touchend', clearActiveSource);
-        rightPane.addEventListener('touchend', clearActiveSource);
+        panes.forEach(p => p.addEventListener('touchend', clearActiveSource));
         document.addEventListener('mouseup', clearActiveSource);
     }
 
@@ -131,32 +156,26 @@
         const roundedMin = Math.floor(currentMin / 5) * 5;
         const targetTimeString = `${currentHour.toString().padStart(2,'0')}:${roundedMin.toString().padStart(2,'0')}`;
         
-        let matchingRows = document.querySelectorAll(`.row[data-rowtime="${targetTimeString}"]`);
-        matchingRows.forEach(r => {
+        document.querySelectorAll(`.row[data-rowtime="${targetTimeString}"]`).forEach(r => {
             r.classList.add('current-time');
         });
 
         return targetTimeString;
     }
 
-    // New Function: Handles smooth automatic scrolling to the active time slot row container
     function scrollToCurrentTime() {
         const targetTime = updateCurrentTimeMarker();
         if (!targetTime) return;
 
-        // Find the active row inside the visible heatmap view container
         const targetRow = document.querySelector(`#g-grid .row[data-rowtime="${targetTime}"]`);
         if (targetRow) {
-            // Centers the active slot smoothly in the middle of the scroll field viewport
             targetRow.scrollIntoView({ block: "center", behavior: "smooth" });
         }
     }
 
     async function initialLoad() {
         const savedName = localStorage.getItem('breakplanner_username');
-        if (savedName) {
-            document.getElementById('user').value = savedName;
-        }
+        if (savedName) document.getElementById('user').value = savedName;
 
         try {
             const res = await fetch(WORKER_URL);
@@ -167,8 +186,6 @@
                 data[u] = new Set(json.data[u]);
             }
             drawMap();
-            
-            // Auto-scroll the group layout timeline into position right away
             setTimeout(scrollToCurrentTime, 300);
         } catch(e) {
             console.error("Initial data load error", e);
@@ -178,6 +195,7 @@
     async function login() {
         name = document.getElementById('user').value.trim();
         if(!name) return alert("Enter a name");
+        if(name === "__limits__") return alert("Invalid Name string key.");
 
         localStorage.setItem('breakplanner_username', name);
 
@@ -198,7 +216,6 @@
         }
 
         if(!data[name]) data[name] = new Set();
-        document.getElementById('title').innerText = `${name}'s Grid`;
         
         document.getElementById('layout').classList.add('active');
         document.getElementById('save-btn').style.display = 'inline-block';
@@ -206,18 +223,41 @@
         document.getElementById('login-btn').style.display = 'none';
         
         drawMap();
-
-        // Auto-scroll again after user panel mounts to snap the new dual layout into line
         setTimeout(scrollToCurrentTime, 100);
 
         setInterval(syncWithCloud, 10000);
         setInterval(updateCurrentTimeMarker, 60000);
     }
 
+    function toggleAdminMode() {
+        const layout = document.getElementById('layout');
+        if (layout.classList.contains('admin-active')) {
+            layout.classList.remove('admin-active');
+        } else {
+            const pass = prompt("Enter Admin Password:");
+            if (pass === "Iwant2breakfree") {
+                if (!name) {
+                    name = "Admin";
+                    document.getElementById('layout').classList.add('active');
+                    document.getElementById('save-btn').style.display = 'inline-block';
+                    document.getElementById('user').style.display = 'none';
+                    document.getElementById('login-btn').style.display = 'none';
+                    if(!data[name]) data[name] = new Set();
+                    setInterval(syncWithCloud, 10000);
+                }
+                layout.classList.add('admin-active');
+                drawMap();
+                setTimeout(scrollToCurrentTime, 100);
+            } else if (pass !== null) {
+                alert("Incorrect Password!");
+            }
+        }
+    }
+
     function countActiveUsersForSlot(timeString) {
         let count = 0;
         for(let u in data) {
-            if(data[u].has(timeString)) count++;
+            if(u !== "__limits__" && data[u].has(timeString)) count++;
         }
         return count;
     }
@@ -230,9 +270,7 @@
             document.getElementById('user-count').innerText = `Active users: ${json.userCount} / 100`;
 
             for (let u in json.data) {
-                if (u !== name) {
-                    data[u] = new Set(json.data[u]);
-                }
+                if (u !== name) data[u] = new Set(json.data[u]);
             }
             for (let u in data) {
                 if (!json.data[u] && u !== name) delete data[u];
@@ -245,14 +283,21 @@
 
     async function saveToCloud() {
         if (!name) return;
+        // Save regular user data
         await fetch(WORKER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: name,
-                selectedSlots: Array.from(data[name])
-            })
+            body: JSON.stringify({ username: name, selectedSlots: Array.from(data[name]) })
         });
+        
+        // Save custom modified limit configurations if active admin changes are logged
+        if (data["__limits__"]) {
+            await fetch(WORKER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: "__limits__", selectedSlots: Array.from(data["__limits__"]) })
+            });
+        }
     }
 
     async function manualSave() {
@@ -264,24 +309,22 @@
         try {
             await saveToCloud();
             await syncWithCloud();
-            
             saveBtn.innerText = "Saved!";
             saveBtn.style.background = "#059669";
-            
             setTimeout(() => {
                 saveBtn.innerText = "Save Changes";
                 saveBtn.style.background = "#10b981";
                 saveBtn.style.opacity = "1";
             }, 1500);
         } catch (e) {
-            alert("Error saving your schedule. Please try again.");
+            alert("Error saving shifts.");
             saveBtn.innerText = "Save Changes";
         }
     }
 
+    /* Regular User Drag Triggers */
     function startDrag(e) {
         if(!name || !e.target.classList.contains('cell')) return;
-        
         const t = e.target.getAttribute('data-time');
         const currentActive = countActiveUsersForSlot(t);
         const maxLimit = getMaxAllowed(t);
@@ -297,16 +340,15 @@
     
     function doDrag(e) { 
         if(!dragging || !e.target.classList.contains('cell')) return;
-        
         const t = e.target.getAttribute('data-time');
-        const currentActive = countActiveUsersForSlot(t);
-        const maxLimit = getMaxAllowed(t);
-
-        if (drawing && currentActive >= maxLimit && !data[name].has(t)) return; 
+        if (drawing && countActiveUsersForSlot(t) >= getMaxAllowed(t) && !data[name].has(t)) return; 
         toggle(e.target); 
     }
     
-    document.addEventListener('mouseup', () => { if(dragging) { dragging = false; drawMap(); } });
+    document.addEventListener('mouseup', () => { 
+        dragging = false; 
+        adminDragging = false; 
+    });
 
     function toggle(c) {
         let t = c.getAttribute('data-time');
@@ -319,42 +361,78 @@
         }
     }
 
+    /* Admin Limit Modification Drag Triggers */
+    function startAdminDrag(e) {
+        if(!e.target.classList.contains('a-cell')) return;
+        if(!data["__limits__"]) data["__limits__"] = new Set();
+        
+        adminDragging = true;
+        const t = e.target.getAttribute('data-time');
+        const currentLimit = getMaxAllowed(t);
+        
+        // Cycle states: 3 -> 2 -> 1 -> back to 3
+        adminTargetLimit = currentLimit === 3 ? 2 : (currentLimit === 2 ? 1 : 3);
+        
+        toggleAdminCell(e.target, t, adminTargetLimit);
+        e.preventDefault();
+    }
+
+    function doAdminDrag(e) {
+        if(!adminDragging || !e.target.classList.contains('a-cell')) return;
+        const t = e.target.getAttribute('data-time');
+        toggleAdminCell(e.target, t, adminTargetLimit);
+    }
+
+    function toggleAdminCell(cellElement, timeString, targetValue) {
+        data["__limits__"].delete(timeString + "-1");
+        data["__limits__"].delete(timeString + "-2");
+        
+        if (targetValue === 1) data["__limits__"].add(timeString + "-1");
+        if (targetValue === 2) data["__limits__"].add(timeString + "-2");
+        
+        renderAdminGrid();
+        drawMap();
+    }
+
+    function renderAdminGrid() {
+        document.querySelectorAll('.a-cell').forEach(c => {
+            const t = c.getAttribute('data-time');
+            const limit = getMaxAllowed(t);
+            
+            c.className = "cell a-cell"; 
+            c.innerText = limit;
+            
+            if (limit === 2) c.classList.add('limit-2');
+            if (limit === 1) c.classList.add('limit-1');
+        });
+    }
+
     function generateFormattedRanges(slotSet) {
         if (!slotSet || slotSet.size === 0) return "No breaks registered";
-        
         const sortedSlots = Array.from(slotSet).sort();
-        let ranges = [];
-        let start = null;
-        let expectedNext = null;
+        let ranges = [], start = null, expectedNext = null;
 
         for (let i = 0; i < sortedSlots.length; i++) {
             const current = sortedSlots[i];
             const [h, m] = current.split(':').map(Number);
-            
-            if (start === null) {
-                start = current;
-            } else if (current !== expectedNext) {
+            if (start === null) { start = current; } 
+            else if (current !== expectedNext) {
                 ranges.push(`${start} - ${expectedNext}`);
                 start = current;
             }
-
-            let nextM = m + 5;
-            let nextH = h;
+            let nextM = m + 5, nextH = h;
             if (nextM >= 60) { nextM = 0; nextH++; }
             expectedNext = `${nextH.toString().padStart(2,'0')}:${nextM.toString().padStart(2,'0')}`;
         }
-        
-        if (start !== null && expectedNext !== null) {
-            ranges.push(`${start} - ${expectedNext}`);
-        }
-        
+        if (start !== null && expectedNext !== null) ranges.push(`${start} - ${expectedNext}`);
         return ranges.join("; ");
     }
 
     function drawMap() {
+        // 1. Group Heatmap Render Passes
         document.querySelectorAll('.g-cell').forEach(c => {
             let t = c.getAttribute('data-time'), activeUsers = [];
-            for(let u in data) if(data[u].has(t)) activeUsers.push(u);
+            for(let u in data) if(u !== "__limits__" && data[u].has(t)) activeUsers.push(u);
             
             let count = activeUsers.length;
             let maxLimit = getMaxAllowed(t);
@@ -363,20 +441,20 @@
 
             if(count === 0) {
                 c.style.background = 'white';
-                c.innerText = "";
+                c.innerText = `(Max: ${maxLimit})`;
+                c.style.color = "#cbd5e1";
             } else if (count >= maxLimit) {
                 c.classList.add('full-capacity');
                 c.innerText = `[FULL] ${activeUsers.join(", ")}`;
             } else {
                 let ratio = count / maxLimit; 
-                let color = ratio <= 0.5 
-                    ? `hsl(50, 100%, ${90 - (ratio * 20)}%)`   
-                    : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;  
-                c.style.background = color;
-                c.innerText = activeUsers.join(", ");
+                c.style.background = ratio <= 0.5 ? `hsl(50, 100%, ${90 - (ratio * 20)}%)` : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;
+                c.innerText = `${activeUsers.join(", ")} (Remaining: ${maxLimit - count})`;
+                c.style.color = "#1e293b";
             }
         });
 
+        // 2. Personal Edit Grid Alignment Blocks
         document.querySelectorAll('#u-grid .cell').forEach(c => {
             let t = c.getAttribute('data-time');
             let count = countActiveUsersForSlot(t);
@@ -394,30 +472,25 @@
             }
         });
 
+        // 3. Render Text Summary Dashboard Elements
         const summaryDisplay = document.getElementById('summary-display');
-        let summaryContent = "";
-        let entriesFound = false;
+        let summaryContent = "", entriesFound = false;
 
         for (let user in data) {
-            if (data[user] && data[user].size > 0) {
+            if (user !== "__limits__" && data[user] && data[user].size > 0) {
                 entriesFound = true;
-                const rangesText = generateFormattedRanges(data[user]);
-                summaryContent += `<li><strong>${user}:</strong> ${rangesText}</li>`;
+                summaryContent += `<li><strong>${user}:</strong> ${generateFormattedRanges(data[user])}</li>`;
             }
         }
-
-        if (entriesFound) {
-            summaryDisplay.innerHTML = summaryContent;
-        } else {
-            summaryDisplay.innerHTML = `<span class="summary-empty">No breaks scheduled yet today.</span>`;
-        }
+        summaryDisplay.innerHTML = entriesFound ? summaryContent : `<span class="summary-empty">No breaks scheduled yet today.</span>`;
+        
+        renderAdminGrid();
     }
 
     function show(t) {
         let hits = [];
-        for(let u in data) if(data[u].has(t)) hits.push(u);
-        const max = getMaxAllowed(t);
-        document.getElementById('tip').innerHTML = `${t}: ${hits.length} / ${max} filled (${hits.join(', ') || 'none'})`;
+        for(let u in data) if(u !== "__limits__" && data[u].has(t)) hits.push(u);
+        document.getElementById('tip').innerHTML = `${t}: ${hits.length} / ${getMaxAllowed(t)} filled (${hits.join(', ') || 'none'})`;
     }
     
     function hide() { document.getElementById('tip').innerText = "Hover over the heatmap to view data"; }
