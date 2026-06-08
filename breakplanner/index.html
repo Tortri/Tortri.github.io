@@ -11,16 +11,29 @@
         /* Summary Box Styling */
         .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; margin-bottom: 20px; text-align: left; }
         .summary-title { font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .summary-list { font-size: 13px; color: #1e293b; line-height: 1.5; margin: 0; padding-left: 20px; }
+        .summary-list { font-size: 13px; color: #1e293b; line-height: 1.5; margin: 0 0 12px 0; padding-left: 20px; }
         .summary-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
+        
+        /* Quick Absences Notification Dashboard Row */
+        .absence-divider { border-top: 1px dashed #cbd5e1; margin-top: 10px; padding-top: 10px; }
+        .absence-title { font-weight: bold; font-size: 12px; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .absence-list { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+        .absence-item { background: #fff5f5; border: 1px solid #fee2e2; padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; display: inline-block; margin-right: 8px; color: #991b1b; font-weight: 500; }
+
+        /* Quick Absences User Action Buttons */
+        .status-actions { display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: center; gap: 10px; justify-content: center; align-items: center; }
+        .status-btn { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; transition: transform 0.1s; }
+        .status-btn:active { transform: scale(0.97); }
+        .btn-restroom { background: #ea580c; color: white; }
+        .btn-water { background: #0284c7; color: white; }
+        .btn-back { background: #16a34a; color: white; display: none; padding: 10px 24px; font-size: 14px; }
 
         .grid-flex { display: flex; gap: 20px; }
         .pane { flex: 1; text-align: center; display: flex; flex-direction: column; min-width: 0; }
         
-        /* Layout logic to swap panes based on Admin state */
         #your-pane { display: none; }
         .grid-flex.active #your-pane { display: block; }
-        .grid-flex.admin-active #your-pane { display: none !important; } /* Hide your pane when admin is open */
+        .grid-flex.admin-active #your-pane { display: none !important; } 
         
         #admin-pane { display: none; }
         .grid-flex.admin-active #admin-pane { display: block; }
@@ -71,11 +84,25 @@
         <div class="counter" id="user-count">Active users: 0 / 100</div>
     </div>
 
+    <div class="status-actions" id="status-container">
+        <div id="status-prompt" style="font-weight: bold; color: #166534; margin-right: 10px;">Quick Absence Checkout:</div>
+        <button class="status-btn btn-restroom" id="btn-out-restroom" onclick="setQuickStatus('Restroom')">🚽 Go to Restroom</button>
+        <button class="status-btn btn-water" id="btn-out-water" onclick="setQuickStatus('Water Refill')">💧 Get Water</button>
+        <button class="status-btn btn-back" id="btn-back" onclick="setQuickStatus('Present')">✅ I'm Back!</button>
+    </div>
+
     <div class="summary-box">
         <div class="summary-title">Daily Break Summary Overview</div>
         <ul class="summary-list" id="summary-display">
             <span class="summary-empty">No breaks scheduled yet today.</span>
         </ul>
+        
+        <div class="absence-divider">
+            <div class="absence-title">Current Quick Absences</div>
+            <div class="absence-list" id="absence-display">
+                <span style="font-size: 13px; color: #94a3b8; font-style: italic;">All users are currently present.</span>
+            </div>
+        </div>
     </div>
 
     <div class="grid-flex" id="layout">
@@ -116,6 +143,7 @@
 
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
     let adminDragging = false, adminTargetLimit = 2;
+    let userStatuses = {}; // Holds temporary quick-absence records separate from times
     
     for(let h=8; h<22; h++) {
         for(let m=0; m<60; m+=5) {
@@ -142,19 +170,29 @@
             a.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell a-cell" data-time="${t}">3</div></div>`;
         });
 
-        setupSynchronizedScrolling(u, g, a);
+        setupSynchronizedScrolling();
         updateCurrentTimeMarker();
     }
 
-    function setupSynchronizedScrolling(leftPane, rightPane, adminPane) {
+    // Completely Rewritten Sync Scroll Engine - Dynamically binds whatever components are active
+    function setupSynchronizedScrolling() {
         let activeScrollSource = null;
+        const leftPane = document.getElementById('u-grid');
+        const rightPane = document.getElementById('g-grid');
+        const adminPane = document.getElementById('a-grid');
         const panes = [leftPane, rightPane, adminPane];
         
         panes.forEach(pane => {
             pane.addEventListener('scroll', () => {
+                // If this scroll element wasn't triggered by another pane sliding it, lock onto it
                 if (activeScrollSource === null) activeScrollSource = pane;
                 if (activeScrollSource === pane) {
-                    panes.forEach(p => { if (p !== pane) p.scrollTop = pane.scrollTop; });
+                    panes.forEach(p => {
+                        // Safely apply positioning changes only if the layout target column is currently drawn/rendered
+                        if (p !== pane && p.offsetParent !== null) {
+                            p.scrollTop = pane.scrollTop;
+                        }
+                    });
                 }
             });
         });
@@ -201,10 +239,7 @@
             const res = await fetch(WORKER_URL);
             const json = await res.json();
             document.getElementById('user-count').innerText = `Active users: ${json.userCount} / 100`;
-            data = {};
-            for (let u in json.data) {
-                data[u] = new Set(json.data[u]);
-            }
+            unpackCloudPayload(json.data);
             drawMap();
             setTimeout(scrollToCurrentTime, 300);
         } catch(e) {
@@ -212,10 +247,30 @@
         }
     }
 
+    // Helper: Safely splits off timestamps and status states out of single incoming Cloudflare dictionary
+    function unpackCloudPayload(rawCloudData) {
+        data = {};
+        userStatuses = {};
+        
+        for (let key in rawCloudData) {
+            if (key.startsWith("__status__:")) {
+                const parts = key.split(":");
+                const username = parts[1];
+                const textValue = Array.from(rawCloudData[key])[0]; // Read string data stored in set item array
+                if (textValue && textValue !== "Present") {
+                    const valSplit = textValue.split("|");
+                    userStatuses[username] = { type: valSplit[0], timestamp: parseInt(valSplit[1]) };
+                }
+            } else {
+                data[key] = new Set(rawCloudData[key]);
+            }
+        }
+    }
+
     async function login() {
         name = document.getElementById('user').value.trim();
         if(!name) return alert("Enter a name");
-        if(name === "__limits__") return alert("Invalid Name.");
+        if(name === "__limits__" || name.startsWith("__status__")) return alert("Invalid Name.");
 
         localStorage.setItem('breakplanner_username', name);
 
@@ -226,11 +281,7 @@
                 return alert(errData.error);
             }
             const json = await res.json();
-            
-            data = {};
-            for (let u in json.data) {
-                data[u] = new Set(json.data[u]);
-            }
+            unpackCloudPayload(json.data);
         } catch (e) {
             console.error("Cloudflare sync failed on login", e);
         }
@@ -238,15 +289,63 @@
         if(!data[name]) data[name] = new Set();
         
         document.getElementById('layout').classList.add('active');
+        document.getElementById('status-container').style.display = 'flex';
         document.getElementById('save-btn').style.display = 'inline-block';
         document.getElementById('user').style.display = 'none';
         document.getElementById('login-btn').style.display = 'none';
         
+        updateStatusActionButtonsUI();
         drawMap();
         setTimeout(scrollToCurrentTime, 100);
 
         setInterval(syncWithCloud, 10000);
         setInterval(updateCurrentTimeMarker, 60000);
+    }
+
+    // Quick Absence Trigger Event: Fires instantly and synchronizes up to the cloud worker
+    async function setQuickStatus(statusType) {
+        if (!name) return;
+        
+        const keyString = `__status__:${name}`;
+        if (statusType === "Present") {
+            delete userStatuses[name];
+            // Clear payload target in local structure
+            data[keyString] = [];
+        } else {
+            const timestampNow = Date.now();
+            userStatuses[name] = { type: statusType, timestamp: timestampNow };
+            data[keyString] = [`${statusType}|${timestampNow}`];
+        }
+
+        updateStatusActionButtonsUI();
+        drawMap();
+
+        // Push immediately to the cloud worker
+        await fetch(WORKER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: keyString, selectedSlots: data[keyString] })
+        });
+    }
+
+    function updateStatusActionButtonsUI() {
+        const activeAbsence = userStatuses[name];
+        const btnRestroom = document.getElementById('btn-out-restroom');
+        const btnWater = document.getElementById('btn-out-water');
+        const btnBack = document.getElementById('btn-back');
+        const promptText = document.getElementById('status-prompt');
+
+        if (activeAbsence) {
+            btnRestroom.style.display = 'none';
+            btnWater.style.display = 'none';
+            btnBack.style.display = 'inline-block';
+            promptText.innerText = `You are registered as AWAY (${activeAbsence.type}):`;
+        } else {
+            btnRestroom.style.display = 'inline-block';
+            btnWater.style.display = 'inline-block';
+            btnBack.style.display = 'none';
+            promptText.innerText = `Quick Absence Checkout:`;
+        }
     }
 
     function toggleAdminMode() {
@@ -277,7 +376,7 @@
     function countActiveUsersForSlot(timeString) {
         let count = 0;
         for(let u in data) {
-            if(u !== "__limits__" && data[u].has(timeString)) count++;
+            if(u !== "__limits__" && !u.startsWith("__status__:") && data[u].has(timeString)) count++;
         }
         return count;
     }
@@ -288,13 +387,8 @@
             const json = await res.json();
             
             document.getElementById('user-count').innerText = `Active users: ${json.userCount} / 100`;
-
-            for (let u in json.data) {
-                if (u !== name) data[u] = new Set(json.data[u]);
-            }
-            for (let u in data) {
-                if (!json.data[u] && u !== name) delete data[u];
-            }
+            unpackCloudPayload(json.data);
+            updateStatusActionButtonsUI();
             drawMap();
         } catch(e) {
             console.error("Sync fetch error", e);
@@ -447,7 +541,7 @@
         // 1. Group Heatmap Render
         document.querySelectorAll('.g-cell').forEach(c => {
             let t = c.getAttribute('data-time'), activeUsers = [];
-            for(let u in data) if(u !== "__limits__" && data[u].has(t)) activeUsers.push(u);
+            for(let u in data) if(u !== "__limits__" && !u.startsWith("__status__:") && data[u].has(t)) activeUsers.push(u);
             
             let count = activeUsers.length;
             let maxLimit = getMaxAllowed(t);
@@ -456,7 +550,7 @@
 
             if(count === 0) {
                 c.style.background = 'white';
-                c.innerText = ""; // Clean layout: empty when nobody is on break
+                c.innerText = ""; 
             } else if (count >= maxLimit) {
                 c.classList.add('full-capacity');
                 c.innerText = `[FULL] ${activeUsers.join(", ")}`;
@@ -491,19 +585,34 @@
         let summaryContent = "", entriesFound = false;
 
         for (let user in data) {
-            if (user !== "__limits__" && data[user] && data[user].size > 0) {
+            if (user !== "__limits__" && !user.startsWith("__status__:") && data[user] && data[user].size > 0) {
                 entriesFound = true;
                 summaryContent += `<li><strong>${user}:</strong> ${generateFormattedRanges(data[user])}</li>`;
             }
         }
         summaryDisplay.innerHTML = entriesFound ? summaryContent : `<span class="summary-empty">No breaks scheduled yet today.</span>`;
         
+        // 4. Render Live Quick Absences Dashboard Elements
+        const absenceDisplay = document.getElementById('absence-display');
+        let absenceContent = "";
+        const nowMs = Date.now();
+
+        for (let user in userStatuses) {
+            const entry = userStatuses[user];
+            const elapsedMins = Math.floor((nowMs - entry.timestamp) / 60000);
+            const emoji = entry.type === "Restroom" ? "🚽" : "💧";
+            
+            absenceContent += `<div class="absence-item">${emoji} <strong>${user}</strong> - ${entry.type} (${elapsedMins}m ago)</div>`;
+        }
+
+        absenceDisplay.innerHTML = absenceContent || `<span style="font-size: 13px; color: #94a3b8; font-style: italic;">All users are currently present.</span>`;
+
         renderAdminGrid();
     }
 
     function show(t) {
         let hits = [];
-        for(let u in data) if(u !== "__limits__" && data[u].has(t)) hits.push(u);
+        for(let u in data) if(u !== "__limits__" && !u.startsWith("__status__:") && data[u].has(t)) hits.push(u);
         document.getElementById('tip').innerHTML = `${t}: ${hits.length} / ${getMaxAllowed(t)} filled (${hits.join(', ') || 'none'})`;
     }
     
