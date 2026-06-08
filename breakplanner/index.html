@@ -17,13 +17,22 @@
         .grid-flex { display: flex; gap: 20px; }
         .pane { flex: 1; text-align: center; display: flex; flex-direction: column; min-width: 0; }
         
-        #your-pane, #admin-pane { display: none; }
+        /* Layout logic to swap panes based on Admin state */
+        #your-pane { display: none; }
         .grid-flex.active #your-pane { display: block; }
+        .grid-flex.admin-active #your-pane { display: none !important; } /* Hide your pane when admin is open */
+        
+        #admin-pane { display: none; }
         .grid-flex.admin-active #admin-pane { display: block; }
         
-        .scroll { max-height: 550px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px; scroll-behavior: smooth; }
+        /* Table Structure Styles */
+        .table-header { display: flex; align-items: center; background: #cbd5e1; color: #1e293b; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; height: 32px; border-radius: 6px 6px 0 0; border: 1px solid #cbd5e1; border-bottom: none; }
+        .th-time { width: 65px; text-align: left; padding-left: 5px; box-sizing: border-box; }
+        .th-content { flex: 1; text-align: center; }
+
+        .scroll { max-height: 540px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 0 0 6px 6px; background: #f8fafc; padding: 5px; scroll-behavior: smooth; }
         .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; position: relative; }
-        .lbl { width: 65px; font-size: 12px; color: #64748b; text-align: left; user-select: none; font-variant-numeric: tabular-nums; font-weight: 500; }
+        .lbl { width: 65px; font-size: 12px; color: #64748b; text-align: left; user-select: none; font-variant-numeric: tabular-nums; font-weight: 500; padding-left: 5px; box-sizing: border-box; }
         
         /* "Now" indicator line style */
         .row.current-time::after { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; border: 2px dashed #ff2a2a; border-radius: 4px; pointer-events: none; z-index: 10; animation: blink 2s infinite; }
@@ -42,7 +51,7 @@
         .g-cell { font-size: 11px; color: #1e293b; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
         .g-cell.full-capacity { background: #dc2626 !important; color: white !important; }
 
-        .pane-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; position: relative; }
+        .pane-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; position: relative; height: 28px; }
         .pane-header h3 { margin: 0; }
         .admin-toggle-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .admin-toggle-btn:hover { background: #e2e8f0; }
@@ -71,7 +80,11 @@
 
     <div class="grid-flex" id="layout">
         <div class="pane" id="your-pane">
-            <h3 style="margin-bottom: 14px;">Your Availability</h3>
+            <div class="pane-header"><h3>Your Availability</h3></div>
+            <div class="table-header">
+                <div class="th-time">Time</div>
+                <div class="th-content">Select Your Breaks</div>
+            </div>
             <div class="scroll" id="u-grid" onmousedown="startDrag(event)" onmouseover="doDrag(event)"></div>
         </div>
         
@@ -80,12 +93,20 @@
                 <h3>Group Heatmap</h3>
                 <button class="admin-toggle-btn" onclick="toggleAdminMode()" title="Modify Capacity Limits">⚙️</button>
             </div>
+            <div class="table-header">
+                <div class="th-time">Time</div>
+                <div class="th-content">Break Schedule & Availability</div>
+            </div>
             <div class="scroll" id="g-grid"></div>
             <div class="tip" id="tip">Hover over the heatmap to view data</div>
         </div>
 
         <div class="pane" id="admin-pane">
-            <h3 style="margin-bottom: 14px; color: #9a3412;">Modify Max Limits</h3>
+            <div class="pane-header"><h3 style="color: #9a3412;">Modify Max Limits</h3></div>
+            <div class="table-header">
+                <div class="th-time">Time</div>
+                <div class="th-content">Allowed Cap</div>
+            </div>
             <div class="scroll" id="a-grid" onmousedown="startAdminDrag(event)" onmouseover="doAdminDrag(event)"></div>
         </div>
     </div>
@@ -103,7 +124,6 @@
     }
     slots.push("22:00");
 
-    // Dynamic Rule Helper: Fetches custom slot limit variations or falls back to default 3
     function getMaxAllowed(timeString) {
         if (data["__limits__"]?.has(timeString + "-1")) return 1;
         if (data["__limits__"]?.has(timeString + "-2")) return 2;
@@ -195,7 +215,7 @@
     async function login() {
         name = document.getElementById('user').value.trim();
         if(!name) return alert("Enter a name");
-        if(name === "__limits__") return alert("Invalid Name string key.");
+        if(name === "__limits__") return alert("Invalid Name.");
 
         localStorage.setItem('breakplanner_username', name);
 
@@ -283,14 +303,12 @@
 
     async function saveToCloud() {
         if (!name) return;
-        // Save regular user data
         await fetch(WORKER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: name, selectedSlots: Array.from(data[name]) })
         });
         
-        // Save custom modified limit configurations if active admin changes are logged
         if (data["__limits__"]) {
             await fetch(WORKER_URL, {
                 method: "POST",
@@ -322,7 +340,6 @@
         }
     }
 
-    /* Regular User Drag Triggers */
     function startDrag(e) {
         if(!name || !e.target.classList.contains('cell')) return;
         const t = e.target.getAttribute('data-time');
@@ -361,7 +378,6 @@
         }
     }
 
-    /* Admin Limit Modification Drag Triggers */
     function startAdminDrag(e) {
         if(!e.target.classList.contains('a-cell')) return;
         if(!data["__limits__"]) data["__limits__"] = new Set();
@@ -370,7 +386,6 @@
         const t = e.target.getAttribute('data-time');
         const currentLimit = getMaxAllowed(t);
         
-        // Cycle states: 3 -> 2 -> 1 -> back to 3
         adminTargetLimit = currentLimit === 3 ? 2 : (currentLimit === 2 ? 1 : 3);
         
         toggleAdminCell(e.target, t, adminTargetLimit);
@@ -429,7 +444,7 @@
     }
 
     function drawMap() {
-        // 1. Group Heatmap Render Passes
+        // 1. Group Heatmap Render
         document.querySelectorAll('.g-cell').forEach(c => {
             let t = c.getAttribute('data-time'), activeUsers = [];
             for(let u in data) if(u !== "__limits__" && data[u].has(t)) activeUsers.push(u);
@@ -441,20 +456,19 @@
 
             if(count === 0) {
                 c.style.background = 'white';
-                c.innerText = `(Max: ${maxLimit})`;
-                c.style.color = "#cbd5e1";
+                c.innerText = ""; // Clean layout: empty when nobody is on break
             } else if (count >= maxLimit) {
                 c.classList.add('full-capacity');
                 c.innerText = `[FULL] ${activeUsers.join(", ")}`;
             } else {
                 let ratio = count / maxLimit; 
                 c.style.background = ratio <= 0.5 ? `hsl(50, 100%, ${90 - (ratio * 20)}%)` : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;
-                c.innerText = `${activeUsers.join(", ")} (Remaining: ${maxLimit - count})`;
+                c.innerText = activeUsers.join(", ");
                 c.style.color = "#1e293b";
             }
         });
 
-        // 2. Personal Edit Grid Alignment Blocks
+        // 2. Personal Edit Grid Restrictions
         document.querySelectorAll('#u-grid .cell').forEach(c => {
             let t = c.getAttribute('data-time');
             let count = countActiveUsersForSlot(t);
