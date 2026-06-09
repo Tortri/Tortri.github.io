@@ -80,7 +80,6 @@
     <div class="auth">
         <input type="text" id="user" placeholder="Enter Name" style="padding:6px; width:150px;">
         <button id="login-btn" onclick="login()" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Edit Grid</button>
-        <button id="save-btn" onclick="manualSave()" style="padding:6px 12px; background:#10b981; color:white; border:none; border-radius:4px; cursor:pointer; margin-left: 10px; display: none;">Save Changes</button>
         <div class="counter" id="user-count">Active users: 0 / 100</div>
     </div>
 
@@ -143,7 +142,7 @@
 
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
     let adminDragging = false, adminTargetLimit = 2;
-    let userStatuses = {}; // Holds temporary quick-absence records separate from times
+    let userStatuses = {}; 
     
     for(let h=8; h<22; h++) {
         for(let m=0; m<60; m+=5) {
@@ -174,7 +173,6 @@
         updateCurrentTimeMarker();
     }
 
-    // Completely Rewritten Sync Scroll Engine - Dynamically binds whatever components are active
     function setupSynchronizedScrolling() {
         let activeScrollSource = null;
         const leftPane = document.getElementById('u-grid');
@@ -184,11 +182,9 @@
         
         panes.forEach(pane => {
             pane.addEventListener('scroll', () => {
-                // If this scroll element wasn't triggered by another pane sliding it, lock onto it
                 if (activeScrollSource === null) activeScrollSource = pane;
                 if (activeScrollSource === pane) {
                     panes.forEach(p => {
-                        // Safely apply positioning changes only if the layout target column is currently drawn/rendered
                         if (p !== pane && p.offsetParent !== null) {
                             p.scrollTop = pane.scrollTop;
                         }
@@ -247,7 +243,6 @@
         }
     }
 
-    // Helper: Safely splits off timestamps and status states out of single incoming Cloudflare dictionary
     function unpackCloudPayload(rawCloudData) {
         data = {};
         userStatuses = {};
@@ -256,7 +251,7 @@
             if (key.startsWith("__status__:")) {
                 const parts = key.split(":");
                 const username = parts[1];
-                const textValue = Array.from(rawCloudData[key])[0]; // Read string data stored in set item array
+                const textValue = Array.from(rawCloudData[key])[0]; 
                 if (textValue && textValue !== "Present") {
                     const valSplit = textValue.split("|");
                     userStatuses[username] = { type: valSplit[0], timestamp: parseInt(valSplit[1]) };
@@ -290,7 +285,6 @@
         
         document.getElementById('layout').classList.add('active');
         document.getElementById('status-container').style.display = 'flex';
-        document.getElementById('save-btn').style.display = 'inline-block';
         document.getElementById('user').style.display = 'none';
         document.getElementById('login-btn').style.display = 'none';
         
@@ -302,14 +296,12 @@
         setInterval(updateCurrentTimeMarker, 60000);
     }
 
-    // Quick Absence Trigger Event: Fires instantly and synchronizes up to the cloud worker
     async function setQuickStatus(statusType) {
         if (!name) return;
         
         const keyString = `__status__:${name}`;
         if (statusType === "Present") {
             delete userStatuses[name];
-            // Clear payload target in local structure
             data[keyString] = [];
         } else {
             const timestampNow = Date.now();
@@ -320,7 +312,6 @@
         updateStatusActionButtonsUI();
         drawMap();
 
-        // Push immediately to the cloud worker
         await fetch(WORKER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -358,7 +349,6 @@
                 if (!name) {
                     name = "Admin";
                     document.getElementById('layout').classList.add('active');
-                    document.getElementById('save-btn').style.display = 'inline-block';
                     document.getElementById('user').style.display = 'none';
                     document.getElementById('login-btn').style.display = 'none';
                     if(!data[name]) data[name] = new Set();
@@ -395,42 +385,16 @@
         }
     }
 
-    async function saveToCloud() {
+    async function saveKeyToCloud(targetKey, itemSet) {
         if (!name) return;
-        await fetch(WORKER_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: name, selectedSlots: Array.from(data[name]) })
-        });
-        
-        if (data["__limits__"]) {
+        try {
             await fetch(WORKER_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username: "__limits__", selectedSlots: Array.from(data["__limits__"]) })
+                body: JSON.stringify({ username: targetKey, selectedSlots: Array.from(itemSet) })
             });
-        }
-    }
-
-    async function manualSave() {
-        if (!name) return;
-        const saveBtn = document.getElementById('save-btn');
-        saveBtn.innerText = "Saving...";
-        saveBtn.style.opacity = "0.7";
-
-        try {
-            await saveToCloud();
-            await syncWithCloud();
-            saveBtn.innerText = "Saved!";
-            saveBtn.style.background = "#059669";
-            setTimeout(() => {
-                saveBtn.innerText = "Save Changes";
-                saveBtn.style.background = "#10b981";
-                saveBtn.style.opacity = "1";
-            }, 1500);
-        } catch (e) {
-            alert("Error saving shifts.");
-            saveBtn.innerText = "Save Changes";
+        } catch(e) {
+            console.error("Failed instant automated cloud update", e);
         }
     }
 
@@ -456,9 +420,16 @@
         toggle(e.target); 
     }
     
-    document.addEventListener('mouseup', () => { 
-        dragging = false; 
-        adminDragging = false; 
+    document.addEventListener('mouseup', async () => { 
+        if (dragging) {
+            dragging = false; 
+            drawMap();
+            await saveKeyToCloud(name, data[name]);
+        }
+        if (adminDragging) {
+            adminDragging = false;
+            await saveKeyToCloud("__limits__", data["__limits__"]);
+        }
     });
 
     function toggle(c) {
@@ -538,7 +509,6 @@
     }
 
     function drawMap() {
-        // 1. Group Heatmap Render
         document.querySelectorAll('.g-cell').forEach(c => {
             let t = c.getAttribute('data-time'), activeUsers = [];
             for(let u in data) if(u !== "__limits__" && !u.startsWith("__status__:") && data[u].has(t)) activeUsers.push(u);
@@ -562,7 +532,6 @@
             }
         });
 
-        // 2. Personal Edit Grid Restrictions
         document.querySelectorAll('#u-grid .cell').forEach(c => {
             let t = c.getAttribute('data-time');
             let count = countActiveUsersForSlot(t);
@@ -580,7 +549,6 @@
             }
         });
 
-        // 3. Render Text Summary Dashboard Elements
         const summaryDisplay = document.getElementById('summary-display');
         let summaryContent = "", entriesFound = false;
 
@@ -592,7 +560,6 @@
         }
         summaryDisplay.innerHTML = entriesFound ? summaryContent : `<span class="summary-empty">No breaks scheduled yet today.</span>`;
         
-        // 4. Render Live Quick Absences Dashboard Elements
         const absenceDisplay = document.getElementById('absence-display');
         let absenceContent = "";
         const nowMs = Date.now();
