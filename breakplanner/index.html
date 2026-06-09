@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>5-Min Scheduler (24h)</title>
+    <title>5-Min Unified Scheduler (24h)</title>
     <style>
         body { font-family: sans-serif; background: #f1f5f9; padding: 20px; color: #1e293b; }
-        .box { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
+        .box { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
         .auth { background: #eff6ff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
         
         /* Summary Box Styling */
@@ -14,7 +14,7 @@
         .summary-list { font-size: 13px; color: #1e293b; line-height: 1.5; margin: 0 0 12px 0; padding-left: 20px; }
         .summary-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
         
-        /* Quick Absences Notification Dashboard Row */
+        /* Quick Absences Notification Dashboard */
         .absence-divider { border-top: 1px dashed #cbd5e1; margin-top: 10px; padding-top: 10px; }
         .absence-title { font-weight: bold; font-size: 12px; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
         .absence-list { list-style: none; padding: 0; margin: 0; font-size: 13px; }
@@ -28,54 +28,51 @@
         .btn-water { background: #0284c7; color: white; }
         .btn-back { background: #16a34a; color: white; display: none; padding: 10px 24px; font-size: 14px; }
 
-        .grid-flex { display: flex; gap: 20px; }
-        .pane { flex: 1; text-align: center; display: flex; flex-direction: column; min-width: 0; }
+        /* Unified Grid Table Structure */
+        .scheduler-container { display: flex; flex-direction: column; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; }
+        .table-header { display: flex; background: #cbd5e1; color: #1e293b; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; height: 36px; align-items: center; }
+        .scroll-body { max-height: 540px; overflow-y: auto; scroll-behavior: smooth; }
         
-        #your-pane { display: none; }
-        .grid-flex.active #your-pane { display: block; }
-        .grid-flex.admin-active #your-pane { display: none !important; } 
-        
-        #admin-pane { display: none; }
-        .grid-flex.admin-active #admin-pane { display: block; }
-        
-        /* Table Structure Styles */
-        .table-header { display: flex; align-items: center; background: #cbd5e1; color: #1e293b; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; height: 32px; border-radius: 6px 6px 0 0; border: 1px solid #cbd5e1; border-bottom: none; }
-        .th-time { width: 65px; text-align: left; padding-left: 5px; box-sizing: border-box; }
-        .th-content { flex: 1; text-align: center; }
+        .grid-row { display: flex; height: 28px; align-items: center; border-bottom: 1px solid #e2e8f0; position: relative; }
+        .grid-row:last-child { border-bottom: none; }
 
-        .scroll { max-height: 540px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 0 0 6px 6px; background: #f8fafc; padding: 5px; scroll-behavior: smooth; }
-        .row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #f1f5f9; position: relative; }
-        .lbl { width: 65px; font-size: 12px; color: #64748b; text-align: left; user-select: none; font-variant-numeric: tabular-nums; font-weight: 500; padding-left: 5px; box-sizing: border-box; }
+        /* Column Width Rules */
+        .col-time { width: 75px; min-width: 75px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; font-variant-numeric: tabular-nums; user-select: none; border-right: 1px solid #cbd5e1; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .col-edit { flex: 1; height: 100%; position: relative; border-right: 1px solid #cbd5e1; display: none; background: white; }
+        .col-heatmap { flex: 2; height: 100%; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; background: white; }
+
+        /* Mode Modifiers */
+        body.logged-in .col-edit { display: block; }
+        body.admin-mode .col-edit { display: block; }
+
+        /* Cell Interactive States */
+        .interactive-cell { width: 100%; height: 100%; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+        .interactive-cell.selected { background: #2563eb !important; color: white !important; }
+        .interactive-cell.full-capacity { background: #fee2e2 !important; color: #dc2626 !important; cursor: not-allowed; }
         
-        /* "Now" indicator line style */
-        .row.current-time::after { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; border: 2px dashed #ff2a2a; border-radius: 4px; pointer-events: none; z-index: 10; animation: blink 2s infinite; }
+        /* Admin Modification Styling colors */
+        body.admin-mode .interactive-cell { background: #f8fafc; }
+        .interactive-cell.limit-2 { background: #fef08a; color: #854d0e; }
+        .interactive-cell.limit-1 { background: #fed7aa; color: #9a3412; }
+
+        .col-heatmap.full-capacity { background: #dc2626 !important; color: white !important; }
+        
+        /* Time Indicator Bar Indicator */
+        .grid-row.current-time::after { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; border: 2px dashed #ff2a2a; border-radius: 4px; pointer-events: none; z-index: 10; animation: blink 2s infinite; }
         @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-        .cell { flex: 1; height: 100%; background: white; border-left: 1px solid #e2e8f0; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
-        .cell.selected { background: #2563eb !important; color: white; }
-        
-        /* Capacity Cell Modifiers */
-        .cell.limit-2 { background: #fef08a; color: #854d0e; }
-        .cell.limit-1 { background: #fed7aa; color: #9a3412; }
-        
-        /* Warning rule state for fully booked grid blocks */
-        .cell.full-capacity { background: #fee2e2 !important; color: #dc2626 !important; border-left: 4px solid #dc2626; cursor: not-allowed; }
-        
-        .g-cell { font-size: 11px; color: #1e293b; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
-        .g-cell.full-capacity { background: #dc2626 !important; color: white !important; }
-
-        .pane-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; position: relative; height: 28px; }
-        .pane-header h3 { margin: 0; }
-        .admin-toggle-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .pane-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px; }
+        .pane-header-actions h3 { margin: 0; font-size: 16px; }
+        .admin-toggle-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .admin-toggle-btn:hover { background: #e2e8f0; }
 
-        .tip { margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; color: #475569; text-align: center; }
+        .tip { margin-top: 15px; font-size: 13px; font-weight: bold; min-height: 20px; color: #475569; text-align: center; }
         .counter { font-size: 13px; color: #64748b; margin-top: 5px; }
     </style>
 </head>
 <body>
 <div class="box">
-    <h2 style="text-align:center; margin-top:0;">5-Minute Interval Scheduler (08:00 - 22:00)</h2>
+    <h2 style="text-align:center; margin-top:0;">5-Minute Unified Scheduler</h2>
     
     <div class="auth">
         <input type="text" id="user" placeholder="Enter Name" style="padding:6px; width:150px;">
@@ -104,44 +101,28 @@
         </div>
     </div>
 
-    <div class="grid-flex" id="layout">
-        <div class="pane" id="your-pane">
-            <div class="pane-header"><h3>Your Availability</h3></div>
-            <div class="table-header">
-                <div class="th-time">Time</div>
-                <div class="th-content">Select Your Breaks</div>
-            </div>
-            <div class="scroll" id="u-grid" onmousedown="startDrag(event)" onmouseover="doDrag(event)"></div>
-        </div>
-        
-        <div class="pane" id="group-pane">
-            <div class="pane-header">
-                <h3>Group Heatmap</h3>
-                <button class="admin-toggle-btn" onclick="toggleAdminMode()" title="Modify Capacity Limits">⚙️</button>
-            </div>
-            <div class="table-header">
-                <div class="th-time">Time</div>
-                <div class="th-content">Break Schedule & Availability</div>
-            </div>
-            <div class="scroll" id="g-grid"></div>
-            <div class="tip" id="tip">Hover over the heatmap to view data</div>
-        </div>
-
-        <div class="pane" id="admin-pane">
-            <div class="pane-header"><h3 style="color: #9a3412;">Modify Max Limits</h3></div>
-            <div class="table-header">
-                <div class="th-time">Time</div>
-                <div class="th-content">Allowed Cap</div>
-            </div>
-            <div class="scroll" id="a-grid" onmousedown="startAdminDrag(event)" onmouseover="doAdminDrag(event)"></div>
-        </div>
+    <div class="pane-header-actions">
+        <h3 id="board-title">Group Schedule Overview</h3>
+        <button class="admin-toggle-btn" onclick="toggleAdminMode()" title="Modify Capacity Limits">⚙️ Settings</button>
     </div>
+
+    <div class="scheduler-container">
+        <div class="table-header">
+            <div class="col-time">Time</div>
+            <div class="col-edit" id="col-header-interactive">Select Your Breaks</div>
+            <div class="col-heatmap">Break Schedule & Heatmap</div>
+        </div>
+        <div class="scroll-body" id="scroll-container">
+            </div>
+    </div>
+    <div class="tip" id="tip">Hover over rows to inspect filled structural metrics</div>
 </div>
+
 <script>
     const WORKER_URL = "https://breakplanner-backend.tortrix03.workers.dev"; 
 
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
-    let adminDragging = false, adminTargetLimit = 2;
+    let adminMode = false, adminDragging = false, adminTargetLimit = 3;
     let userStatuses = {}; 
     
     for(let h=8; h<22; h++) {
@@ -158,73 +139,46 @@
     }
 
     function build() {
-        const u = document.getElementById('u-grid');
-        const g = document.getElementById('g-grid');
-        const a = document.getElementById('a-grid');
-        u.innerHTML = ''; g.innerHTML = ''; a.innerHTML = '';
+        const container = document.getElementById('scroll-container');
+        container.innerHTML = '';
         
         slots.forEach((t) => {
-            u.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell" data-time="${t}"></div></div>`;
-            g.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell g-cell" data-time="${t}" onmouseover="show('${t}')" onmouseout="hide()"></div></div>`;
-            a.innerHTML += `<div class="row" data-rowtime="${t}"><div class="lbl">${t}</div><div class="cell a-cell" data-time="${t}">3</div></div>`;
+            container.innerHTML += `
+                <div class="grid-row" data-rowtime="${t}" onmouseover="showDetail('${t}')" onmouseout="hideDetail()">
+                    <div class="col-time">${t}</div>
+                    <div class="col-edit">
+                        <div class="interactive-cell" data-time="${t}" 
+                             onmousedown="handleCellMouseDown(event, '${t}')" 
+                             onmouseover="handleCellMouseOver(event, '${t}')">
+                        </div>
+                    </div>
+                    <div class="col-heatmap" data-heatmap-time="${t}"></div>
+                </div>`;
         });
 
-        setupSynchronizedScrolling();
         updateCurrentTimeMarker();
     }
 
-    function setupSynchronizedScrolling() {
-        let activeScrollSource = null;
-        const leftPane = document.getElementById('u-grid');
-        const rightPane = document.getElementById('g-grid');
-        const adminPane = document.getElementById('a-grid');
-        const panes = [leftPane, rightPane, adminPane];
-        
-        panes.forEach(pane => {
-            pane.addEventListener('scroll', () => {
-                if (activeScrollSource === null) activeScrollSource = pane;
-                if (activeScrollSource === pane) {
-                    panes.forEach(p => {
-                        if (p !== pane && p.offsetParent !== null) {
-                            p.scrollTop = pane.scrollTop;
-                        }
-                    });
-                }
-            });
-        });
-        
-        const clearActiveSource = () => { activeScrollSource = null; };
-        panes.forEach(p => p.addEventListener('touchend', clearActiveSource));
-        document.addEventListener('mouseup', clearActiveSource);
-    }
-
     function updateCurrentTimeMarker() {
-        document.querySelectorAll('.row').forEach(r => r.classList.remove('current-time'));
-        
+        document.querySelectorAll('.grid-row').forEach(r => r.classList.remove('current-time'));
         const now = new Date();
         const currentHour = now.getHours();
         const currentMin = now.getMinutes();
         
         if (currentHour < 8 || currentHour >= 22) return null; 
-        
         const roundedMin = Math.floor(currentMin / 5) * 5;
         const targetTimeString = `${currentHour.toString().padStart(2,'0')}:${roundedMin.toString().padStart(2,'0')}`;
         
-        document.querySelectorAll(`.row[data-rowtime="${targetTimeString}"]`).forEach(r => {
-            r.classList.add('current-time');
-        });
-
+        const row = document.querySelector(`.grid-row[data-rowtime="${targetTimeString}"]`);
+        if (row) row.classList.add('current-time');
         return targetTimeString;
     }
 
     function scrollToCurrentTime() {
         const targetTime = updateCurrentTimeMarker();
         if (!targetTime) return;
-
-        const targetRow = document.querySelector(`#g-grid .row[data-rowtime="${targetTime}"]`);
-        if (targetRow) {
-            targetRow.scrollIntoView({ block: "center", behavior: "smooth" });
-        }
+        const targetRow = document.querySelector(`.grid-row[data-rowtime="${targetTime}"]`);
+        if (targetRow) targetRow.scrollIntoView({ block: "center", behavior: "smooth" });
     }
 
     async function initialLoad() {
@@ -239,7 +193,7 @@
             drawMap();
             setTimeout(scrollToCurrentTime, 300);
         } catch(e) {
-            console.error("Initial data load error", e);
+            console.error("Initial load validation anomaly", e);
         }
     }
 
@@ -271,19 +225,17 @@
 
         try {
             const res = await fetch(`${WORKER_URL}?user=${encodeURIComponent(name)}`);
-            if (res.status === 503) {
-                const errData = await res.json();
-                return alert(errData.error);
-            }
             const json = await res.json();
             unpackCloudPayload(json.data);
         } catch (e) {
-            console.error("Cloudflare sync failed on login", e);
+            console.error("Failed handling background fetch user key confirmation", e);
         }
 
         if(!data[name]) data[name] = new Set();
         
-        document.getElementById('layout').classList.add('active');
+        document.body.classList.add('logged-in');
+        document.getElementById('board-title').innerText = `Your Dashboard & Break Editor`;
+        document.getElementById('col-header-interactive').innerText = "Select Your Breaks";
         document.getElementById('status-container').style.display = 'flex';
         document.getElementById('user').style.display = 'none';
         document.getElementById('login-btn').style.display = 'none';
@@ -298,7 +250,6 @@
 
     async function setQuickStatus(statusType) {
         if (!name) return;
-        
         const keyString = `__status__:${name}`;
         if (statusType === "Present") {
             delete userStatuses[name];
@@ -340,21 +291,33 @@
     }
 
     function toggleAdminMode() {
-        const layout = document.getElementById('layout');
-        if (layout.classList.contains('admin-active')) {
-            layout.classList.remove('admin-active');
+        if (adminMode) {
+            adminMode = false;
+            document.body.classList.remove('admin-mode');
+            if (name === "Admin") {
+                document.body.classList.remove('logged-in');
+                name = "";
+                document.getElementById('user').style.display = 'inline-block';
+                document.getElementById('login-btn').style.display = 'inline-block';
+            }
+            document.getElementById('board-title').innerText = name ? `Your Dashboard & Break Editor` : `Group Schedule Overview`;
+            document.getElementById('col-header-interactive').innerText = "Select Your Breaks";
+            drawMap();
         } else {
             const pass = prompt("Enter Admin Password:");
             if (pass === "Iwant2breakfree") {
+                adminMode = true;
+                document.body.classList.add('admin-mode');
+                document.getElementById('board-title').innerText = `⚠️ Administrative Limit Overrides`;
+                document.getElementById('col-header-interactive').innerText = "Allowed Capacity Rule";
                 if (!name) {
                     name = "Admin";
-                    document.getElementById('layout').classList.add('active');
+                    document.body.classList.add('logged-in');
                     document.getElementById('user').style.display = 'none';
                     document.getElementById('login-btn').style.display = 'none';
                     if(!data[name]) data[name] = new Set();
                     setInterval(syncWithCloud, 10000);
                 }
-                layout.classList.add('admin-active');
                 drawMap();
                 setTimeout(scrollToCurrentTime, 100);
             } else if (pass !== null) {
@@ -372,6 +335,9 @@
     }
 
     async function syncWithCloud() {
+        // Anti-Flashing Guard: Block sync rendering if user is currently clicking/dragging cells
+        if (dragging || adminDragging) return; 
+
         try {
             const res = await fetch(`${WORKER_URL}?user=${encodeURIComponent(name)}`);
             const json = await res.json();
@@ -381,7 +347,7 @@
             updateStatusActionButtonsUI();
             drawMap();
         } catch(e) {
-            console.error("Sync fetch error", e);
+            console.error("Automated synchronized check failure logs", e);
         }
     }
 
@@ -394,32 +360,39 @@
                 body: JSON.stringify({ username: targetKey, selectedSlots: Array.from(itemSet) })
             });
         } catch(e) {
-            console.error("Failed instant automated cloud update", e);
+            console.error("Instant push failed execution parameters", e);
         }
     }
 
-    function startDrag(e) {
-        if(!name || !e.target.classList.contains('cell')) return;
-        const t = e.target.getAttribute('data-time');
-        const currentActive = countActiveUsersForSlot(t);
-        const maxLimit = getMaxAllowed(t);
-        const isSelected = e.target.classList.contains('selected');
-
-        if (!isSelected && currentActive >= maxLimit) return; 
-
-        dragging = true;
-        drawing = !isSelected;
-        toggle(e.target);
+    /* Combined Mouse Handling Events to direct calculations correctly depending on structural configuration */
+    function handleCellMouseDown(e, timeString) {
+        if (!name) return;
         e.preventDefault();
+
+        if (adminMode) {
+            if (!data["__limits__"]) data["__limits__"] = new Set();
+            adminDragging = true;
+            const currentLimit = getMaxAllowed(timeString);
+            adminTargetLimit = currentLimit === 3 ? 2 : (currentLimit === 2 ? 1 : 3);
+            executeAdminCellAdjustment(timeString, adminTargetLimit);
+        } else {
+            const isSelected = data[name]?.has(timeString);
+            if (!isSelected && countActiveUsersForSlot(timeString) >= getMaxAllowed(timeString)) return; 
+            dragging = true;
+            drawing = !isSelected;
+            executePersonalCellToggle(timeString);
+        }
     }
-    
-    function doDrag(e) { 
-        if(!dragging || !e.target.classList.contains('cell')) return;
-        const t = e.target.getAttribute('data-time');
-        if (drawing && countActiveUsersForSlot(t) >= getMaxAllowed(t) && !data[name].has(t)) return; 
-        toggle(e.target); 
+
+    function handleCellMouseOver(e, timeString) {
+        if (adminDragging) {
+            executeAdminCellAdjustment(timeString, adminTargetLimit);
+        } else if (dragging) {
+            if (drawing && countActiveUsersForSlot(timeString) >= getMaxAllowed(timeString) && !data[name].has(timeString)) return;
+            executePersonalCellToggle(timeString);
+        }
     }
-    
+
     document.addEventListener('mouseup', async () => { 
         if (dragging) {
             dragging = false; 
@@ -432,59 +405,25 @@
         }
     });
 
-    function toggle(c) {
-        let t = c.getAttribute('data-time');
+    function executePersonalCellToggle(timeString) {
         if (drawing) {
-            data[name].add(t);
-            c.classList.add('selected');
+            data[name].add(timeString);
         } else {
-            data[name].delete(t);
-            c.classList.remove('selected');
+            data[name].delete(timeString);
         }
+        // Micro-optimization visual update: change the single element's color instantly during dragging
+        const cell = document.querySelector(`.interactive-cell[data-time="${timeString}"]`);
+        if (cell) cell.classList.toggle('selected', drawing);
     }
 
-    function startAdminDrag(e) {
-        if(!e.target.classList.contains('a-cell')) return;
-        if(!data["__limits__"]) data["__limits__"] = new Set();
-        
-        adminDragging = true;
-        const t = e.target.getAttribute('data-time');
-        const currentLimit = getMaxAllowed(t);
-        
-        adminTargetLimit = currentLimit === 3 ? 2 : (currentLimit === 2 ? 1 : 3);
-        
-        toggleAdminCell(e.target, t, adminTargetLimit);
-        e.preventDefault();
-    }
-
-    function doAdminDrag(e) {
-        if(!adminDragging || !e.target.classList.contains('a-cell')) return;
-        const t = e.target.getAttribute('data-time');
-        toggleAdminCell(e.target, t, adminTargetLimit);
-    }
-
-    function toggleAdminCell(cellElement, timeString, targetValue) {
+    function executeAdminCellAdjustment(timeString, targetValue) {
         data["__limits__"].delete(timeString + "-1");
         data["__limits__"].delete(timeString + "-2");
         
         if (targetValue === 1) data["__limits__"].add(timeString + "-1");
         if (targetValue === 2) data["__limits__"].add(timeString + "-2");
         
-        renderAdminGrid();
         drawMap();
-    }
-
-    function renderAdminGrid() {
-        document.querySelectorAll('.a-cell').forEach(c => {
-            const t = c.getAttribute('data-time');
-            const limit = getMaxAllowed(t);
-            
-            c.className = "cell a-cell"; 
-            c.innerText = limit;
-            
-            if (limit === 2) c.classList.add('limit-2');
-            if (limit === 1) c.classList.add('limit-1');
-        });
     }
 
     function generateFormattedRanges(slotSet) {
@@ -509,46 +448,62 @@
     }
 
     function drawMap() {
-        document.querySelectorAll('.g-cell').forEach(c => {
-            let t = c.getAttribute('data-time'), activeUsers = [];
-            for(let u in data) if(u !== "__limits__" && !u.startsWith("__status__:") && data[u].has(t)) activeUsers.push(u);
-            
-            let count = activeUsers.length;
-            let maxLimit = getMaxAllowed(t);
-            
-            c.classList.remove('full-capacity');
+        // Loop through rows to render everything correctly based on whether adminMode is true or false
+        slots.forEach(t => {
+            const activeUsers = [];
+            for (let u in data) {
+                if (u !== "__limits__" && !u.startsWith("__status__:") && data[u].has(t)) {
+                    activeUsers.push(u);
+                }
+            }
 
-            if(count === 0) {
-                c.style.background = 'white';
-                c.innerText = ""; 
-            } else if (count >= maxLimit) {
-                c.classList.add('full-capacity');
-                c.innerText = `[FULL] ${activeUsers.join(", ")}`;
-            } else {
-                let ratio = count / maxLimit; 
-                c.style.background = ratio <= 0.5 ? `hsl(50, 100%, ${90 - (ratio * 20)}%)` : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;
-                c.innerText = activeUsers.join(", ");
-                c.style.color = "#1e293b";
+            const count = activeUsers.length;
+            const maxLimit = getMaxAllowed(t);
+            
+            // 1. Heatmap Column rendering
+            const hCell = document.querySelector(`.col-heatmap[data-heatmap-time="${t}"]`);
+            if (hCell) {
+                hCell.classList.remove('full-capacity');
+                if (count === 0) {
+                    hCell.style.background = 'white';
+                    hCell.innerText = "";
+                } else if (count >= maxLimit) {
+                    hCell.classList.add('full-capacity');
+                    hCell.innerText = `[FULL] ${activeUsers.join(", ")}`;
+                } else {
+                    let ratio = count / maxLimit;
+                    hCell.style.background = ratio <= 0.5 ? `hsl(50, 100%, ${90 - (ratio * 20)}%)` : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;
+                    hCell.innerText = activeUsers.join(", ");
+                    hCell.style.color = "#1e293b";
+                }
+            }
+
+            // 2. Interactive Column rendering
+            const iCell = document.querySelector(`.interactive-cell[data-time="${t}"]`);
+            if (iCell) {
+                // Clear any layout modification styling states completely
+                iCell.className = "interactive-cell";
+                iCell.innerText = "";
+
+                if (adminMode) {
+                    // Render custom numerical limit modifiers
+                    iCell.innerText = maxLimit;
+                    if (maxLimit === 2) iCell.classList.add('limit-2');
+                    if (maxLimit === 1) iCell.classList.add('limit-1');
+                } else {
+                    // Render personal checkboxes/selections
+                    const isSelected = data[name]?.has(t);
+                    if (isSelected) iCell.classList.add('selected');
+
+                    if (!isSelected && count >= maxLimit) {
+                        iCell.classList.add('full-capacity');
+                        iCell.innerText = "Locked";
+                    }
+                }
             }
         });
 
-        document.querySelectorAll('#u-grid .cell').forEach(c => {
-            let t = c.getAttribute('data-time');
-            let count = countActiveUsersForSlot(t);
-            let maxLimit = getMaxAllowed(t);
-            const isSelected = data[name]?.has(t);
-
-            c.classList.remove('full-capacity');
-            c.classList.toggle('selected', isSelected);
-
-            if (!isSelected && count >= maxLimit) {
-                c.classList.add('full-capacity');
-                c.innerText = "Locked";
-            } else {
-                c.innerText = "";
-            }
-        });
-
+        // 3. Main Dashboard summary components updates
         const summaryDisplay = document.getElementById('summary-display');
         let summaryContent = "", entriesFound = false;
 
@@ -560,6 +515,7 @@
         }
         summaryDisplay.innerHTML = entriesFound ? summaryContent : `<span class="summary-empty">No breaks scheduled yet today.</span>`;
         
+        // 4. Away Notification dash tracker elements build updates
         const absenceDisplay = document.getElementById('absence-display');
         let absenceContent = "";
         const nowMs = Date.now();
@@ -568,22 +524,20 @@
             const entry = userStatuses[user];
             const elapsedMins = Math.floor((nowMs - entry.timestamp) / 60000);
             const emoji = entry.type === "Restroom" ? "🚽" : "💧";
-            
             absenceContent += `<div class="absence-item">${emoji} <strong>${user}</strong> - ${entry.type} (${elapsedMins}m ago)</div>`;
         }
-
         absenceDisplay.innerHTML = absenceContent || `<span style="font-size: 13px; color: #94a3b8; font-style: italic;">All users are currently present.</span>`;
-
-        renderAdminGrid();
     }
 
-    function show(t) {
+    function showDetail(t) {
         let hits = [];
         for(let u in data) if(u !== "__limits__" && !u.startsWith("__status__:") && data[u].has(t)) hits.push(u);
-        document.getElementById('tip').innerHTML = `${t}: ${hits.length} / ${getMaxAllowed(t)} filled (${hits.join(', ') || 'none'})`;
+        document.getElementById('tip').innerHTML = `Time row <strong>${t}</strong>: ${hits.length} / ${getMaxAllowed(t)} spaces used (${hits.join(', ') || 'none'})`;
     }
     
-    function hide() { document.getElementById('tip').innerText = "Hover over the heatmap to view data"; }
+    function hideDetail() { 
+        document.getElementById('tip').innerHTML = "Hover over rows to inspect filled structural metrics"; 
+    }
     
     build();
     initialLoad();
