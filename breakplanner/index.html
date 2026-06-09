@@ -42,8 +42,8 @@
         .col-heatmap { flex: 2; height: 100%; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; background: white; }
 
         /* Mode Modifiers */
-        body.logged-in .col-edit { display: block; }
-        body.admin-mode .col-edit { display: block; }
+        body.logged-in:not(.hide-edit) .col-edit { display: block; }
+        body.admin-mode .col-edit { display: block !important; } /* Force admin visibility regardless of toggle */
 
         /* Cell Interactive States */
         .interactive-cell { width: 100%; height: 100%; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
@@ -63,8 +63,12 @@
 
         .pane-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px; }
         .pane-header-actions h3 { margin: 0; font-size: 16px; }
-        .admin-toggle-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-        .admin-toggle-btn:hover { background: #e2e8f0; }
+        .right-buttons { display: flex; gap: 8px; align-items: center; }
+        .admin-toggle-btn { background: none; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; padding: 6px 12px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s; }
+        .admin-toggle-btn:hover { background: #e2e8f0; color: #1e293b; }
+        .view-toggle-btn { display: none; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; padding: 6px 12px; border-radius: 4px; transition: background 0.2s; }
+        .view-toggle-btn:hover { background: #e2e8f0; }
+        body.logged-in .view-toggle-btn { display: inline-block; }
 
         .tip { margin-top: 15px; font-size: 13px; font-weight: bold; min-height: 20px; color: #475569; text-align: center; }
         .counter { font-size: 13px; color: #64748b; margin-top: 5px; }
@@ -103,7 +107,10 @@
 
     <div class="pane-header-actions">
         <h3 id="board-title">Group Schedule Overview</h3>
-        <button class="admin-toggle-btn" onclick="toggleAdminMode()" title="Modify Capacity Limits">⚙️ Settings</button>
+        <div class="right-buttons">
+            <button class="view-toggle-btn" id="view-toggle-btn" onclick="toggleViewMode()">👁️ View Heatmap Only</button>
+            <button class="admin-toggle-btn" onclick="toggleAdminMode()" title="Modify Capacity Limits">⚙️ Settings</button>
+        </div>
     </div>
 
     <div class="scheduler-container">
@@ -236,6 +243,7 @@
         document.body.classList.add('logged-in');
         document.getElementById('board-title').innerText = `Your Dashboard & Break Editor`;
         document.getElementById('col-header-interactive').innerText = "Select Your Breaks";
+        document.getElementById('col-header-interactive').style.display = "block";
         document.getElementById('status-container').style.display = 'flex';
         document.getElementById('user').style.display = 'none';
         document.getElementById('login-btn').style.display = 'none';
@@ -246,6 +254,24 @@
 
         setInterval(syncWithCloud, 10000);
         setInterval(updateCurrentTimeMarker, 60000);
+    }
+
+    function toggleViewMode() {
+        const body = document.body;
+        const btn = document.getElementById('view-toggle-btn');
+        const headerInteractive = document.getElementById('col-header-interactive');
+
+        if (body.classList.contains('hide-edit')) {
+            body.classList.remove('hide-edit');
+            btn.innerText = "👁️ View Heatmap Only";
+            headerInteractive.style.display = "block";
+            document.getElementById('board-title').innerText = `Your Dashboard & Break Editor`;
+        } else {
+            body.classList.add('hide-edit');
+            btn.innerText = "✏️ Show Edit Column";
+            headerInteractive.style.display = "none";
+            document.getElementById('board-title').innerText = `Group Schedule Overview`;
+        }
     }
 
     async function setQuickStatus(statusType) {
@@ -291,6 +317,7 @@
     }
 
     function toggleAdminMode() {
+        const headerInteractive = document.getElementById('col-header-interactive');
         if (adminMode) {
             adminMode = false;
             document.body.classList.remove('admin-mode');
@@ -300,7 +327,15 @@
                 document.getElementById('user').style.display = 'inline-block';
                 document.getElementById('login-btn').style.display = 'inline-block';
             }
-            document.getElementById('board-title').innerText = name ? `Your Dashboard & Break Editor` : `Group Schedule Overview`;
+            
+            if (document.body.classList.contains('hide-edit')) {
+                headerInteractive.style.display = "none";
+                document.getElementById('board-title').innerText = `Group Schedule Overview`;
+            } else {
+                headerInteractive.style.display = name ? "block" : "none";
+                document.getElementById('board-title').innerText = name ? `Your Dashboard & Break Editor` : `Group Schedule Overview`;
+            }
+            
             document.getElementById('col-header-interactive').innerText = "Select Your Breaks";
             drawMap();
         } else {
@@ -309,7 +344,8 @@
                 adminMode = true;
                 document.body.classList.add('admin-mode');
                 document.getElementById('board-title').innerText = `⚠️ Administrative Limit Overrides`;
-                document.getElementById('col-header-interactive').innerText = "Allowed Capacity Rule";
+                headerInteractive.innerText = "Allowed Capacity Rule";
+                headerInteractive.style.display = "block";
                 if (!name) {
                     name = "Admin";
                     document.body.classList.add('logged-in');
@@ -335,7 +371,6 @@
     }
 
     async function syncWithCloud() {
-        // Anti-Flashing Guard: Block sync rendering if user is currently clicking/dragging cells
         if (dragging || adminDragging) return; 
 
         try {
@@ -364,7 +399,6 @@
         }
     }
 
-    /* Combined Mouse Handling Events to direct calculations correctly depending on structural configuration */
     function handleCellMouseDown(e, timeString) {
         if (!name) return;
         e.preventDefault();
@@ -411,7 +445,6 @@
         } else {
             data[name].delete(timeString);
         }
-        // Micro-optimization visual update: change the single element's color instantly during dragging
         const cell = document.querySelector(`.interactive-cell[data-time="${timeString}"]`);
         if (cell) cell.classList.toggle('selected', drawing);
     }
@@ -448,7 +481,6 @@
     }
 
     function drawMap() {
-        // Loop through rows to render everything correctly based on whether adminMode is true or false
         slots.forEach(t => {
             const activeUsers = [];
             for (let u in data) {
@@ -460,7 +492,6 @@
             const count = activeUsers.length;
             const maxLimit = getMaxAllowed(t);
             
-            // 1. Heatmap Column rendering
             const hCell = document.querySelector(`.col-heatmap[data-heatmap-time="${t}"]`);
             if (hCell) {
                 hCell.classList.remove('full-capacity');
@@ -478,20 +509,16 @@
                 }
             }
 
-            // 2. Interactive Column rendering
             const iCell = document.querySelector(`.interactive-cell[data-time="${t}"]`);
             if (iCell) {
-                // Clear any layout modification styling states completely
                 iCell.className = "interactive-cell";
                 iCell.innerText = "";
 
                 if (adminMode) {
-                    // Render custom numerical limit modifiers
                     iCell.innerText = maxLimit;
                     if (maxLimit === 2) iCell.classList.add('limit-2');
                     if (maxLimit === 1) iCell.classList.add('limit-1');
                 } else {
-                    // Render personal checkboxes/selections
                     const isSelected = data[name]?.has(t);
                     if (isSelected) iCell.classList.add('selected');
 
@@ -503,7 +530,6 @@
             }
         });
 
-        // 3. Main Dashboard summary components updates
         const summaryDisplay = document.getElementById('summary-display');
         let summaryContent = "", entriesFound = false;
 
@@ -515,7 +541,6 @@
         }
         summaryDisplay.innerHTML = entriesFound ? summaryContent : `<span class="summary-empty">No breaks scheduled yet today.</span>`;
         
-        // 4. Away Notification dash tracker elements build updates
         const absenceDisplay = document.getElementById('absence-display');
         let absenceContent = "";
         const nowMs = Date.now();
