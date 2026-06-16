@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>5-Min Unified Scheduler (24h)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: sans-serif; background: #f1f5f9; padding: 20px; color: #1e293b; }
         .box { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
@@ -24,6 +25,7 @@
         .status-actions { display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: center; gap: 10px; justify-content: center; align-items: center; }
         .status-btn { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; transition: transform 0.1s; }
         .status-btn:active { transform: scale(0.97); }
+        .btn-break { background: #d97706; color: white; }
         .btn-restroom { background: #ea580c; color: white; }
         .btn-water { background: #0284c7; color: white; }
         .btn-back { background: #16a34a; color: white; display: none; padding: 10px 24px; font-size: 14px; }
@@ -43,7 +45,7 @@
 
         /* Mode Modifiers */
         body.logged-in:not(.hide-edit) .col-edit { display: block; }
-        body.admin-mode .col-edit { display: block !important; } /* Force admin visibility regardless of toggle */
+        body.admin-mode .col-edit { display: block !important; }
 
         /* Cell Interactive States */
         .interactive-cell { width: 100%; height: 100%; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
@@ -76,6 +78,31 @@
 </head>
 <body>
 <div class="box">
+    
+    <div class="mb-5 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">🔗 Useful Links</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+            <a href="https://kronos8.nac.sitel-world.net/wfc/logon" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
+                Kronos ↗
+            </a>
+            <a href="https://www.foundever.es/mifoundever/Account/Login" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
+                My Foundever ES ↗
+            </a>
+            <a href="https://agentmail.emea.foundever.com/carbonio" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
+                EMEA Mail ↗
+            </a>
+            <a href="https://www.foundever.es/mifoundever/Schedule" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
+                Horarios ↗
+            </a>
+            <a href="https://www.50plus.de/spiele.html" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
+                50plus ↗
+            </a>
+            <button onclick="copyNetworkPath()" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block w-full">
+                <span id="cuposText">Cupos Holidays</span> <span id="cuposIcon">📋</span>
+            </button>
+        </div>
+    </div>
+
     <h2 style="text-align:center; margin-top:0;">5-Minute Unified Scheduler</h2>
     
     <div class="auth">
@@ -86,6 +113,7 @@
 
     <div class="status-actions" id="status-container">
         <div id="status-prompt" style="font-weight: bold; color: #166534; margin-right: 10px;">Quick Absence Checkout:</div>
+        <button class="status-btn btn-break" id="btn-out-break" onclick="setQuickStatus('Break')">☕ Go to Break</button>
         <button class="status-btn btn-restroom" id="btn-out-restroom" onclick="setQuickStatus('Restroom')">🚽 Go to Restroom</button>
         <button class="status-btn btn-water" id="btn-out-water" onclick="setQuickStatus('Water Refill')">💧 Get Water</button>
         <button class="status-btn btn-back" id="btn-back" onclick="setQuickStatus('Present')">✅ I'm Back!</button>
@@ -120,7 +148,7 @@
             <div class="col-heatmap">Break Schedule & Heatmap</div>
         </div>
         <div class="scroll-body" id="scroll-container">
-            </div>
+        </div>
     </div>
     <div class="tip" id="tip">Hover over rows to inspect filled structural metrics</div>
 </div>
@@ -143,6 +171,20 @@
         if (data["__limits__"]?.has(timeString + "-1")) return 1;
         if (data["__limits__"]?.has(timeString + "-2")) return 2;
         return 3; 
+    }
+
+    function copyNetworkPath() {
+        const path = "P:\\01_Agents\\WFM HOLIDAYS - DLF\\CUPOS HOLIDAYS";
+        navigator.clipboard.writeText(path).then(() => {
+            const textEl = document.getElementById('cuposText');
+            const iconEl = document.getElementById('cuposIcon');
+            textEl.innerText = "Path Copied!";
+            iconEl.innerText = "✅";
+            setTimeout(() => {
+                textEl.innerText = "Cupos Holidays";
+                iconEl.innerText = "📋";
+            }, 2000);
+        });
     }
 
     function build() {
@@ -298,17 +340,20 @@
 
     function updateStatusActionButtonsUI() {
         const activeAbsence = userStatuses[name];
+        const btnBreak = document.getElementById('btn-out-break');
         const btnRestroom = document.getElementById('btn-out-restroom');
         const btnWater = document.getElementById('btn-out-water');
         const btnBack = document.getElementById('btn-back');
         const promptText = document.getElementById('status-prompt');
 
         if (activeAbsence) {
+            btnBreak.style.display = 'none';
             btnRestroom.style.display = 'none';
             btnWater.style.display = 'none';
             btnBack.style.display = 'inline-block';
             promptText.innerText = `You are registered as AWAY (${activeAbsence.type}):`;
         } else {
+            btnBreak.style.display = 'inline-block';
             btnRestroom.style.display = 'inline-block';
             btnWater.style.display = 'inline-block';
             btnBack.style.display = 'none';
@@ -548,7 +593,9 @@
         for (let user in userStatuses) {
             const entry = userStatuses[user];
             const elapsedMins = Math.floor((nowMs - entry.timestamp) / 60000);
-            const emoji = entry.type === "Restroom" ? "🚽" : "💧";
+            let emoji = "🚽";
+            if (entry.type === "Water Refill") emoji = "💧";
+            if (entry.type === "Break") emoji = "☕";
             absenceContent += `<div class="absence-item">${emoji} <strong>${user}</strong> - ${entry.type} (${elapsedMins}m ago)</div>`;
         }
         absenceDisplay.innerHTML = absenceContent || `<span style="font-size: 13px; color: #94a3b8; font-style: italic;">All users are currently present.</span>`;
