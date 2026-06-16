@@ -2,119 +2,140 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Team Break Planner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Break Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        .no-select { -webkit-user-select: none; user-select: none; }
-        .grid-compact { grid-template-columns: 85px repeat(12, minmax(0, 1fr)); }
+        .time-slot-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 2px;
+        }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col no-select">
+<body class="bg-gray-100 font-sans min-h-screen p-4">
 
-    <!-- Header App Bar -->
-    <header class="bg-slate-800 border-b border-slate-700 p-4 flex items-center justify-between shadow-lg">
-        <h1 class="text-xl font-bold tracking-wide">BreakPlanner</h1>
-        <div id="userBadge" class="bg-slate-700 px-3 py-1 rounded-full text-xs font-semibold text-emerald-400">
-            Connecting...
+    <!-- Useful Links Bar -->
+    <div class="max-w-7xl mx-auto mb-4 p-4 bg-white rounded-lg shadow-md border border-gray-200">
+        <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">🔗 Useful Links</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <a href="https://kronos8.nac.sitel-world.net/wfc/logon" target="_blank" rel="noopener noreferrer" class="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-300 transition block">
+                Kronos ↗
+            </a>
+            <a href="https://www.foundever.es/mifoundever/Account/Login" target="_blank" rel="noopener noreferrer" class="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-300 transition block">
+                My Foundever ES ↗
+            </a>
+            <a href="https://agentmail.emea.foundever.com/carbonio" target="_blank" rel="noopener noreferrer" class="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-300 transition block">
+                EMEA Mail ↗
+            </a>
+            <a href="https://www.foundever.es/mifoundever/Schedule" target="_blank" rel="noopener noreferrer" class="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-300 transition block">
+                Horarios ↗
+            </a>
+            <a href="https://www.50plus.de/spiele.html" target="_blank" rel="noopener noreferrer" class="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-300 transition block">
+                50plus ↗
+            </a>
+            <button onclick="copyNetworkPath()" class="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-300 transition block w-full">
+                <span id="cuposText">Cupos Holidays</span> <span id="cuposIcon">📋</span>
+            </button>
         </div>
-    </header>
+    </div>
 
-    <!-- Main Dynamic Workspace -->
-    <main class="flex-1 p-4 max-w-7xl w-full mx-auto space-y-4">
+    <!-- Main Container Layout: Two Sides -->
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- Useful Links Bar Dashboard Panel -->
-        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl">
-            <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase mb-3">🔗 Useful Links</h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <a href="https://kronos8.nac.sitel-world.net/wfc/logon" target="_blank" rel="noopener noreferrer" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-center text-xs font-semibold border border-slate-600 transition flex items-center justify-center gap-1">
-                    Kronos ↗
-                </a>
-                <a href="https://www.foundever.es/mifoundever/Account/Login" target="_blank" rel="noopener noreferrer" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-center text-xs font-semibold border border-slate-600 transition flex items-center justify-center gap-1">
-                    My Foundever ES ↗
-                </a>
-                <a href="https://agentmail.emea.foundever.com/carbonio" target="_blank" rel="noopener noreferrer" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-center text-xs font-semibold border border-slate-600 transition flex items-center justify-center gap-1">
-                    EMEA Mail ↗
-                </a>
-                <a href="https://www.foundever.es/mifoundever/Schedule" target="_blank" rel="noopener noreferrer" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-center text-xs font-semibold border border-slate-600 transition flex items-center justify-center gap-1">
-                    Horarios ↗
-                </a>
-                <a href="https://www.50plus.de/spiele.html" target="_blank" rel="noopener noreferrer" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-center text-xs font-semibold border border-slate-600 transition flex items-center justify-center gap-1">
-                    50plus ↗
-                </a>
-                <button onclick="copyNetworkPath()" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-center text-xs font-semibold border border-slate-600 transition flex items-center justify-center gap-1 w-full">
-                    <span id="cuposText">Cupos Holidays</span> <span id="cuposIcon">📋</span>
-                </button>
+        <!-- LEFT SIDE: Edit Grid & Input Controls -->
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 space-y-6">
+            <h2 class="text-xl font-bold text-gray-800 border-b pb-2">Edit Grid</h2>
+            
+            <!-- User Configuration Profile Selector -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Select User:</label>
+                <select id="userSelect" onchange="handleUserChange()" class="w-full p-2 border border-gray-300 rounded bg-gray-50 text-gray-800 font-medium">
+                    <option value="">-- Choose your Name --</option>
+                    <option value="Agent 1">Agent 1</option>
+                    <option value="Agent 2">Agent 2</option>
+                    <option value="Agent 3">Agent 3</option>
+                    <option value="Agent 4">Agent 4</option>
+                    <option value="Agent 5">Agent 5</option>
+                    <option value="Admin">Admin</option>
+                </select>
             </div>
-        </div>
-        
-        <!-- Quick Status Control Panel -->
-        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <button id="btnBreak" onclick="toggleActiveStatus('__active_break__', '☕ Break', 'bg-amber-500/20 text-amber-400 border-amber-500/30')" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm font-semibold border border-slate-600 transition">
+
+            <!-- Quick Active Status Buttons -->
+            <div class="flex flex-wrap gap-2 pt-2">
+                <button id="btnBreak" onclick="toggleActiveStatus('__active_break__', '☕ Break', 'bg-amber-100 text-amber-800 border-amber-300')" class="px-4 py-2 rounded font-semibold text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 border border-gray-300 transition">
                     ☕ Start Break
                 </button>
-                <button onclick="toggleQuickStatus('__wc__', '🚽 WC', 'bg-blue-500/20 text-blue-400 border-blue-500/30')" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm font-semibold border border-slate-600 transition">
+                <button onclick="toggleQuickStatus('__wc__', '🚽 WC', 'bg-blue-100 text-blue-800 border-blue-300')" class="px-4 py-2 rounded font-semibold text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 border border-gray-300 transition">
                     🚽 Toilet Quick
                 </button>
-                <button onclick="toggleQuickStatus('__water__', '💧 Water', 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30')" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm font-semibold border border-slate-600 transition">
+                <button onclick="toggleQuickStatus('__water__', '💧 Water', 'bg-cyan-100 text-cyan-800 border-cyan-300')" class="px-4 py-2 rounded font-semibold text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 border border-gray-300 transition">
                     💧 Water Quick
                 </button>
             </div>
-            
-            <!-- Live Active Feed Grid -->
-            <div id="liveStatusContainer" class="flex flex-wrap gap-2 text-xs w-full md:w-auto justify-start md:justify-end">
-                <!-- Status blocks pop up here instantly -->
+
+            <!-- Scrollable Input Editor Matrix Timeline Scheduler -->
+            <div class="border border-gray-300 rounded overflow-hidden">
+                <div class="grid grid-cols-12 gap-px bg-gray-200 p-1 text-center text-[10px] font-bold text-gray-600">
+                    <div class="col-span-3 text-left pl-1">Time</div>
+                    <div class="col-span-9 grid grid-cols-12 gap-px">
+                        <div>00</div><div>05</div><div>10</div><div>15</div><div>20</div><div>25</div><div>30</div><div>35</div><div>40</div><div>45</div><div>50</div><div>55</div>
+                    </div>
+                </div>
+                <div id="editorGridContainer" class="max-h-[50vh] overflow-y-auto divide-y divide-gray-200">
+                    <!-- Dynamic editor rows go here -->
+                </div>
             </div>
         </div>
 
-        <!-- Master Matrix Timeline Scheduler -->
-        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl overflow-hidden">
-            <!-- Timeline Header Column Matrix Titles -->
-            <div class="grid grid-compact gap-1 pb-2 border-b border-slate-700 text-xs font-bold text-slate-400 text-center items-center">
-                <div class="text-left pl-2">Timeline</div>
-                <div>00</div><div>05</div><div>10</div><div>15</div><div>20</div><div>25</div><div>30</div><div>35</div><div>40</div><div>45</div><div>50</div><div>55</div>
+        <!-- RIGHT SIDE: See Others View Matrix Panel -->
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 space-y-4">
+            <div class="flex items-center justify-between border-b pb-2">
+                <h2 class="text-xl font-bold text-gray-800">See Others</h2>
+                <span id="syncBadge" class="text-xs bg-green-100 text-green-800 px-2.5 py-1 rounded-full font-semibold">Synced</span>
             </div>
 
-            <!-- Scrollable Slots Container -->
-            <div id="timelineGrid" class="divide-y divide-slate-700/50 max-h-[70vh] overflow-y-auto pr-1 mt-1">
-                <!-- Interactive rows generated dynamically by js entry scripts -->
+            <!-- Instant Active Status Realtime Monitor -->
+            <div id="liveStatusContainer" class="flex flex-wrap gap-2 min-h-[36px] p-2 bg-gray-50 border border-dashed border-gray-300 rounded">
+                <!-- Status boxes append here dynamically -->
+            </div>
+
+            <!-- Read Only Main Overview Dashboard Viewport -->
+            <div class="border border-gray-300 rounded overflow-hidden">
+                <div class="grid grid-cols-12 gap-px bg-gray-200 p-1 text-center text-[10px] font-bold text-gray-600">
+                    <div class="col-span-3 text-left pl-1">Time</div>
+                    <div class="col-span-9 grid grid-cols-12 gap-px">
+                        <div>00</div><div>05</div><div>10</div><div>15</div><div>20</div><div>25</div><div>30</div><div>35</div><div>40</div><div>45</div><div>50</div><div>55</div>
+                    </div>
+                </div>
+                <div id="viewerGridContainer" class="max-h-[60vh] overflow-y-auto divide-y divide-gray-200">
+                    <!-- Dynamic view rows go here -->
+                </div>
             </div>
         </div>
-    </main>
+    </div>
 
-    <!-- Global App Control Footer Metrics Status Bar -->
-    <footer class="bg-slate-800 border-t border-slate-700 px-4 py-2 text-xs text-slate-400 flex items-center justify-between">
-        <div id="connectionStatus" class="flex items-center gap-1.5 text-emerald-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> System Synchronized
-        </div>
-        <div id="metricsFooter" class="font-medium">Active Workers: 0 / 100</div>
-    </footer>
-
-    <!-- Core App Application Scripts Matrix Routing Systems -->
+    <!-- JavaScript Logical Engine Processing Loops -->
     <script>
         const WORKER_URL = "https://breakplanner-backend.tortrix03.workers.dev";
         
-        let username = localStorage.getItem('bp_username');
-        while (!username || username.trim() === "" || username.startsWith("__")) {
-            username = prompt("Please entry your official identification signature name (e.g. John, Sarah):");
-            if (username) {
-                username = username.trim();
-                localStorage.setItem('bp_username', username);
-            }
+        let username = "";
+        let appState = {};
+        let isDragging = false;
+        let dragMode = true;
+
+        function handleUserChange() {
+            username = document.getElementById('userSelect').value;
+            renderLocalFeedback();
         }
-        document.getElementById('userBadge').innerText = `User: ${username}`;
 
         function copyNetworkPath() {
             const path = "P:\\01_Agents\\WFM HOLIDAYS - DLF\\CUPOS HOLIDAYS";
             navigator.clipboard.writeText(path).then(() => {
                 const textEl = document.getElementById('cuposText');
                 const iconEl = document.getElementById('cuposIcon');
-                
                 textEl.innerText = "Path Copied!";
                 iconEl.innerText = "✅";
-                
                 setTimeout(() => {
                     textEl.innerText = "Cupos Holidays";
                     iconEl.innerText = "📋";
@@ -122,7 +143,8 @@
             });
         }
 
-        const hours = Array.from({length: 13}, (_, i) => i + 7); 
+        // Generate Master Intervals Time Scales Array (07:00 -> 19:55)
+        const hours = Array.from({length: 13}, (_, i) => i + 7);
         const intervals = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
         const timeSlots = [];
         hours.forEach(h => {
@@ -130,68 +152,72 @@
             intervals.forEach(m => timeSlots.push(`${padH}:${m}`));
         });
 
-        let appState = {};
-        let isDragging = false;
-        let dragMode = true; 
+        const editorContainer = document.getElementById('editorGridContainer');
+        const viewerContainer = document.getElementById('viewerGridContainer');
 
-        const gridContainer = document.getElementById('timelineGrid');
+        // Build Rows for Both Sides Synchronously
         timeSlots.forEach(slot => {
-            const row = document.createElement('div');
-            row.className = "grid grid-compact gap-1 py-2 items-center border-b border-slate-700/30 hover:bg-slate-700/20 transition";
-            row.dataset.slot = slot;
-
-            const label = document.createElement('div');
-            label.className = "text-xs font-bold text-slate-300 pl-2 tracking-tight cursor-pointer flex flex-col justify-center";
-            label.innerHTML = `<span>${slot}</span><span class="text-[9px] text-slate-500 font-normal limit-indicator" id="limit-label-${slot}">Limit: 3</span>`;
+            // 1. Build Left Side (Editor)
+            const eRow = document.createElement('div');
+            eRow.className = "grid grid-cols-12 items-center p-1 hover:bg-gray-50";
             
-            label.addEventListener('dblclick', () => toggleSlotLimit(slot));
-            row.appendChild(label);
+            const eLabel = document.createElement('div');
+            eLabel.className = "col-span-3 text-xs font-bold text-gray-700 flex flex-col cursor-pointer";
+            eLabel.innerHTML = `<span>${slot}</span><span class="text-[9px] text-gray-400 font-normal" id="limit-label-${slot}">Limit: 3</span>`;
+            eLabel.addEventListener('dblclick', () => toggleSlotLimit(slot));
+            eRow.appendChild(eLabel);
+
+            const eGrid = document.createElement('div');
+            eGrid.className = "col-span-9 time-slot-grid";
+
+            // 2. Build Right Side (Viewer)
+            const vRow = document.createElement('div');
+            vRow.className = "grid grid-cols-12 items-center p-1 hover:bg-gray-50";
+            
+            const vLabel = document.createElement('div');
+            vLabel.className = "col-span-3 text-xs font-bold text-gray-500";
+            vLabel.innerText = slot;
+            vRow.appendChild(vLabel);
+
+            const vGrid = document.createElement('div');
+            vGrid.className = "col-span-9 time-slot-grid";
 
             for(let index = 0; index < 12; index++) {
-                const block = document.createElement('div');
-                block.className = "h-7 rounded border text-[9px] font-bold flex items-center justify-center transition bg-slate-800 border-slate-700 text-transparent";
-                block.dataset.slot = slot;
-                block.dataset.index = index;
+                // Interactive Editor Block
+                const eBlock = document.createElement('div');
+                eBlock.className = "h-6 border border-gray-300 bg-white cursor-pointer rounded-sm transition-all";
+                eBlock.dataset.slot = slot;
+                eBlock.dataset.index = index;
+                eBlock.addEventListener('mousedown', (e) => startDrag(slot, index, eBlock));
+                eBlock.addEventListener('mouseenter', () => handleDragEnter(slot, index, eBlock));
+                eGrid.appendChild(eBlock);
 
-                block.addEventListener('mousedown', (e) => startDrag(slot, index, block));
-                block.addEventListener('mouseenter', () => handleDragEnter(slot, index, block));
-                
-                row.appendChild(block);
+                // Static Viewer Block
+                const vBlock = document.createElement('div');
+                vBlock.className = "h-6 border border-gray-200 bg-gray-50 rounded-sm text-[9px] font-bold flex items-center justify-center transition-all";
+                vBlock.id = `view-${slot}-${index}`;
+                vGrid.appendChild(vBlock);
             }
-            gridContainer.appendChild(row);
+
+            eRow.appendChild(eGrid);
+            vRow.appendChild(vGrid);
+            editorContainer.appendChild(eRow);
+            viewerContainer.appendChild(vRow);
         });
 
         window.addEventListener('mouseup', () => { isDragging = false; });
 
-        gridContainer.addEventListener('touchstart', (e) => {
-            const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-            if (target && target.dataset.index !== undefined) {
-                e.preventDefault();
-                startDrag(target.dataset.slot, parseInt(target.dataset.index), target);
-            }
-        }, {passive: false});
-
-        gridContainer.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-            if (target && target.dataset.index !== undefined) {
-                e.preventDefault();
-                handleDragEnter(target.dataset.slot, parseInt(target.dataset.index), target);
-            }
-        }, {passive: false});
-
-        gridContainer.addEventListener('touchend', () => { isDragging = false; });
-
         function startDrag(slot, index, element) {
+            if (!username) { alert("Please select your name first."); return; }
             isDragging = true;
             const key = `${slot}-${index}`;
             const currentArr = appState[username] || [];
-            dragMode = !currentArr.includes(key); 
+            dragMode = !currentArr.includes(key);
             toggleBlock(slot, index, element);
         }
 
         function handleDragEnter(slot, index, element) {
-            if (!isDragging) return;
+            if (!isDragging || !username) return;
             toggleBlock(slot, index, element);
         }
 
@@ -211,42 +237,29 @@
         }
 
         function toggleQuickStatus(type, labelText, styles) {
+            if (!username) { alert("Please select your name first."); return; }
             const key = `${username}${type}`;
             let currentArr = appState[key] || [];
-            
-            if (currentArr.length > 0) {
-                currentArr = [];
-            } else {
-                currentArr = [labelText, styles];
-            }
-            
-            appState[key] = currentArr;
+            appState[key] = currentArr.length > 0 ? [] : [labelText, styles];
             renderLocalFeedback();
-            saveStateToDatabase(key, currentArr);
+            saveStateToDatabase(key, appState[key]);
         }
 
         function toggleActiveStatus(type, labelText, styles) {
+            if (!username) { alert("Please select your name first."); return; }
             const key = `__active_break__${username}`;
             let currentArr = appState[key] || [];
-            
-            if (currentArr.length > 0) {
-                currentArr = [];
-            } else {
-                currentArr = [labelText, styles];
-            }
-            
-            appState[key] = currentArr;
+            appState[key] = currentArr.length > 0 ? [] : [labelText, styles];
             renderLocalFeedback();
-            saveStateToDatabase(key, currentArr);
+            saveStateToDatabase(key, appState[key]);
         }
 
         function toggleSlotLimit(slot) {
             if (username.toLowerCase() !== 'admin') {
-                alert("Authorization Denied: Only Admin credentials can overwrite slot thresholds.");
+                alert("Only Admin accounts can adjust row layout limits.");
                 return;
             }
             let currentLimits = appState['__limits__'] || [];
-            
             if (!currentLimits.includes(`${slot}-1`) && !currentLimits.includes(`${slot}-2`)) {
                 currentLimits.push(`${slot}-1`);
             } else if (currentLimits.includes(`${slot}-1`)) {
@@ -255,7 +268,6 @@
             } else {
                 currentLimits = currentLimits.filter(i => i !== `${slot}-2`);
             }
-
             appState['__limits__'] = currentLimits;
             renderLocalFeedback();
             saveStateToDatabase('__limits__', currentLimits);
@@ -264,55 +276,49 @@
         async function saveStateToDatabase(customUser, customData) {
             const targetUser = customUser || username;
             const targetData = customData || appState[username] || [];
-
             try {
-                const response = await fetch(WORKER_URL, {
+                await fetch(WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: targetUser, selectedSlots: targetData })
                 });
-                if (!response.ok) throw new Error("Sync failure anomaly caught");
             } catch (err) {
-                document.getElementById('connectionStatus').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Connection Offline`;
-                document.getElementById('connectionStatus').className = "flex items-center gap-1.5 text-rose-400";
+                document.getElementById('syncBadge').innerText = "Offline";
+                document.getElementById('syncBadge').className = "text-xs bg-red-100 text-red-800 px-2.5 py-1 rounded-full font-semibold";
             }
         }
 
         async function fetchStateFromDatabase() {
             try {
                 const response = await fetch(WORKER_URL);
-                if (!response.ok) throw new Error("Fetch stream parsing exception");
                 const res = await response.json();
-                
                 appState = res.data || {};
-                document.getElementById('metricsFooter').innerText = `Active Workers: ${res.userCount || 0}`;
-                document.getElementById('connectionStatus').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> System Synchronized`;
-                document.getElementById('connectionStatus').className = "flex items-center gap-1.5 text-emerald-400";
-                
+                document.getElementById('syncBadge').innerText = "Synced";
+                document.getElementById('syncBadge').className = "text-xs bg-green-100 text-green-800 px-2.5 py-1 rounded-full font-semibold";
                 renderLocalFeedback();
             } catch (err) {
-                document.getElementById('connectionStatus').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Latency Reconnect Sync`;
-                document.getElementById('connectionStatus').className = "flex items-center gap-1.5 text-amber-400";
+                document.getElementById('syncBadge').innerText = "Syncing...";
+                document.getElementById('syncBadge').className = "text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-semibold";
             }
         }
 
         function renderLocalFeedback() {
-            const allBlocks = gridContainer.querySelectorAll('[data-index]');
             const slotUserCountMap = {};
             const limitsArray = appState['__limits__'] || [];
 
+            // Dynamic Break Button Feedback state change
             const myBreakKey = `__active_break__${username}`;
             const isCurrentlyOnBreak = appState[myBreakKey] && appState[myBreakKey].length > 0;
             const btnBreak = document.getElementById('btnBreak');
-            
             if (isCurrentlyOnBreak) {
                 btnBreak.innerText = "☕ End Break";
-                btnBreak.className = "px-4 py-2 rounded-lg bg-slate-600 text-amber-400 text-sm font-semibold border border-amber-500/40 transition";
+                btnBreak.className = "px-4 py-2 rounded font-semibold text-sm bg-red-600 hover:bg-red-700 text-white border border-red-700 transition";
             } else {
                 btnBreak.innerText = "☕ Start Break";
-                btnBreak.className = "px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm font-semibold border border-slate-600 transition";
+                btnBreak.className = "px-4 py-2 rounded font-semibold text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 border border-gray-300 transition";
             }
 
+            // Build structural counts mapping
             Object.keys(appState).forEach(user => {
                 if (user.startsWith("__")) return;
                 const selections = appState[user] || [];
@@ -321,26 +327,22 @@
                 });
             });
 
+            // Live Activity Log Parsing
             const liveStatusContainer = document.getElementById('liveStatusContainer');
             liveStatusContainer.innerHTML = '';
-            
             Object.keys(appState).forEach(key => {
                 if ((key.includes('__wc__') || key.includes('__water__') || key.startsWith('__active_break__')) && appState[key].length > 0) {
                     let displayUser = key.replace('__wc__', '').replace('__water__', '').replace('__active_break__', '');
                     const [label, styles] = appState[key];
-                    
                     const badge = document.createElement('div');
-                    badge.className = `px-3 py-1 rounded border font-semibold ${styles}`;
+                    badge.className = `px-2 py-1 rounded text-xs font-bold border ${styles}`;
                     badge.innerText = `${displayUser}: ${label}`;
                     liveStatusContainer.appendChild(badge);
                 }
             });
 
-            allBlocks.forEach(block => {
-                const slot = block.dataset.slot;
-                const idx = block.dataset.index;
-                const key = `${slot}-${idx}`;
-
+            // Re-render blocks and labels maps loops
+            timeSlots.forEach(slot => {
                 let currentMaxLimit = 3;
                 if (limitsArray.includes(`${slot}-1`)) currentMaxLimit = 1;
                 else if (limitsArray.includes(`${slot}-2`)) currentMaxLimit = 2;
@@ -348,26 +350,44 @@
                 const limitIndicatorLabel = document.getElementById(`limit-label-${slot}`);
                 if (limitIndicatorLabel) {
                     limitIndicatorLabel.innerText = `Limit: ${currentMaxLimit}`;
-                    limitIndicatorLabel.className = currentMaxLimit < 3 ? "text-[9px] text-amber-400 font-bold tracking-wide limit-indicator" : "text-[9px] text-slate-500 font-normal limit-indicator";
+                    limitIndicatorLabel.className = currentMaxLimit < 3 ? "text-[9px] text-red-500 font-bold" : "text-[9px] text-gray-400 font-normal";
                 }
 
-                const parallelUsersCount = slotUserCountMap[key] || 0;
-                const iHaveSelectedThis = appState[username] && appState[username].includes(key);
+                for(let index = 0; index < 12; index++) {
+                    const key = `${slot}-${index}`;
+                    const parallelUsersCount = slotUserCountMap[key] || 0;
+                    const iHaveSelectedThis = username && appState[username] && appState[username].includes(key);
 
-                if (iHaveSelectedThis) {
-                    block.className = "h-7 rounded border text-[9px] font-bold flex items-center justify-center transition bg-sky-500 border-sky-400 text-white shadow-md shadow-sky-500/20";
-                    block.innerText = "ME";
-                } else if (parallelUsersCount > 0) {
-                    if (parallelUsersCount >= currentMaxLimit) {
-                        block.className = "h-7 rounded border text-[9px] font-bold flex items-center justify-center transition bg-rose-500/20 border-rose-500/40 text-rose-400";
-                        block.innerText = `FULL (${parallelUsersCount})`;
-                    } else {
-                        block.className = "h-7 rounded border text-[9px] font-bold flex items-center justify-center transition bg-emerald-500/20 border-emerald-500/30 text-emerald-400";
-                        block.innerText = `TAKEN (${parallelUsersCount})`;
+                    const eBlock = editorContainer.querySelector(`[data-slot="${slot}"][data-index="${index}"]`);
+                    const vBlock = document.getElementById(`view-${slot}-${index}`);
+
+                    // Render interactive Editor block lookups
+                    if (eBlock) {
+                        if (iHaveSelectedThis) {
+                            eBlock.className = "h-6 border border-sky-500 bg-sky-500 rounded-sm shadow-inner";
+                        } else {
+                            eBlock.className = "h-6 border border-gray-300 bg-white rounded-sm";
+                        }
                     }
-                } else {
-                    block.className = "h-7 rounded border text-[9px] font-bold flex items-center justify-center transition bg-slate-800 border-slate-700 text-transparent";
-                    block.innerText = "";
+
+                    // Render Shared View Matrix dashboard outputs
+                    if (vBlock) {
+                        vBlock.innerText = "";
+                        if (iHaveSelectedThis) {
+                            vBlock.className = "h-6 border border-sky-500 bg-sky-500 text-white rounded-sm text-[9px] font-bold flex items-center justify-center shadow-sm";
+                            vBlock.innerText = "ME";
+                        } else if (parallelUsersCount > 0) {
+                            if (parallelUsersCount >= currentMaxLimit) {
+                                vBlock.className = "h-6 border border-red-300 bg-red-100 text-red-700 rounded-sm text-[9px] font-bold flex items-center justify-center";
+                                vBlock.innerText = `FULL (${parallelUsersCount})`;
+                            } else {
+                                vBlock.className = "h-6 border border-green-300 bg-green-100 text-green-700 rounded-sm text-[9px] font-bold flex items-center justify-center";
+                                vBlock.innerText = `TAKEN (${parallelUsersCount})`;
+                            }
+                        } else {
+                            vBlock.className = "h-6 border border-gray-200 bg-gray-50 text-transparent rounded-sm";
+                        }
+                    }
                 }
             });
         }
