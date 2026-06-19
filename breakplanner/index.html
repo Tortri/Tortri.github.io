@@ -7,7 +7,9 @@
     <style>
         body { font-family: sans-serif; background: #f8fafc; padding: 20px; color: #0f172a; }
         .box { max-width: 900px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
-        .auth { background: #f1f5f9; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 24px; }
+        
+        /* Ultra-Minimal Login Dashboard Area */
+        .auth { display: flex; justify-content: center; align-items: center; margin-bottom: 24px; padding: 4px 0; gap: 8px; }
         
         /* Summary Box Styling */
         .summary-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: left; }
@@ -40,14 +42,19 @@
         .grid-row:last-child { border-bottom: none; }
         .grid-row:hover { background-color: #f8fafc; }
 
-        /* Column Width Rules */
+        /* Fixed Geometric Column Width Rules & Alignment */
         .col-time { width: 75px; min-width: 75px; text-align: center; font-size: 12px; font-weight: 600; color: #64748b; font-variant-numeric: tabular-nums; user-select: none; border-right: 1px solid #e2e8f0; height: 100%; display: flex; align-items: center; justify-content: center; background: #f8fafc; }
-        .col-edit { flex: 1; height: 100%; position: relative; border-right: 1px solid #e2e8f0; display: none; background: white; }
+        .col-edit { flex: 1; height: 100%; position: relative; border-right: 1px solid #e2e8f0; display: none; background: white; text-align: center; }
         .col-heatmap { flex: 2; height: 100%; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 500; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; background: white; }
+
+        /* Header Specific Classes for Explicit Centering Grid Alignment */
+        .header-edit-text { flex: 1; display: none; border-right: 1px solid #e2e8f0; height: 100%; align-items: center; justify-content: center; text-align: center; }
 
         /* Mode Modifiers */
         body.logged-in:not(.hide-edit) .col-edit { display: block; }
+        body.logged-in:not(.hide-edit) .header-edit-text { display: flex; }
         body.admin-mode .col-edit { display: block !important; }
+        body.admin-mode .header-edit-text { display: flex !important; }
 
         /* Cell Interactive States */
         .interactive-cell { width: 100%; height: 100%; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; transition: all 0.1s ease; }
@@ -80,10 +87,10 @@
 <body>
 <div class="box">
     
-    <!-- User Login Dashboard Area -->
+    <!-- Permanent Space-saving Minimal Input Panel Area -->
     <div class="auth">
-        <input type="text" id="user" placeholder="Enter Name" onkeydown="handleLoginKey(event)" style="padding: 8px 12px; width: 180px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
-        <button id="login-btn" onclick="login()" style="padding:8px 16px; margin-left: 6px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight: 600; font-size: 14px; cursor:pointer; transition: background 0.2s;">Edit Grid</button>
+        <input type="text" id="user" placeholder="Enter Name" onkeydown="handleLoginKey(event)" style="padding: 6px 12px; width: 160px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
+        <button id="login-btn" onclick="login()" style="padding: 6px 14px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight: 600; font-size: 13px; cursor:pointer; transition: background 0.2s;">Edit Grid</button>
     </div>
 
     <!-- Quick Absence Checkout Panel -->
@@ -122,7 +129,7 @@
     <div class="scheduler-container">
         <div class="table-header">
             <div class="col-time">Time</div>
-            <div class="col-edit" id="col-header-interactive">Select Your Breaks</div>
+            <div class="header-edit-text" id="col-header-interactive">Select Your Breaks</div>
             <div class="col-heatmap">Break Schedule & Heatmap</div>
         </div>
         <div class="scroll-body" id="scroll-container">
@@ -133,7 +140,7 @@
 
 <!-- Modern, Minimal Low-Profile Footer Link Layout Placement Bar -->
 <div class="max-w-[900px] mx-auto mt-6 px-4 text-center">
-    <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 text-xs font-medium text-slate-400">
+    <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs font-medium text-slate-400">
         <a href="https://kronos8.nac.sitel-world.net/wfc/logon" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Kronos ↗</a>
         <span class="text-slate-200">|</span>
         <a href="https://www.foundever.es/mifoundever/Account/Login" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">My Foundever ES ↗</a>
@@ -143,6 +150,10 @@
         <a href="https://www.foundever.es/mifoundever/Schedule" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Horarios ↗</a>
         <span class="text-slate-200">|</span>
         <a href="https://www.50plus.de/spiele.html" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">50plus ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://accor-360.my.salesforce.com" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Salesforce ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://resaweb.accor.net" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">RESAWeb ↗</a>
         <span class="text-slate-200">|</span>
         <a href="https://jacobperezwibe.site/noteblock/booking/" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Booking Notes ↗</a>
         <span class="text-slate-200">|</span>
@@ -160,6 +171,7 @@
     let name = "", dragging = false, drawing = true, data = {}, slots = [];
     let adminMode = false, adminDragging = false, adminTargetLimit = 3;
     let userStatuses = {}; 
+    let syncIntervalId = null;
     
     for(let h=8; h<22; h++) {
         for(let m=0; m<60; m+=5) {
@@ -290,17 +302,14 @@
         
         document.body.classList.add('logged-in');
         document.getElementById('board-title').innerText = `Your Dashboard & Break Editor`;
-        document.getElementById('col-header-interactive').innerText = "Select Your Breaks";
-        document.getElementById('col-header-interactive').style.display = "block";
         document.getElementById('status-container').style.display = 'flex';
-        document.getElementById('user').style.display = 'none';
-        document.getElementById('login-btn').style.display = 'none';
         
         updateStatusActionButtonsUI();
         drawMap();
         setTimeout(scrollToCurrentTime, 100);
 
-        setInterval(syncWithCloud, 10000);
+        if (syncIntervalId) clearInterval(syncIntervalId);
+        syncIntervalId = setInterval(syncWithCloud, 10000);
         setInterval(updateCurrentTimeMarker, 60000);
     }
 
@@ -312,7 +321,7 @@
         if (body.classList.contains('hide-edit')) {
             body.classList.remove('hide-edit');
             btn.innerText = "👁️ View Heatmap Only";
-            headerInteractive.style.display = "block";
+            headerInteractive.style.display = "flex";
             document.getElementById('board-title').innerText = `Your Dashboard & Break Editor`;
         } else {
             body.classList.add('hide-edit');
@@ -372,22 +381,16 @@
         if (adminMode) {
             adminMode = false;
             document.body.classList.remove('admin-mode');
-            if (name === "Admin") {
-                document.body.classList.remove('logged-in');
-                name = "";
-                document.getElementById('user').style.display = 'inline-block';
-                document.getElementById('login-btn').style.display = 'inline-block';
-            }
             
             if (document.body.classList.contains('hide-edit')) {
                 headerInteractive.style.display = "none";
                 document.getElementById('board-title').innerText = `Group Schedule Overview`;
             } else {
-                headerInteractive.style.display = name ? "block" : "none";
+                headerInteractive.style.display = name ? "flex" : "none";
                 document.getElementById('board-title').innerText = name ? `Your Dashboard & Break Editor` : `Group Schedule Overview`;
             }
             
-            document.getElementById('col-header-interactive').innerText = "Select Your Breaks";
+            headerInteractive.innerText = "Select Your Breaks";
             drawMap();
         } else {
             const pass = prompt("Enter Admin Password:");
@@ -396,14 +399,13 @@
                 document.body.classList.add('admin-mode');
                 document.getElementById('board-title').innerText = `⚠️ Administrative Limit Overrides`;
                 headerInteractive.innerText = "Allowed Capacity Rule";
-                headerInteractive.style.display = "block";
+                headerInteractive.style.display = "flex";
                 if (!name) {
                     name = "Admin";
                     document.body.classList.add('logged-in');
-                    document.getElementById('user').style.display = 'none';
-                    document.getElementById('login-btn').style.display = 'none';
                     if(!data[name]) data[name] = new Set();
-                    setInterval(syncWithCloud, 10000);
+                    if (syncIntervalId) clearInterval(syncIntervalId);
+                    syncIntervalId = setInterval(syncWithCloud, 10000);
                 }
                 drawMap();
                 setTimeout(scrollToCurrentTime, 100);
