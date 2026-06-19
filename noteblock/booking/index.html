@@ -18,10 +18,11 @@
             --btn-copy: #666666;
             --btn-copy-hover: #ffffff;
             --btn-copy-bg: #3a3a3a;
-            --btn-global: #333333;
-            --btn-global-border: #444444;
-            --btn-global-hover: #444444;
             --shadow: rgba(0, 0, 0, 0.5);
+            --bg-sidebar: #252525;
+            --hover-sidebar-item: #333333;
+            --btn-danger: #cf6679;
+            --btn-danger-hover: #b85467;
         }
 
         [data-theme="light"] {
@@ -36,10 +37,11 @@
             --btn-copy: #9ca3af;
             --btn-copy-hover: #111827;
             --btn-copy-bg: #e5e7eb;
-            --btn-global: #f3f4f6;
-            --btn-global-border: #d1d5db;
-            --btn-global-hover: #e5e7eb;
             --shadow: rgba(0, 0, 0, 0.05);
+            --bg-sidebar: #f9fafb;
+            --hover-sidebar-item: #f3f4f6;
+            --btn-danger: #dc2626;
+            --btn-danger-hover: #b91c1c;
         }
 
         * {
@@ -58,6 +60,7 @@
             min-height: 100vh;
             padding: 20px;
             transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
         }
 
         .container {
@@ -71,11 +74,16 @@
             transition: background-color 0.2s, box-shadow 0.2s;
         }
 
-        /* Theme Toggle Switch */
-        .theme-toggle {
+        /* Top Controls Setup */
+        .top-controls {
             position: absolute;
             top: 28px;
             right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .top-btn {
             background: none;
             border: none;
             color: var(--text-muted);
@@ -86,8 +94,9 @@
             font-weight: bold;
             padding: 4px 8px;
             border-radius: 4px;
+            transition: all 0.2s;
         }
-        .theme-toggle:hover {
+        .top-btn:hover {
             color: var(--text-heading);
             background-color: var(--btn-copy-bg);
         }
@@ -120,7 +129,7 @@
         input[type="tel"],
         textarea {
             width: 100%;
-            padding: 12px 65px 12px 14px; /* Room for copy indicator */
+            padding: 12px 65px 12px 14px;
             background-color: var(--bg-input);
             border: 1px solid var(--border-input);
             border-radius: 6px;
@@ -153,7 +162,6 @@
             line-height: 1.5;
         }
 
-        /* Subtle Inline Copy Button */
         .copy-btn {
             position: absolute;
             right: 10px;
@@ -183,85 +191,160 @@
             color: #4caf50 !important;
         }
 
-        /* Bottom Controls */
+        /* Bottom Controls layout */
         .actions {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
         }
 
-        .btn-global {
-            flex: 1;
-            padding: 12px;
-            background-color: var(--btn-global);
-            border: 1px solid var(--btn-global-border);
-            color: var(--text-heading);
+        .btn-delete {
+            background-color: var(--btn-danger);
+            border: none;
+            color: #ffffff;
+            padding: 10px 14px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: background-color 0.2s;
         }
 
-        .btn-global:hover {
-            background-color: var(--btn-global-hover);
+        .btn-delete:hover {
+            background-color: var(--btn-danger-hover);
         }
 
-        .btn-primary {
-            background-color: #4a90e2;
-            border: none;
-            color: #fff;
+        .btn-delete svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
         }
 
-        .btn-primary:hover {
-            background-color: #357abd;
+        /* --- Sidebar History Layout --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100%;
+            background-color: var(--bg-sidebar);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 30px 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.open {
+            right: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-input);
+            padding-bottom: 10px;
+        }
+
+        .sidebar-header h3 {
+            font-weight: 400;
+            font-size: 1.1rem;
+            color: var(--text-heading);
+        }
+
+        .history-list {
+            list-style: none;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .history-item {
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-input);
+            transition: background-color 0.2s;
+        }
+
+        .history-item:hover {
+            background-color: var(--hover-sidebar-item);
+        }
+
+        .history-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-heading);
+            margin-bottom: 3px;
+        }
+
+        .history-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
         }
     </style>
 </head>
 <body>
 
+<div class="sidebar" id="history-sidebar">
+    <div class="sidebar-header">
+        <h3>Recent Bookings</h3>
+        <button class="top-btn" onclick="toggleHistory()">Close</button>
+    </div>
+    <ul class="history-list" id="history-list-element">
+        </ul>
+</div>
+
 <div class="container">
-    <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">Light Mode</button>
+    <div class="top-controls">
+        <button class="top-btn" onclick="toggleHistory()">History</button>
+        <button class="top-btn" onclick="toggleTheme()" id="theme-toggle-btn">Light Mode</button>
+    </div>
+    
     <h2>Booking Intake Notes</h2>
 
     <div class="form-group">
         <label class="label-text" for="guest-name">Guest Name</label>
         <input type="text" id="guest-name" oninput="autoSave()">
-        <button class="copy-btn" onclick="copyField('guest-name')" title="Double-click to clear field">Copy</button>
+        <button class="copy-btn" onclick="copyField('guest-name')">Copy</button>
     </div>
 
     <div class="form-group">
         <label class="label-text" for="stay-dates">Stay Dates</label>
         <input type="text" id="stay-dates" oninput="autoSave()">
-        <button class="copy-btn" onclick="copyField('stay-dates')" title="Double-click to clear field">Copy</button>
+        <button class="copy-btn" onclick="copyField('stay-dates')">Copy</button>
     </div>
 
     <div class="form-group">
         <label class="label-text" for="email">Email Address</label>
         <input type="email" id="email" oninput="autoSave()">
-        <button class="copy-btn" onclick="copyField('email')" title="Double-click to clear field">Copy</button>
+        <button class="copy-btn" onclick="copyField('email')">Copy</button>
     </div>
 
     <div class="form-group">
         <label class="label-text" for="phone">Phone Number</label>
         <input type="tel" id="phone" oninput="autoSave()">
-        <button class="copy-btn" onclick="copyField('phone')" title="Double-click to clear field">Copy</button>
+        <button class="copy-btn" onclick="copyField('phone')">Copy</button>
     </div>
 
     <div class="form-group">
         <label class="label-text">Ref</label>
         <div class="grid-3">
             <div style="position: relative;">
-                <input type="text" id="ref-1" class="booking-code" oninput="checkLength(this); autoSave();" maxlength="20">
-                <button class="copy-btn" onclick="copyField('ref-1')" title="Double-click to clear field">Copy</button>
+                <input type="text" id="ref-1" class="booking-code" oninput="autoSave();">
+                <button class="copy-btn" onclick="copyField('ref-1')">Copy</button>
             </div>
             <div style="position: relative;">
-                <input type="text" id="ref-2" class="booking-code" oninput="checkLength(this); autoSave();" maxlength="20">
-                <button class="copy-btn" onclick="copyField('ref-2')" title="Double-click to clear field">Copy</button>
+                <input type="text" id="ref-2" class="booking-code" oninput="autoSave();">
+                <button class="copy-btn" onclick="copyField('ref-2')">Copy</button>
             </div>
             <div style="position: relative;">
-                <input type="text" id="ref-3" class="booking-code" oninput="autoSave();" maxlength="20">
-                <button class="copy-btn" onclick="copyField('ref-3')" title="Double-click to clear field">Copy</button>
+                <input type="text" id="ref-3" class="booking-code" oninput="autoSave();">
+                <button class="copy-btn" onclick="copyField('ref-3')">Copy</button>
             </div>
         </div>
     </div>
@@ -269,17 +352,22 @@
     <div class="form-group">
         <label class="label-text" for="notes">Notes</label>
         <textarea id="notes" oninput="autoSave()"></textarea>
-        <button class="copy-btn" onclick="copyField('notes')" title="Double-click to clear field">Copy</button>
+        <button class="copy-btn" onclick="copyField('notes')">Copy</button>
     </div>
 
     <div class="actions">
-        <button class="btn-global" onclick="clearAll()">Clear Form</button>
-        <button class="btn-global btn-primary" onclick="copyAll()">Copy Summary</button>
+        <button class="btn-delete" onclick="archiveAndClearAll()" title="Archive and Clear Form">
+            <svg viewBox="0 0 24 24">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+        </button>
     </div>
 </div>
 
 <script>
-    // 1. Theme Toggling Implementation
+    const FIELD_IDS = ['guest-name', 'stay-dates', 'email', 'phone', 'ref-1', 'ref-2', 'ref-3', 'notes'];
+
+    // Theme Toggling
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -289,15 +377,12 @@
         localStorage.setItem('agent-theme', targetTheme);
     }
 
-    // 2. Auto-Tab for Fast Typing (Advances cursor automatically at 8 characters)
-    function checkLength(element) {
-        if (element.value.length >= 8) {
-            if (element.id === 'ref-1') document.getElementById('ref-2').focus();
-            if (element.id === 'ref-2') document.getElementById('ref-3').focus();
-        }
+    // Toggle History Drawer
+    function toggleHistory() {
+        document.getElementById('history-sidebar').classList.toggle('open');
     }
 
-    // 3. Individual Copy Operations & Double-Click to Clear
+    // Individual Copy Function
     function copyField(fieldId) {
         const input = document.getElementById(fieldId);
         if (!input.value) return;
@@ -314,85 +399,103 @@
         });
     }
 
-    // Double-click structural listener setup to clear single fields cleanly
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('dblclick', function(e) {
-            e.preventDefault();
-            const prevInput = this.previousElementSibling;
-            if (prevInput) {
-                prevInput.value = '';
-                autoSave();
-            }
-        });
-    });
+    // Silently log form data snapshots to local storage history
+    function saveToHistoryLog() {
+        const guestName = document.getElementById('guest-name').value.trim() || 'Unnamed Guest';
+        
+        const snapshot = {};
+        let hasData = false;
 
-    // 4. Global Copy Summary Function
-    function copyAll() {
-        const fields = {
-            'Guest Name': 'guest-name',
-            'Stay Dates': 'stay-dates',
-            'Email': 'email',
-            'Phone': 'phone',
-            'Ref 1': 'ref-1',
-            'Ref 2': 'ref-2',
-            'Ref 3': 'ref-3',
-            'Notes': 'notes'
-        };
-
-        let summary = "--- BOOKING INTAKE --- \n";
-        for (const [label, id] of Object.entries(fields)) {
+        FIELD_IDS.forEach(id => {
             const val = document.getElementById(id).value;
-            if (val) {
-                if (['ref-1', 'ref-2', 'ref-3'].includes(id)) {
-                    summary += `${label}: ${val.toUpperCase()}\n`;
-                } else {
-                    summary += `${label}: ${val}\n`;
-                }
-            }
+            snapshot[id] = val;
+            if (val.trim() !== '') hasData = true;
+        });
+        
+        // Prevent archiving entirely blank cards
+        if (!hasData) return;
+
+        snapshot.metaName = guestName;
+        snapshot.metaTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        let log = JSON.parse(localStorage.getItem('agent-history-log')) || [];
+        log.unshift(snapshot);
+        if (log.length > 5) log.pop();
+
+        localStorage.setItem('agent-history-log', JSON.stringify(log));
+        renderHistoryList();
+    }
+
+    // Build the list elements inside history panel
+    function renderHistoryList() {
+        const listContainer = document.getElementById('history-list-element');
+        const log = JSON.parse(localStorage.getItem('agent-history-log')) || [];
+        
+        listContainer.innerHTML = '';
+
+        if (log.length === 0) {
+            listContainer.innerHTML = `<li style="font-size:0.85rem; color: var(--text-muted); text-align:center; margin-top:20px;">No history logged yet.</li>`;
+            return;
         }
 
-        navigator.clipboard.writeText(summary.trim()).then(() => {
-            const mainBtn = document.querySelector('.btn-primary');
-            mainBtn.innerText = "Summary Copied!";
-            setTimeout(() => mainBtn.innerText = "Copy Summary", 1500);
+        log.forEach((entry, index) => {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.onclick = () => restoreFromHistory(index);
+            li.innerHTML = `
+                <div class="history-name">${entry.metaName}</div>
+                <div class="history-meta">Saved at ${entry.metaTime} • ${entry['stay-dates'] || 'No dates'}</div>
+            `;
+            listContainer.appendChild(li);
         });
     }
 
-    // 5. Local Storage Core Logic (Persistent Auto-Save)
+    // Restore previous state card back into main views
+    function restoreFromHistory(index) {
+        const log = JSON.parse(localStorage.getItem('agent-history-log')) || [];
+        const entry = log[index];
+        if (!entry) return;
+
+        FIELD_IDS.forEach(id => {
+            document.getElementById(id).value = entry[id] || '';
+        });
+
+        autoSave();
+        toggleHistory();
+    }
+
+    // Cache current typing states locally
     function autoSave() {
-        const inputs = document.querySelectorAll('input, textarea');
-        inputs.forEach(input => {
-            if (input.id) localStorage.setItem(`cache_${input.id}`, input.value);
+        FIELD_IDS.forEach(id => {
+            localStorage.setItem(`cache_${id}`, document.getElementById(id).value);
         });
     }
 
     function loadCache() {
-        // Hydrate Theme setting
         const savedTheme = localStorage.getItem('agent-theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
         document.getElementById('theme-toggle-btn').innerText = savedTheme === 'light' ? 'Dark Mode' : 'Light Mode';
 
-        // Hydrate Input Fields
-        const inputs = document.querySelectorAll('input, textarea');
-        inputs.forEach(input => {
-            if (input.id) {
-                const cachedValue = localStorage.getItem(`cache_${input.id}`);
-                if (cachedValue) input.value = cachedValue;
-            }
+        FIELD_IDS.forEach(id => {
+            const cachedValue = localStorage.getItem(`cache_${id}`);
+            if (cachedValue) document.getElementById(id).value = cachedValue;
         });
+
+        renderHistoryList();
     }
 
-    function clearAll() {
-        if (confirm("Are you sure you want to clear all fields?")) {
-            const inputs = document.querySelectorAll('input, textarea');
-            inputs.forEach(input => {
-                input.value = '';
-                if (input.id) localStorage.removeItem(`cache_${input.id}`);
+    // Red Bin Trigger: Archives active data to history first, then resets form UI
+    function archiveAndClearAll() {
+        if (confirm("Are you sure you want to clear this form? (Current details will be saved to History)")) {
+            saveToHistoryLog(); // Commit data to history stream first
+
+            FIELD_IDS.forEach(id => {
+                document.getElementById(id).value = '';
+                localStorage.removeItem(`cache_${id}`);
             });
         }
     }
 
-    // Initialize state on page load
     window.onload = loadCache;
 </script>
 
