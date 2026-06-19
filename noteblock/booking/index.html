@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Booking Notes</title>
     <style>
-        /* Base Reset & Sleek Dark Mode Monospace/Sans Blend */
+        /* Base Reset & Sleek Dark Mode */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -47,7 +47,7 @@
             margin-bottom: 20px;
         }
 
-        label {
+        .label-text {
             display: block;
             font-size: 0.75rem;
             color: #888;
@@ -60,10 +60,9 @@
         input[type="text"],
         input[type="email"],
         input[type="tel"],
-        input[type="date"],
         textarea {
             width: 100%;
-            padding: 12px 45px 12px 14px; /* Right padding leaves room for copy button */
+            padding: 12px 45px 12px 14px; /* Space for copy button */
             background-color: #2a2a2a;
             border: 1px solid #3a3a3a;
             border-radius: 6px;
@@ -85,8 +84,14 @@
             letter-spacing: 1px;
         }
 
-        /* Date Range Row */
-        .date-row {
+        /* Multi-column Rows */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
@@ -170,57 +175,57 @@
     <h2>Booking Intake Notes</h2>
 
     <div class="form-group">
-        <label for="guest-name">Guest Name</label>
-        <input type="text" id="guest-name" placeholder="John Doe">
+        <label class="label-text" for="guest-name">Guest Name</label>
+        <input type="text" id="guest-name">
         <button class="copy-btn" onclick="copyField('guest-name')">Copy</button>
     </div>
 
     <div class="form-group">
-        <label for="booking-ref">Reservation Ref / GDS Code</label>
-        <input type="text" id="booking-ref" class="booking-code" placeholder="X7R9PL2">
-        <button class="copy-btn" onclick="copyField('booking-ref')">Copy</button>
+        <label class="label-text">Ref</label>
+        <div class="grid-3">
+            <div style="position: relative;">
+                <input type="text" id="ref-1" class="booking-code">
+                <button class="copy-btn" onclick="copyField('ref-1')">Copy</button>
+            </div>
+            <div style="position: relative;">
+                <input type="text" id="ref-2" class="booking-code">
+                <button class="copy-btn" onclick="copyField('ref-2')">Copy</button>
+            </div>
+            <div style="position: relative;">
+                <input type="text" id="ref-3" class="booking-code">
+                <button class="copy-btn" onclick="copyField('ref-3')">Copy</button>
+            </div>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="pms-number">Internal PMS Number</label>
-        <input type="text" id="pms-number" class="booking-code" placeholder="9876543">
-        <button class="copy-btn" onclick="copyField('pms-number')">Copy</button>
-    </div>
-
-    <div class="form-group">
-        <label for="channel-id">Channel/OTA ID</label>
-        <input type="text" id="channel-id" class="booking-code" placeholder="EXP-45521">
-        <button class="copy-btn" onclick="copyField('channel-id')">Copy</button>
-    </div>
-
-    <div class="date-row">
+    <div class="grid-2">
         <div class="form-group">
-            <label for="check-in">Check-In</label>
-            <input type="date" id="check-in">
+            <label class="label-text" for="check-in">Check-In</label>
+            <input type="text" id="check-in">
             <button class="copy-btn" onclick="copyField('check-in')">Copy</button>
         </div>
         <div class="form-group">
-            <label for="check-out">Check-Out</label>
-            <input type="date" id="check-out">
+            <label class="label-text" for="check-out">Check-Out</label>
+            <input type="text" id="check-out">
             <button class="copy-btn" onclick="copyField('check-out')">Copy</button>
         </div>
     </div>
 
     <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" placeholder="guest@example.com">
+        <label class="label-text" for="email">Email Address</label>
+        <input type="email" id="email">
         <button class="copy-btn" onclick="copyField('email')">Copy</button>
     </div>
 
     <div class="form-group">
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" placeholder="+1 (555) 000-0000">
+        <label class="label-text" for="phone">Phone Number</label>
+        <input type="tel" id="phone">
         <button class="copy-btn" onclick="copyField('phone')">Copy</button>
     </div>
 
     <div class="form-group">
-        <label for="notes">Special Requests & Notes</label>
-        <textarea id="notes" placeholder="Late check-in, dietary restrictions, high floor request..."></textarea>
+        <label class="label-text" for="notes">Notes</label>
+        <textarea id="notes"></textarea>
         <button class="copy-btn" onclick="copyField('notes')">Copy</button>
     </div>
 
@@ -236,10 +241,8 @@
         const input = document.getElementById(fieldId);
         if (!input.value) return;
 
-        // Visual feedback setup
         const btn = input.nextElementSibling;
         
-        // Use modern clipboard API
         navigator.clipboard.writeText(input.value).then(() => {
             const originalText = btn.innerText;
             btn.innerText = "Copied!";
@@ -252,13 +255,13 @@
         });
     }
 
-    // Copy everything in a clean format for CRM pasting
+    // Copy everything formatted for CRM/pasting
     function copyAll() {
         const fields = {
             'Guest Name': 'guest-name',
-            'Res Ref': 'booking-ref',
-            'PMS Num': 'pms-number',
-            'OTA ID': 'channel-id',
+            'Ref 1': 'ref-1',
+            'Ref 2': 'ref-2',
+            'Ref 3': 'ref-3',
             'Check-In': 'check-in',
             'Check-Out': 'check-out',
             'Email': 'email',
@@ -270,8 +273,7 @@
         for (const [label, id] of Object.entries(fields)) {
             const val = document.getElementById(id).value;
             if (val) {
-                // Capitalize the booking specific fields in output summary too
-                if (['booking-ref', 'pms-number', 'channel-id'].includes(id)) {
+                if (['ref-1', 'ref-2', 'ref-3'].includes(id)) {
                     summary += `${label}: ${val.toUpperCase()}\n`;
                 } else {
                     summary += `${label}: ${val}\n`;
