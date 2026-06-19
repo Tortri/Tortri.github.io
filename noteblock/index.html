@@ -3,41 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Noteblock</title>
+    <title>Minimalist Scratchpad</title>
     <style>
-        /* Reset and basic styling */
+        /* Base / Light Mode Variables */
+        :root {
+            --bg-color: #f9f9f9;
+            --text-color: #2c3e50;
+            --panel-bg: rgba(0, 0, 0, 0.05);
+            --btn-bg: #ffffff;
+            --btn-text: #2c3e50;
+            --btn-border: #cccccc;
+        }
+
+        /* Dark Mode Variables */
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --panel-bg: rgba(255, 255, 255, 0.05);
+            --btn-bg: #1e1e1e;
+            --btn-text: #e0e0e0;
+            --btn-border: #444444;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-        
+
         body, html {
             height: 100%;
-            background-color: #fdfdfd; /* Off-white paper feel */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            /* Monospace Typewriter Font */
+            font-family: "Courier New", Courier, monospace;
+            transition: background-color 0.3s, color 0.3s;
+            overflow: hidden;
         }
 
-        /* The scratchpad area */
+        /* Main Toolbar */
+        .toolbar {
+            position: fixed;
+            top: 20px;
+            right: 40px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        button {
+            font-family: inherit;
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            border: 1px solid var(--btn-border);
+            padding: 8px 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        /* Writing Area */
         textarea {
             width: 100%;
             height: 100%;
-            padding: 40px;
+            padding: 80px 40px 60px 40px;
             border: none;
             outline: none;
             resize: none;
             background: transparent;
-            
-            /* Text styling */
+            color: inherit;
+            font-family: inherit;
             font-size: 18px;
             line-height: 1.6;
-            color: #2c3e50;
+        }
+
+        /* Status Bar (Counters) */
+        .status-bar {
+            position: fixed;
+            bottom: 20px;
+            right: 40px;
+            font-size: 13px;
+            background-color: var(--panel-bg);
+            padding: 6px 12px;
+            border-radius: 4px;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Print Layout Override for A4 PDF Generation */
+        @media print {
+            @page {
+                size: A4;
+                margin: 20mm;
+            }
+            body, html {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-family: "Courier New", Courier, monospace !important;
+            }
+            .toolbar, .status-bar {
+                display: none !important;
+            }
+            textarea {
+                padding: 0 !important;
+                overflow: visible !important;
+                height: auto !important;
+                width: 100% !important;
+            }
         }
     </style>
 </head>
 <body>
 
-    <textarea placeholder="Start typing... (Reloading will clear everything)" autofocus></textarea>
+    <div class="toolbar">
+        <button id="themeToggle" onclick="toggleTheme()">Dark Mode</button>
+        <button id="copyBtn" onclick="copyText()">Copy All</button>
+        <button onclick="downloadPDF()">Download PDF</button>
+    </div>
 
+    <textarea id="pad" placeholder="Start typing your thoughts..." autofocus oninput="updatePage()"></textarea>
+
+    <div class="status-bar">
+        <span id="wordCount">0</span> words | <span id="charCount">0</span> chars
+    </div>
+
+    <script>
+        const pad = document.getElementById('pad');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // 1. LocalStorage: Load saved text and theme preference on page load
+        window.onload = () => {
+            const savedText = localStorage.getItem('scratchpad_text');
+            if (savedText) {
+                pad.value = savedText;
+            }
+
+            const savedTheme = localStorage.getItem('scratchpad_theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = 'Light Mode';
+            }
+            
+            updateCounters();
+        };
+
+        // 2. LocalStorage & Counter Trigger
+        function updatePage() {
+            localStorage.setItem('scratchpad_text', pad.value);
+            updateCounters();
+        }
+
+        // 3. Word & Character Counters
+        function updateCounters() {
+            const text = pad.value;
+            const charCount = text.length;
+            
+            // Clean up whitespace to accurately count words
+            const cleanText = text.trim().replace(/\s+/g, ' ');
+            const wordCount = cleanText === '' ? 0 : cleanText.split(' ').length;
+
+            document.getElementById('charCount').textContent = charCount;
+            document.getElementById('wordCount').textContent = wordCount;
+        }
+
+        // 4. Dark / Light Theme Toggle
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+                themeToggle.textContent = 'Dark Mode';
+                localStorage.setItem('scratchpad_theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = 'Light Mode';
+                localStorage.setItem('scratchpad_theme', 'dark');
+            }
+        }
+
+        // 5. Copy Text Function
+        function copyText() {
+            const copyBtn = document.getElementById('copyBtn');
+            navigator.clipboard.writeText(pad.value).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy text: ', err);
+            });
+        }
+
+        // 6. Download as Plain Text White A4 PDF
+        function downloadPDF() {
+            // Native print triggers the `@media print` CSS rules automatically.
+            // Selecting "Save as PDF" inside the print prompt enforces the custom A4 white-paper styling.
+            window.print();
+        }
+    </script>
 </body>
 </html>
