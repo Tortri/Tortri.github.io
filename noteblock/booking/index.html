@@ -5,7 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Booking Notes</title>
     <style>
-        /* Base Reset & Sleek Dark Mode */
+        /* CSS Variables for seamless theme switching */
+        :root {
+            --bg-body: #121212;
+            --bg-container: #1e1e1e;
+            --bg-input: #2a2a2a;
+            --bg-input-focus: #2d2d2d;
+            --border-input: #3a3a3a;
+            --text-main: #e0e0e0;
+            --text-heading: #ffffff;
+            --text-muted: #888888;
+            --btn-copy: #666666;
+            --btn-copy-hover: #ffffff;
+            --btn-copy-bg: #3a3a3a;
+            --btn-global: #333333;
+            --btn-global-border: #444444;
+            --btn-global-hover: #444444;
+            --shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        [data-theme="light"] {
+            --bg-body: #f4f6f8;
+            --bg-container: #ffffff;
+            --bg-input: #f9fafb;
+            --bg-input-focus: #ffffff;
+            --border-input: #d1d5db;
+            --text-main: #1f2937;
+            --text-heading: #111827;
+            --text-muted: #6b7280;
+            --btn-copy: #9ca3af;
+            --btn-copy-hover: #111827;
+            --btn-copy-bg: #e5e7eb;
+            --btn-global: #f3f4f6;
+            --btn-global-border: #d1d5db;
+            --btn-global-hover: #e5e7eb;
+            --shadow: rgba(0, 0, 0, 0.05);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -14,34 +50,57 @@
         }
 
         body {
-            background-color: #121212;
-            color: #e0e0e0;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
+            transition: background-color 0.2s, color 0.2s;
         }
 
         .container {
+            position: relative;
             width: 100%;
             max-width: 650px;
-            background-color: #1e1e1e;
+            background-color: var(--bg-container);
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 30px var(--shadow);
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        /* Theme Toggle Switch */
+        .theme-toggle {
+            position: absolute;
+            top: 28px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .theme-toggle:hover {
+            color: var(--text-heading);
+            background-color: var(--btn-copy-bg);
         }
 
         h2 {
             font-weight: 300;
             font-size: 1.5rem;
-            color: #ffffff;
+            color: var(--text-heading);
             margin-bottom: 25px;
             text-align: center;
             letter-spacing: 1px;
         }
 
-        /* Form Layout */
         .form-group {
             position: relative;
             margin-bottom: 20px;
@@ -50,23 +109,22 @@
         .label-text {
             display: block;
             font-size: 0.75rem;
-            color: #888;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 6px;
         }
 
-        /* Input Styling */
         input[type="text"],
         input[type="email"],
         input[type="tel"],
         textarea {
             width: 100%;
-            padding: 12px 45px 12px 14px; /* Space for copy button */
-            background-color: #2a2a2a;
-            border: 1px solid #3a3a3a;
+            padding: 12px 65px 12px 14px; /* Room for copy indicator */
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-input);
             border-radius: 6px;
-            color: #ffffff;
+            color: var(--text-heading);
             font-size: 0.95rem;
             transition: border-color 0.2s, background-color 0.2s;
             outline: none;
@@ -74,38 +132,35 @@
 
         input:focus, textarea:focus {
             border-color: #4a90e2;
-            background-color: #2d2d2d;
+            background-color: var(--bg-input-focus);
         }
 
-        /* Booking code capitalized & bold */
         .booking-code {
             text-transform: uppercase;
             font-weight: bold;
             letter-spacing: 1px;
         }
 
-        /* 3 Columns for Ref inputs */
         .grid-3 {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
         }
 
-        /* Main Notes Field */
         textarea {
             height: 140px;
             resize: vertical;
             line-height: 1.5;
         }
 
-        /* Copy Button Overlay */
+        /* Subtle Inline Copy Button */
         .copy-btn {
             position: absolute;
             right: 10px;
             bottom: 8px;
             background: none;
             border: none;
-            color: #666;
+            color: var(--btn-copy);
             font-size: 0.75rem;
             cursor: pointer;
             padding: 6px 8px;
@@ -115,21 +170,20 @@
             font-weight: bold;
         }
 
-        /* Adjust copy button position for textarea */
         .form-group textarea + .copy-btn {
             bottom: 12px;
         }
 
         .copy-btn:hover {
-            color: #ffffff;
-            background-color: #3a3a3a;
+            color: var(--btn-copy-hover);
+            background-color: var(--btn-copy-bg);
         }
 
         .copy-btn.copied {
-            color: #4caf50;
+            color: #4caf50 !important;
         }
 
-        /* Global Actions */
+        /* Bottom Controls */
         .actions {
             display: flex;
             gap: 10px;
@@ -139,9 +193,9 @@
         .btn-global {
             flex: 1;
             padding: 12px;
-            background-color: #333;
-            border: 1px solid #444;
-            color: #fff;
+            background-color: var(--btn-global);
+            border: 1px solid var(--btn-global-border);
+            color: var(--text-heading);
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
@@ -150,12 +204,13 @@
         }
 
         .btn-global:hover {
-            background-color: #444;
+            background-color: var(--btn-global-hover);
         }
 
         .btn-primary {
             background-color: #4a90e2;
             border: none;
+            color: #fff;
         }
 
         .btn-primary:hover {
@@ -166,54 +221,55 @@
 <body>
 
 <div class="container">
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">Light Mode</button>
     <h2>Booking Intake Notes</h2>
 
     <div class="form-group">
         <label class="label-text" for="guest-name">Guest Name</label>
-        <input type="text" id="guest-name">
-        <button class="copy-btn" onclick="copyField('guest-name')">Copy</button>
+        <input type="text" id="guest-name" oninput="autoSave()">
+        <button class="copy-btn" onclick="copyField('guest-name')" title="Double-click to clear field">Copy</button>
     </div>
 
     <div class="form-group">
         <label class="label-text" for="stay-dates">Stay Dates</label>
-        <input type="text" id="stay-dates">
-        <button class="copy-btn" onclick="copyField('stay-dates')">Copy</button>
+        <input type="text" id="stay-dates" oninput="autoSave()">
+        <button class="copy-btn" onclick="copyField('stay-dates')" title="Double-click to clear field">Copy</button>
     </div>
 
     <div class="form-group">
         <label class="label-text" for="email">Email Address</label>
-        <input type="email" id="email">
-        <button class="copy-btn" onclick="copyField('email')">Copy</button>
+        <input type="email" id="email" oninput="autoSave()">
+        <button class="copy-btn" onclick="copyField('email')" title="Double-click to clear field">Copy</button>
     </div>
 
     <div class="form-group">
         <label class="label-text" for="phone">Phone Number</label>
-        <input type="tel" id="phone">
-        <button class="copy-btn" onclick="copyField('phone')">Copy</button>
+        <input type="tel" id="phone" oninput="autoSave()">
+        <button class="copy-btn" onclick="copyField('phone')" title="Double-click to clear field">Copy</button>
     </div>
 
     <div class="form-group">
         <label class="label-text">Ref</label>
         <div class="grid-3">
             <div style="position: relative;">
-                <input type="text" id="ref-1" class="booking-code">
-                <button class="copy-btn" onclick="copyField('ref-1')">Copy</button>
+                <input type="text" id="ref-1" class="booking-code" oninput="checkLength(this); autoSave();" maxlength="20">
+                <button class="copy-btn" onclick="copyField('ref-1')" title="Double-click to clear field">Copy</button>
             </div>
             <div style="position: relative;">
-                <input type="text" id="ref-2" class="booking-code">
-                <button class="copy-btn" onclick="copyField('ref-2')">Copy</button>
+                <input type="text" id="ref-2" class="booking-code" oninput="checkLength(this); autoSave();" maxlength="20">
+                <button class="copy-btn" onclick="copyField('ref-2')" title="Double-click to clear field">Copy</button>
             </div>
             <div style="position: relative;">
-                <input type="text" id="ref-3" class="booking-code">
-                <button class="copy-btn" onclick="copyField('ref-3')">Copy</button>
+                <input type="text" id="ref-3" class="booking-code" oninput="autoSave();" maxlength="20">
+                <button class="copy-btn" onclick="copyField('ref-3')" title="Double-click to clear field">Copy</button>
             </div>
         </div>
     </div>
 
     <div class="form-group">
         <label class="label-text" for="notes">Notes</label>
-        <textarea id="notes"></textarea>
-        <button class="copy-btn" onclick="copyField('notes')">Copy</button>
+        <textarea id="notes" oninput="autoSave()"></textarea>
+        <button class="copy-btn" onclick="copyField('notes')" title="Double-click to clear field">Copy</button>
     </div>
 
     <div class="actions">
@@ -223,18 +279,34 @@
 </div>
 
 <script>
-    // Copy Individual Field
+    // 1. Theme Toggling Implementation
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', targetTheme);
+        document.getElementById('theme-toggle-btn').innerText = targetTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+        localStorage.setItem('agent-theme', targetTheme);
+    }
+
+    // 2. Auto-Tab for Fast Typing (Advances cursor automatically at 8 characters)
+    function checkLength(element) {
+        if (element.value.length >= 8) {
+            if (element.id === 'ref-1') document.getElementById('ref-2').focus();
+            if (element.id === 'ref-2') document.getElementById('ref-3').focus();
+        }
+    }
+
+    // 3. Individual Copy Operations & Double-Click to Clear
     function copyField(fieldId) {
         const input = document.getElementById(fieldId);
         if (!input.value) return;
 
         const btn = input.nextElementSibling;
-        
         navigator.clipboard.writeText(input.value).then(() => {
             const originalText = btn.innerText;
             btn.innerText = "Copied!";
             btn.classList.add('copied');
-            
             setTimeout(() => {
                 btn.innerText = originalText;
                 btn.classList.remove('copied');
@@ -242,7 +314,19 @@
         });
     }
 
-    // Copy everything formatted for CRM/pasting
+    // Double-click structural listener setup to clear single fields cleanly
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            const prevInput = this.previousElementSibling;
+            if (prevInput) {
+                prevInput.value = '';
+                autoSave();
+            }
+        });
+    });
+
+    // 4. Global Copy Summary Function
     function copyAll() {
         const fields = {
             'Guest Name': 'guest-name',
@@ -274,13 +358,42 @@
         });
     }
 
-    // Reset Form
+    // 5. Local Storage Core Logic (Persistent Auto-Save)
+    function autoSave() {
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            if (input.id) localStorage.setItem(`cache_${input.id}`, input.value);
+        });
+    }
+
+    function loadCache() {
+        // Hydrate Theme setting
+        const savedTheme = localStorage.getItem('agent-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.getElementById('theme-toggle-btn').innerText = savedTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+
+        // Hydrate Input Fields
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            if (input.id) {
+                const cachedValue = localStorage.getItem(`cache_${input.id}`);
+                if (cachedValue) input.value = cachedValue;
+            }
+        });
+    }
+
     function clearAll() {
         if (confirm("Are you sure you want to clear all fields?")) {
             const inputs = document.querySelectorAll('input, textarea');
-            inputs.forEach(input => input.value = '');
+            inputs.forEach(input => {
+                input.value = '';
+                if (input.id) localStorage.removeItem(`cache_${input.id}`);
+            });
         }
     }
+
+    // Initialize state on page load
+    window.onload = loadCache;
 </script>
 
 </body>
