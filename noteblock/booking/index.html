@@ -72,7 +72,7 @@
         .container {
             position: relative;
             width: 100%;
-            max-width: 1000px; /* Expanded space constraint to permit side-by-side splits */
+            max-width: 1000px;
             background-color: var(--bg-container);
             padding: 30px;
             border-radius: 12px;
@@ -126,16 +126,16 @@
             fill: currentColor;
         }
 
-        /* Workspace Core Layout Structure Split */
+        /* Workspace Grid Split - Adjusted proportions to favor structured fields on the right */
         .workspace-grid {
             display: grid;
-            grid-template-columns: 1.2fr 1fr; /* Primary focus weight maps toward the main textual note field */
+            grid-template-columns: 1fr 1.1fr;
             gap: 30px;
         }
 
         @media (max-width: 768px) {
             .workspace-grid {
-                grid-template-columns: 1fr; /* Fall back gracefully to clean single columns on constrained tablet viewports */
+                grid-template-columns: 1fr;
             }
         }
 
@@ -174,7 +174,7 @@
             background-color: var(--bg-input-focus);
         }
 
-        /* Target Left Note Block specifically to map across full proportional height ranges */
+        /* Setup Left Column Notes to occupy proportionate heights */
         .notes-textarea-wrapper {
             display: flex;
             flex-direction: column;
@@ -194,24 +194,18 @@
             letter-spacing: 1px;
         }
 
-        .grid-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-        }
-
-        /* Inline Mini Group Splits */
+        /* 2-Column Splits for Sub-fields and Ref fields */
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
         }
 
-        /* Checkbox Custom styling */
+        /* Checkbox custom container alignment adjustments */
         .checkbox-container {
             display: flex;
             align-items: center;
-            height: 46px; /* Align row balances exactly with standard field heights */
+            height: 46px;
             background-color: var(--bg-input);
             border: 1px solid var(--border-input);
             border-radius: 6px;
@@ -264,7 +258,7 @@
             color: #4caf50 !important;
         }
 
-        /* Action Row Layout controls */
+        /* Action bar configuration layout specs */
         .actions {
             display: flex;
             justify-content: flex-end;
@@ -296,7 +290,7 @@
             fill: currentColor;
         }
 
-        /* --- Sidebar Drawer Panel --- */
+        /* --- Sidebar Panel Mechanics --- */
         .sidebar {
             position: fixed;
             top: 0;
@@ -365,7 +359,7 @@
 </head>
 <body>
 
-<!-- History Sidebar Panel -->
+<!-- History Drawer Sidebar Component -->
 <div class="sidebar" id="history-sidebar">
     <div class="sidebar-header">
         <h3>Recent Bookings</h3>
@@ -374,7 +368,7 @@
         </button>
     </div>
     <ul class="history-list" id="history-list-element">
-        <!-- Structural history card targets parsed dynamically inside application scopes -->
+        <!-- Structural storage nodes parsed via javascript updates -->
     </ul>
 </div>
 
@@ -382,11 +376,11 @@
     <div class="header-bar">
         <h2>Booking Intake Notes</h2>
         <div class="top-controls">
-            <!-- Dynamic Side Log Drawer Toggles -->
+            <!-- Side Log Sidebar Toggle Triggers -->
             <button class="icon-btn" onclick="toggleHistory()" title="View Booking History">
                 <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
             </button>
-            <!-- Layout Theme Switches -->
+            <!-- UI Color Inversion Engines -->
             <button class="icon-btn" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Light/Dark Theme">
                 <svg id="theme-icon" viewBox="0 0 24 24"></svg>
             </button>
@@ -394,14 +388,14 @@
     </div>
 
     <div class="workspace-grid">
-        <!-- LEFT COLUMN: Bulk Intake Stream Workspace -->
+        <!-- LEFT COLUMN: Open Intake Stream Workspace -->
         <div class="form-group notes-textarea-wrapper">
-            <label class="label-text" for="notes">Live Call Conversation Notes</label>
-            <textarea id="notes" placeholder="Paste full message streams or log raw intake details rapidly here first..." oninput="autoSave()"></textarea>
+            <label class="label-text" for="notes">Notes</label>
+            <textarea id="notes" oninput="autoSave()"></textarea>
             <button class="copy-btn" onclick="copyField('notes')">Copy</button>
         </div>
 
-        <!-- RIGHT COLUMN: Granular Structured Parsing Fields -->
+        <!-- RIGHT COLUMN: Granular Structured Parameters -->
         <div>
             <!-- Guest Name -->
             <div class="form-group">
@@ -417,7 +411,7 @@
                 <button class="copy-btn" onclick="copyField('stay-dates')">Copy</button>
             </div>
 
-            <!-- Dynamic Combo Row: Rooms & Meals Options -->
+            <!-- Dynamic Combo Configuration Split: Rooms Count & Dining Elements -->
             <div class="grid-2">
                 <div class="form-group">
                     <label class="label-text" for="num-rooms">No. of Rooms</label>
@@ -425,7 +419,7 @@
                     <button class="copy-btn" onclick="copyField('num-rooms')">Copy</button>
                 </div>
                 <div class="form-group">
-                    <label class="label-text">Meal Plan</label>
+                    <label class="label-text">Breakfast</label>
                     <label class="checkbox-container" for="breakfast-checkbox">
                         <input type="checkbox" id="breakfast-checkbox" onchange="autoSave()">
                         <span>Includes Breakfast</span>
@@ -446,28 +440,24 @@
                 <button class="copy-btn" onclick="copyField('phone')">Copy</button>
             </div>
 
-            <!-- Reference Codes Matrix -->
+            <!-- Optimized Double Reference Code Configuration Matrices -->
             <div class="form-group">
-                <label class="label-text">System Reference Codes</label>
-                <div class="grid-3">
+                <label class="label-text">Ref</label>
+                <div class="grid-2">
                     <div style="position: relative;">
-                        <input type="text" id="ref-1" class="booking-code" placeholder="REF 1" oninput="autoSave();">
+                        <input type="text" id="ref-1" class="booking-code" oninput="autoSave();">
                         <button class="copy-btn" onclick="copyField('ref-1')">Copy</button>
                     </div>
                     <div style="position: relative;">
-                        <input type="text" id="ref-2" class="booking-code" placeholder="REF 2" oninput="autoSave();">
+                        <input type="text" id="ref-2" class="booking-code" oninput="autoSave();">
                         <button class="copy-btn" onclick="copyField('ref-2')">Copy</button>
-                    </div>
-                    <div style="position: relative;">
-                        <input type="text" id="ref-3" class="booking-code" placeholder="REF 3" oninput="autoSave();">
-                        <button class="copy-btn" onclick="copyField('ref-3')">Copy</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Action Bar Controls (Bottom right flush tracking metrics) -->
+    <!-- Clear Cache / Archive Trigger Actions Container (Bottom right) -->
     <div class="actions">
         <button class="btn-delete" onclick="archiveAndClearAll()" title="Archive to History and Clear Form Workspaces">
             <svg viewBox="0 0 24 24">
@@ -478,14 +468,14 @@
 </div>
 
 <script>
-    // System Data Matrix Fields
-    const STRING_FIELDS = ['guest-name', 'stay-dates', 'num-rooms', 'email', 'phone', 'ref-1', 'ref-2', 'ref-3', 'notes'];
+    // System Structural Fields List Object Matrices
+    const STRING_FIELDS = ['guest-name', 'stay-dates', 'num-rooms', 'email', 'phone', 'ref-1', 'ref-2', 'notes'];
     
     // UI Theme SVG Path Constants
     const sunIconPath = `<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM7.05 18.01c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41z"/>`;
     const moonIconPath = `<path d="M12.3 2c4.4-.1 8 3.5 8 8 0 4.2-3.3 7.7-7.5 8-4.7.3-8.8-3.3-8.8-8 0-3.6 2.5-6.7 6.1-7.5-.4.7-.6 1.5-.6 2.4 0 3.9 3.1 7 7 7 1 0 1.9-.2 2.7-.6-1 3.2-3.9 5.6-7.4 5.6-4.4 0-8-3.6-8-8 0-3.9 2.8-7.1 6.6-7.7-.1.3-.1.6-.1.8z"/>`;
 
-    // Global Theme State Configuration engines
+    // Dynamic Style Theme Switches
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -499,7 +489,7 @@
         document.getElementById('history-sidebar').classList.toggle('open');
     }
 
-    // Individual Clipboard Controller Pipeline
+    // Individual Field Copy Function
     function copyField(fieldId) {
         const input = document.getElementById(fieldId);
         if (!input.value) return;
@@ -516,7 +506,7 @@
         });
     }
 
-    // Silently parse snapshot arrays down to localStorage arrays
+    // Silently parse structural snapshot data entries inside browser memory logs
     function saveToHistoryLog() {
         const guestName = document.getElementById('guest-name').value.trim() || 'Unnamed Guest';
         const snapshot = {};
@@ -528,12 +518,11 @@
             if (val.trim() !== '') hasData = true;
         });
         
-        // Include the boolean state profile parameters inside snapshots
         const breakfastChecked = document.getElementById('breakfast-checkbox').checked;
         snapshot.breakfast = breakfastChecked;
         if (breakfastChecked) hasData = true;
 
-        if (!hasData) return; // Ignore tracking clear events on empty text layouts
+        if (!hasData) return;
 
         snapshot.metaName = guestName;
         snapshot.metaTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -546,7 +535,7 @@
         renderHistoryList();
     }
 
-    // Parse structures into side drawer navigation elements
+    // Print drawer listing items out dynamically
     function renderHistoryList() {
         const listContainer = document.getElementById('history-list-element');
         const log = JSON.parse(localStorage.getItem('agent-history-log')) || [];
@@ -563,7 +552,7 @@
             li.className = 'history-item';
             li.onclick = () => restoreFromHistory(index);
             
-            const breakfastTag = entry.breakfast ? ' • Breakfast Incl.' : '';
+            const breakfastTag = entry.breakfast ? ' • Breakfast' : '';
             const roomsCount = entry['num-rooms'] ? ` • ${entry['num-rooms']} Rm(s)` : '';
 
             li.innerHTML = `
@@ -574,7 +563,7 @@
         });
     }
 
-    // Reload prior cards backwards into operational forms
+    // Rehydrate operational tracking inputs using specific index targets from log array
     function restoreFromHistory(index) {
         const log = JSON.parse(localStorage.getItem('agent-history-log')) || [];
         const entry = log[index];
@@ -590,12 +579,12 @@
         toggleHistory();
     }
 
-    // Auto-Save Active Processing Input State cache limits locally
+    // Cache structural raw values to browser cache limits locally
     function autoSave() {
         STRING_FIELDS.forEach(id => {
-            localStorage.setItem(`cache_v2_${id}`, document.getElementById(id).value);
+            localStorage.setItem(`cache_v3_${id}`, document.getElementById(id).value);
         });
-        localStorage.setItem(`cache_v2_breakfast`, document.getElementById('breakfast-checkbox').checked);
+        localStorage.setItem(`cache_v3_breakfast`, document.getElementById('breakfast-checkbox').checked);
     }
 
     function loadCache() {
@@ -604,28 +593,28 @@
         document.getElementById('theme-icon').innerHTML = savedTheme === 'light' ? moonIconPath : sunIconPath;
 
         STRING_FIELDS.forEach(id => {
-            const cachedValue = localStorage.getItem(`cache_v2_${id}`);
+            const cachedValue = localStorage.getItem(`cache_v3_${id}`);
             if (cachedValue) document.getElementById(id).value = cachedValue;
         });
 
-        const cachedBreakfast = localStorage.getItem(`cache_v2_breakfast`);
+        const cachedBreakfast = localStorage.getItem(`cache_v3_breakfast`);
         document.getElementById('breakfast-checkbox').checked = (cachedBreakfast === 'true');
 
         renderHistoryList();
     }
 
-    // Run active data preservation mappings prior to field wipeouts
+    // Preserve current elements into history metrics prior to performing view clear functions
     function archiveAndClearAll() {
         if (confirm("Are you sure you want to clear this form? (Current details will be saved to History)")) {
             saveToHistoryLog();
 
             STRING_FIELDS.forEach(id => {
                 document.getElementById(id).value = id === 'num-rooms' ? '1' : '';
-                localStorage.removeItem(`cache_v2_${id}`);
+                localStorage.removeItem(`cache_v3_${id}`);
             });
             
             document.getElementById('breakfast-checkbox').checked = false;
-            localStorage.removeItem(`cache_v2_breakfast`);
+            localStorage.removeItem(`cache_v3_breakfast`);
             autoSave();
         }
     }
