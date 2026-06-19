@@ -2,129 +2,100 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>5-Min Unified Scheduler (24h)</title>
+    <title>BreakPlanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; color: #1e293b; }
-        .box { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px #0002; }
-        .auth { background: #eff6ff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
+        body { font-family: sans-serif; background: #f8fafc; padding: 20px; color: #0f172a; }
+        .box { max-width: 900px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+        .auth { background: #f1f5f9; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 24px; }
         
         /* Summary Box Styling */
-        .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; margin-bottom: 20px; text-align: left; }
-        .summary-title { font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .summary-list { font-size: 13px; color: #1e293b; line-height: 1.5; margin: 0 0 12px 0; padding-left: 20px; }
+        .summary-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: left; }
+        .summary-title { font-weight: 700; font-size: 13px; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .summary-list { font-size: 13px; color: #334155; line-height: 1.6; margin: 0 0 12px 0; padding-left: 20px; }
         .summary-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
         
         /* Quick Absences Notification Dashboard */
-        .absence-divider { border-top: 1px dashed #cbd5e1; margin-top: 10px; padding-top: 10px; }
-        .absence-title { font-weight: bold; font-size: 12px; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .absence-divider { border-top: 1px dashed #e2e8f0; margin-top: 12px; padding-top: 12px; }
+        .absence-title { font-weight: 700; font-size: 11px; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
         .absence-list { list-style: none; padding: 0; margin: 0; font-size: 13px; }
-        .absence-item { background: #fff5f5; border: 1px solid #fee2e2; padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; display: inline-block; margin-right: 8px; color: #991b1b; font-weight: 500; }
+        .absence-item { background: #fef2f2; border: 1px solid #fee2e2; padding: 6px 12px; border-radius: 6px; margin-bottom: 4px; display: inline-block; margin-right: 8px; color: #991b1b; font-weight: 500; font-size: 12px; }
 
         /* Quick Absences User Action Buttons */
-        .status-actions { display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: center; gap: 10px; justify-content: center; align-items: center; }
-        .status-btn { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; transition: transform 0.1s; }
-        .status-btn:active { transform: scale(0.97); }
+        .status-actions { display: none; background: #f0fdf4; border: 1px solid #dcfce7; padding: 12px; border-radius: 8px; margin-bottom: 24px; text-align: center; gap: 8px; justify-content: center; align-items: center; }
+        .status-btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.15s ease; }
+        .status-btn:hover { filter: brightness(0.95); }
+        .status-btn:active { transform: scale(0.98); }
         .btn-break { background: #d97706; color: white; }
         .btn-restroom { background: #ea580c; color: white; }
         .btn-water { background: #0284c7; color: white; }
         .btn-back { background: #16a34a; color: white; display: none; padding: 10px 24px; font-size: 14px; }
 
         /* Unified Grid Table Structure */
-        .scheduler-container { display: flex; flex-direction: column; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; }
-        .table-header { display: flex; background: #cbd5e1; color: #1e293b; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; height: 36px; align-items: center; }
+        .scheduler-container { display: flex; flex-direction: column; width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #ffffff; }
+        .table-header { display: flex; background: #f1f5f9; color: #475569; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; height: 40px; align-items: center; border-bottom: 1px solid #e2e8f0; }
         .scroll-body { max-height: 540px; overflow-y: auto; scroll-behavior: smooth; }
         
-        .grid-row { display: flex; height: 28px; align-items: center; border-bottom: 1px solid #e2e8f0; position: relative; }
+        .grid-row { display: flex; height: 32px; align-items: center; border-bottom: 1px solid #f1f5f9; position: relative; transition: background-color 0.15s ease; }
         .grid-row:last-child { border-bottom: none; }
+        .grid-row:hover { background-color: #f8fafc; }
 
         /* Column Width Rules */
-        .col-time { width: 75px; min-width: 75px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; font-variant-numeric: tabular-nums; user-select: none; border-right: 1px solid #cbd5e1; height: 100%; display: flex; align-items: center; justify-content: center; }
-        .col-edit { flex: 1; height: 100%; position: relative; border-right: 1px solid #cbd5e1; display: none; background: white; }
-        .col-heatmap { flex: 2; height: 100%; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; background: white; }
+        .col-time { width: 75px; min-width: 75px; text-align: center; font-size: 12px; font-weight: 600; color: #64748b; font-variant-numeric: tabular-nums; user-select: none; border-right: 1px solid #e2e8f0; height: 100%; display: flex; align-items: center; justify-content: center; background: #f8fafc; }
+        .col-edit { flex: 1; height: 100%; position: relative; border-right: 1px solid #e2e8f0; display: none; background: white; }
+        .col-heatmap { flex: 2; height: 100%; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 500; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; background: white; }
 
         /* Mode Modifiers */
         body.logged-in:not(.hide-edit) .col-edit { display: block; }
         body.admin-mode .col-edit { display: block !important; }
 
         /* Cell Interactive States */
-        .interactive-cell { width: 100%; height: 100%; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+        .interactive-cell { width: 100%; height: 100%; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; transition: all 0.1s ease; }
         .interactive-cell.selected { background: #2563eb !important; color: white !important; }
-        .interactive-cell.full-capacity { background: #fee2e2 !important; color: #dc2626 !important; cursor: not-allowed; }
+        .interactive-cell.full-capacity { background: #fef2f2 !important; color: #ef4444 !important; cursor: not-allowed; }
         
         /* Admin Modification Styling colors */
-        body.admin-mode .interactive-cell { background: #f8fafc; }
-        .interactive-cell.limit-2 { background: #fef08a; color: #854d0e; }
-        .interactive-cell.limit-1 { background: #fed7aa; color: #9a3412; }
+        body.admin-mode .interactive-cell { background: #fffdf5; }
+        .interactive-cell.limit-2 { background: #fef9c3; color: #854d0e; }
+        .interactive-cell.limit-1 { background: #ffedd5; color: #9a3412; }
 
-        .col-heatmap.full-capacity { background: #dc2626 !important; color: white !important; }
+        .col-heatmap.full-capacity { background: #fee2e2 !important; color: #b91c1c !important; font-weight: 600; }
         
         /* Time Indicator Bar Indicator */
-        .grid-row.current-time::after { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; border: 2px dashed #ff2a2a; border-radius: 4px; pointer-events: none; z-index: 10; animation: blink 2s infinite; }
+        .grid-row.current-time::after { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; border: 2px dashed #ef4444; border-radius: 4px; pointer-events: none; z-index: 10; animation: blink 2s infinite; }
         @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-        .pane-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px; }
-        .pane-header-actions h3 { margin: 0; font-size: 16px; }
+        .pane-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+        .pane-header-actions h3 { margin: 0; font-size: 15px; font-weight: 700; color: #1e293b; }
         .right-buttons { display: flex; gap: 8px; align-items: center; }
-        .admin-toggle-btn { background: none; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; padding: 6px 12px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s; }
-        .admin-toggle-btn:hover { background: #e2e8f0; color: #1e293b; }
-        .view-toggle-btn { display: none; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; padding: 6px 12px; border-radius: 4px; transition: background 0.2s; }
-        .view-toggle-btn:hover { background: #e2e8f0; }
+        .admin-toggle-btn { background: none; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .admin-toggle-btn:hover { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
+        .view-toggle-btn { display: none; background: #ffffff; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; }
+        .view-toggle-btn:hover { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
         body.logged-in .view-toggle-btn { display: inline-block; }
 
-        .tip { margin-top: 15px; font-size: 13px; font-weight: bold; min-height: 20px; color: #475569; text-align: center; }
-        .counter { font-size: 13px; color: #64748b; margin-top: 5px; }
+        .tip { margin-top: 16px; font-size: 12px; font-weight: 500; min-height: 20px; color: #64748b; text-align: center; }
     </style>
 </head>
 <body>
 <div class="box">
     
-    <div class="mb-5 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">🔗 Useful Links</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2">
-            <a href="https://kronos8.nac.sitel-world.net/wfc/logon" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
-                Kronos ↗
-            </a>
-            <a href="https://www.foundever.es/mifoundever/Account/Login" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
-                My Foundever ES ↗
-            </a>
-            <a href="https://agentmail.emea.foundever.com/carbonio" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
-                EMEA Mail ↗
-            </a>
-            <a href="https://www.foundever.es/mifoundever/Schedule" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
-                Horarios ↗
-            </a>
-            <a href="https://www.50plus.de/spiele.html" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
-                50plus ↗
-            </a>
-            <a href="https://jacobperezwibe.site/noteblock/booking/" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
-                Booking Notes ↗
-            </a>
-            <a href="https://jacobperezwibe.site/noteblock/" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block">
-                Noteblock ↗
-            </a>
-            <button onclick="copyNetworkPath()" class="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded text-center text-xs font-semibold border border-gray-200 transition block w-full">
-                <span id="cuposText">Cupos Holidays</span> <span id="cuposIcon">📋</span>
-            </button>
-        </div>
-    </div>
-
-    <h2 style="text-align:center; margin-top:0;">5-Minute Unified Scheduler</h2>
-    
+    <!-- User Login Dashboard Area -->
     <div class="auth">
-        <input type="text" id="user" placeholder="Enter Name" style="padding:6px; width:150px;">
-        <button id="login-btn" onclick="login()" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">Edit Grid</button>
-        <div class="counter" id="user-count">Active users: 0 / 100</div>
+        <input type="text" id="user" placeholder="Enter Name" onkeydown="handleLoginKey(event)" style="padding: 8px 12px; width: 180px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
+        <button id="login-btn" onclick="login()" style="padding:8px 16px; margin-left: 6px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight: 600; font-size: 14px; cursor:pointer; transition: background 0.2s;">Edit Grid</button>
     </div>
 
+    <!-- Quick Absence Checkout Panel -->
     <div class="status-actions" id="status-container">
-        <div id="status-prompt" style="font-weight: bold; color: #166534; margin-right: 10px;">Quick Absence Checkout:</div>
+        <div id="status-prompt" style="font-weight: 600; color: #14532d; margin-right: 12px; font-size: 13px;">Quick Absence Checkout:</div>
         <button class="status-btn btn-break" id="btn-out-break" onclick="setQuickStatus('Break')">☕ Go to Break</button>
         <button class="status-btn btn-restroom" id="btn-out-restroom" onclick="setQuickStatus('Restroom')">🚽 Go to Restroom</button>
         <button class="status-btn btn-water" id="btn-out-water" onclick="setQuickStatus('Water Refill')">💧 Get Water</button>
         <button class="status-btn btn-back" id="btn-back" onclick="setQuickStatus('Present')">✅ I'm Back!</button>
     </div>
 
+    <!-- Overview Statistics Dashboard Layout -->
     <div class="summary-box">
         <div class="summary-title">Daily Break Summary Overview</div>
         <ul class="summary-list" id="summary-display">
@@ -147,6 +118,7 @@
         </div>
     </div>
 
+    <!-- Main Schedule Structural Framework Template -->
     <div class="scheduler-container">
         <div class="table-header">
             <div class="col-time">Time</div>
@@ -157,6 +129,29 @@
         </div>
     </div>
     <div class="tip" id="tip">Hover over rows to inspect filled structural metrics</div>
+</div>
+
+<!-- Modern, Minimal Low-Profile Footer Link Layout Placement Bar -->
+<div class="max-w-[900px] mx-auto mt-6 px-4 text-center">
+    <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 text-xs font-medium text-slate-400">
+        <a href="https://kronos8.nac.sitel-world.net/wfc/logon" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Kronos ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://www.foundever.es/mifoundever/Account/Login" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">My Foundever ES ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://agentmail.emea.foundever.com/carbonio" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">EMEA Mail ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://www.foundever.es/mifoundever/Schedule" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Horarios ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://www.50plus.de/spiele.html" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">50plus ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://jacobperezwibe.site/noteblock/booking/" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Booking Notes ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://jacobperezwibe.site/noteblock/" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Noteblock ↗</a>
+        <span class="text-slate-200">|</span>
+        <button onclick="copyNetworkPath()" class="hover:text-slate-600 font-medium transition-colors cursor-pointer inline-flex items-center gap-1">
+            <span id="cuposText">Cupos Holidays</span><span id="cuposIcon">📋</span>
+        </button>
+    </div>
 </div>
 
 <script>
@@ -177,6 +172,12 @@
         if (data["__limits__"]?.has(timeString + "-1")) return 1;
         if (data["__limits__"]?.has(timeString + "-2")) return 2;
         return 3; 
+    }
+
+    function handleLoginKey(e) {
+        if (e.key === "Enter") {
+            login();
+        }
     }
 
     function copyNetworkPath() {
@@ -243,7 +244,6 @@
         try {
             const res = await fetch(WORKER_URL);
             const json = await res.json();
-            document.getElementById('user-count').innerText = `Active users: ${json.userCount} / 100`;
             unpackCloudPayload(json.data);
             drawMap();
             setTimeout(scrollToCurrentTime, 300);
@@ -428,7 +428,6 @@
             const res = await fetch(`${WORKER_URL}?user=${encodeURIComponent(name)}`);
             const json = await res.json();
             
-            document.getElementById('user-count').innerText = `Active users: ${json.userCount} / 100`;
             unpackCloudPayload(json.data);
             updateStatusActionButtonsUI();
             drawMap();
@@ -556,7 +555,7 @@
                     let ratio = count / maxLimit;
                     hCell.style.background = ratio <= 0.5 ? `hsl(50, 100%, ${90 - (ratio * 20)}%)` : `hsl(30, 100%, ${75 - (ratio * 15)}%)`;
                     hCell.innerText = activeUsers.join(", ");
-                    hCell.style.color = "#1e293b";
+                    hCell.style.color = "#0f172a";
                 }
             }
 
