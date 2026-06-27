@@ -289,7 +289,6 @@
             console.error("Initial load validation anomaly", e);
         }
         
-        // Background interval to continuously check for new chat updates even if logged out
         setInterval(syncWithCloud, 6000);
     }
 
@@ -345,6 +344,10 @@
         document.getElementById('status-container').style.display = 'flex';
         
         updateStatusActionButtonsUI();
+        
+        // Dynamic structural binding alignment step: forces layout update right before re-rendering cells
+        build(); 
+        
         drawMap();
         renderChatUI();
         setTimeout(scrollToCurrentTime, 100);
@@ -503,19 +506,16 @@
         const messageText = chatInput.value.trim();
         if (!messageText) return;
 
-        // Strip payload pipes safely
         const sanitizedText = messageText.replace(/\|/g, " ");
         const timeKey = new Date().toISOString(); 
         const packedPayloadValue = `${timeKey}|${currentActiveName}|${sanitizedText}`;
 
-        // Local dynamic optimistic insert 
         rawChatMessages.push({ time: timeKey, user: currentActiveName, text: sanitizedText });
         renderChatUI();
         chatInput.value = "";
 
         const outboundPayloadSet = new Set(rawChatMessages.map(m => `${m.time}|${m.user}|${m.text}`));
 
-        // If user wasn't strictly logged in, save their handle automatically
         if (!name) {
             name = currentActiveName;
             document.body.classList.add('logged-in');
