@@ -9,8 +9,12 @@
         .box { max-width: 900px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
         
         /* Ultra-Minimal Login Dashboard Area */
-        .auth { display: flex; justify-content: center; align-items: center; margin-bottom: 24px; padding: 4px 0; gap: 8px; }
+        .auth { display: flex; justify-content: center; align-items: center; margin-bottom: 12px; padding: 4px 0; gap: 8px; flex-wrap: wrap; }
         
+        /* Manual Form Input Panel styling */
+        .manual-input-box { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; display: none; }
+        body.logged-in .manual-input-box { display: block; }
+
         /* Summary Box Styling */
         .summary-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: left; }
         .summary-title { font-weight: 700; font-size: 13px; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -105,6 +109,17 @@
         <button id="login-btn" onclick="login()" style="padding: 6px 14px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight: 600; font-size: 13px; cursor:pointer; transition: background 0.2s;">Edit Grid</button>
     </div>
 
+    <!-- Manual Break Generation Form Panel (Only Visible when Logged In) -->
+    <div class="manual-input-box" id="manual-form-wrapper">
+        <div class="flex items-center gap-3 mb-4 flex-wrap">
+            <span class="text-xs font-bold uppercase text-slate-500 tracking-wider">⚡ Quick Add Multiple Breaks:</span>
+            <input type="number" id="manual-break-count" min="1" max="6" value="2" class="w-14 px-2 py-1 text-sm border rounded bg-white outline-none">
+            <button onclick="generateManualFormMenus()" class="px-3 py-1 bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold rounded transition-colors">Generate Inputs</button>
+        </div>
+        <div id="manual-menus-container" class="space-y-3 mb-4"></div>
+        <button id="apply-manual-btn" onclick="applyManualBreaksToGrid()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors hidden">Apply Breaks to Grid</button>
+    </div>
+
     <!-- Quick Absence Checkout Panel -->
     <div class="status-actions" id="status-container">
         <div id="status-prompt" style="font-weight: 600; color: #14532d; margin-right: 12px; font-size: 13px;">Quick Absence Checkout:</div>
@@ -184,6 +199,8 @@
         <a href="https://jacobperezwibe.site/noteblock/" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Noteblock ↗</a>
         <span class="text-slate-200">|</span>
         <a href="https://fspspaysso.pn.cegid.cloud/" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 font-semibold text-blue-500 transition-colors">Datos Económicos ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=s8gWf-_woUWqgZ1ckMuLpT3eJElPophHuL_k0DAiLABUOFlEM1JBMDhSMDZBS1BSQ0Q5NDNNNzRRRS4u" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 font-semibold text-orange-500 transition-colors">Feedback Hotels ↗</a>
         <span class="text-slate-200">|</span>
         <button onclick="copyNetworkPath()" class="hover:text-slate-600 font-medium transition-colors cursor-pointer inline-flex items-center gap-1">
             <span id="cuposText">Cupos Holidays</span><span id="cuposIcon">📋</span>
@@ -284,7 +301,7 @@
     }
 
     async function initialLoad() {
-        build(); // Built strictly once up front so scrolling target elements exist cleanly in the document map from the start
+        build(); 
 
         const savedName = localStorage.getItem('breakplanner_username');
         if (savedName) document.getElementById('user').value = savedName;
@@ -363,6 +380,100 @@
         if (syncIntervalId) clearInterval(syncIntervalId);
         syncIntervalId = setInterval(syncWithCloud, 6000);
         setInterval(updateCurrentTimeMarker, 60000);
+    }
+
+    /* Form Generation Engine for Entering Breaks Manually */
+    function generateManualFormMenus() {
+        const countInput = document.getElementById('manual-break-count');
+        let totalMenus = parseInt(countInput.value);
+        if (isNaN(totalMenus) || totalMenus < 1) totalMenus = 1;
+        if (totalMenus > 6) totalMenus = 6;
+
+        const wrapper = document.getElementById('manual-menus-container');
+        let htmlBlock = '';
+
+        // Generate matching selector options dynamically based on scheduling increments
+        let timeOptionsHTML = '';
+        slots.forEach(t => {
+            if(t !== "22:00") timeOptionsHTML += `<option value="${t}">${t}</option>`;
+        });
+
+        for(let i = 1; i <= totalMenus; i++) {
+            htmlBlock += `
+            <div class="flex flex-wrap items-center gap-3 bg-white p-3 rounded-md border border-slate-200 text-sm">
+                <span class="font-bold text-slate-600 text-xs">Break #${i}:</span>
+                <div class="flex items-center gap-1">
+                    <label class="text-xs text-slate-500">Start:</label>
+                    <select id="manual-start-${i}" class="px-2 py-1 border rounded bg-slate-50 text-xs font-semibold outline-none">${timeOptionsHTML}</select>
+                </div>
+                <div class="flex items-center gap-1">
+                    <label class="text-xs text-slate-500">Duration:</label>
+                    <select id="manual-duration-${i}" class="px-2 py-1 border rounded bg-slate-50 text-xs font-semibold outline-none">
+                        <option value="15">15 Minutes</option>
+                        <option value="20">20 Minutes</option>
+                        <option value="30">30 Minutes</option>
+                        <option value="45">45 Minutes</option>
+                        <option value="60">60 Minutes</option>
+                    </select>
+                </div>
+            </div>`;
+        }
+
+        wrapper.innerHTML = htmlBlock;
+        document.getElementById('apply-manual-btn').style.display = 'block';
+    }
+
+    async function applyManualBreaksToGrid() {
+        if (!name) return alert("Please type your name and log in before applying breaks.");
+        
+        const wrapper = document.getElementById('manual-menus-container');
+        const count = wrapper.children.length;
+        if (count === 0) return;
+
+        // Create new replacement set for the current user session
+        const proposedSlots = new Set();
+        let conflictsFound = false;
+
+        for (let i = 1; i <= count; i++) {
+            const startVal = document.getElementById(`manual-start-${i}`).value;
+            const durationMins = parseInt(document.getElementById(`manual-duration-${i}`).value);
+
+            let [h, m] = startVal.split(':').map(Number);
+            const intervalsNeeded = durationMins / 5;
+
+            for (let k = 0; k < intervalsNeeded; k++) {
+                const checkTime = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+                
+                // Keep inside schedule boundary limits
+                if (slots.includes(checkTime) && checkTime !== "22:00") {
+                    // Check local capacity constraints before assigning
+                    if (countActiveUsersForSlot(checkTime) >= getMaxAllowed(checkTime) && !data[name]?.has(checkTime)) {
+                        conflictsFound = true;
+                    }
+                    proposedSlots.add(checkTime);
+                }
+
+                m += 5;
+                if (m >= 60) { m = 0; h++; }
+            }
+        }
+
+        if (conflictsFound) {
+            const proceeding = confirm("Notice: Some selected intervals are already at full capacity. Those full slots will lock and cannot be written over. Proceed with applying available slots?");
+            if (!proceeding) return;
+        }
+
+        // Merge back safe available nodes
+        data[name] = new Set();
+        proposedSlots.forEach(t => {
+            if (countActiveUsersForSlot(t) < getMaxAllowed(t) || data[name].has(t)) {
+                data[name].add(t);
+            }
+        });
+
+        drawMap();
+        await saveKeyToCloud(name, data[name]);
+        alert("Manual selections successfully stamped onto the grid!");
     }
 
     function toggleViewMode() {
@@ -534,6 +645,7 @@
         await saveKeyToCloud("__chat__:messages", outboundPayloadSet);
     }
 
+    UX-friendly context adjustments
     function renderChatUI() {
         const chatBox = document.getElementById('chat-messages-box');
         if (rawChatMessages.length === 0) {
