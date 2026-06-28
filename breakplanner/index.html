@@ -99,11 +99,13 @@
 <body>
 <div class="box">
     
+    <!-- Permanent Space-saving Minimal Input Panel Area -->
     <div class="auth">
         <input type="text" id="user" placeholder="Enter Name" onkeydown="handleLoginKey(event)" style="padding: 6px 12px; width: 160px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
         <button id="login-btn" onclick="login()" style="padding: 6px 14px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight: 600; font-size: 13px; cursor:pointer; transition: background 0.2s;">Edit Grid</button>
     </div>
 
+    <!-- Quick Absence Checkout Panel -->
     <div class="status-actions" id="status-container">
         <div id="status-prompt" style="font-weight: 600; color: #14532d; margin-right: 12px; font-size: 13px;">Quick Absence Checkout:</div>
         <button class="status-btn btn-break" id="btn-out-break" onclick="setQuickStatus('Break')">☕ Go to Break</button>
@@ -112,6 +114,7 @@
         <button class="status-btn btn-back" id="btn-back" onclick="setQuickStatus('Present')">✅ I'm Back!</button>
     </div>
 
+    <!-- Overview Statistics Dashboard Layout -->
     <div class="summary-box">
         <div class="summary-title">Daily Break Summary Overview</div>
         <ul class="summary-list" id="summary-display">
@@ -134,6 +137,7 @@
         </div>
     </div>
 
+    <!-- Main Schedule Structural Framework Template -->
     <div class="scheduler-container">
         <div class="table-header">
             <div class="col-time">Time</div>
@@ -145,6 +149,7 @@
     </div>
     <div class="tip" id="tip">Hover over rows to inspect filled structural metrics</div>
 
+    <!-- Group Chat Option Below The Workspace Page -->
     <div class="chat-container">
         <div class="chat-header">💬 Workspace Chat lounge (Clears Nightly)</div>
         <div class="chat-messages" id="chat-messages-box">
@@ -157,6 +162,7 @@
     </div>
 </div>
 
+<!-- Modern, Minimal Low-Profile Footer Link Layout Placement Bar -->
 <div class="max-w-[900px] mx-auto mt-6 px-4 text-center">
     <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs font-medium text-slate-400">
         <a href="https://kronos8.nac.sitel-world.net/wfc/logon" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Kronos ↗</a>
@@ -176,6 +182,8 @@
         <a href="https://jacobperezwibe.site/noteblock/booking/" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Booking Notes ↗</a>
         <span class="text-slate-200">|</span>
         <a href="https://jacobperezwibe.site/noteblock/" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 transition-colors">Noteblock ↗</a>
+        <span class="text-slate-200">|</span>
+        <a href="https://fspspaysso.pn.cegid.cloud/" target="_blank" rel="noopener noreferrer" class="hover:text-slate-600 font-semibold text-blue-500 transition-colors">Datos Económicos ↗</a>
         <span class="text-slate-200">|</span>
         <button onclick="copyNetworkPath()" class="hover:text-slate-600 font-medium transition-colors cursor-pointer inline-flex items-center gap-1">
             <span id="cuposText">Cupos Holidays</span><span id="cuposIcon">📋</span>
@@ -233,10 +241,10 @@
 
     function build() {
         const container = document.getElementById('scroll-container');
-        container.innerHTML = '';
+        let htmlContent = '';
         
         slots.forEach((t) => {
-            container.innerHTML += `
+            htmlContent += `
                 <div class="grid-row" data-rowtime="${t}" onmouseover="showDetail('${t}')" onmouseout="hideDetail()">
                     <div class="col-time">${t}</div>
                     <div class="col-edit">
@@ -248,7 +256,8 @@
                     <div class="col-heatmap" data-heatmap-time="${t}"></div>
                 </div>`;
         });
-
+        
+        container.innerHTML = htmlContent;
         updateCurrentTimeMarker();
     }
 
@@ -275,6 +284,8 @@
     }
 
     async function initialLoad() {
+        build(); // Built strictly once up front so scrolling target elements exist cleanly in the document map from the start
+
         const savedName = localStorage.getItem('breakplanner_username');
         if (savedName) document.getElementById('user').value = savedName;
 
@@ -344,9 +355,6 @@
         document.getElementById('status-container').style.display = 'flex';
         
         updateStatusActionButtonsUI();
-        
-        // Dynamic structural binding alignment step: forces layout update right before re-rendering cells
-        build(); 
         
         drawMap();
         renderChatUI();
@@ -712,7 +720,6 @@
         document.getElementById('tip').innerHTML = "Hover over rows to inspect filled structural metrics"; 
     }
     
-    build();
     initialLoad();
 </script>
 </body>
