@@ -111,13 +111,20 @@
 
     <!-- Manual Break Generation Form Panel (Only Visible when Logged In) -->
     <div class="manual-input-box" id="manual-form-wrapper">
-        <div class="flex items-center gap-3 mb-4 flex-wrap">
-            <span class="text-xs font-bold uppercase text-slate-500 tracking-wider">⚡ Quick Add Multiple Breaks:</span>
-            <input type="number" id="manual-break-count" min="1" max="6" value="2" class="w-14 px-2 py-1 text-sm border rounded bg-white outline-none">
-            <button onclick="generateManualFormMenus()" class="px-3 py-1 bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold rounded transition-colors">Generate Inputs</button>
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-xs font-bold uppercase text-slate-500 tracking-wider">⚡ Quick Add Multiple Breaks:</span>
+                <div id="manual-config-controls" class="flex items-center gap-3">
+                    <input type="number" id="manual-break-count" min="1" max="6" value="2" class="w-14 px-2 py-1 text-sm border rounded bg-white outline-none">
+                    <button onclick="generateManualFormMenus()" class="px-3 py-1 bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold rounded transition-colors">Generate Inputs</button>
+                </div>
+            </div>
+            <button onclick="toggleManualFormVisibility()" id="toggle-menu-btn" class="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors">🙈 Hide Menu</button>
         </div>
-        <div id="manual-menus-container" class="space-y-3 mb-4"></div>
-        <button id="apply-manual-btn" onclick="applyManualBreaksToGrid()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors hidden">Apply Breaks to Grid</button>
+        <div id="manual-main-contents">
+            <div id="manual-menus-container" class="space-y-3 mb-4"></div>
+            <button id="apply-manual-btn" onclick="applyManualBreaksToGrid()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors hidden">Apply Breaks to Grid</button>
+        </div>
     </div>
 
     <!-- Quick Absence Checkout Panel -->
@@ -216,6 +223,7 @@
     let userStatuses = {}; 
     let syncIntervalId = null;
     let rawChatMessages = [];
+    let manualFormCollapsed = false;
     
     for(let h=8; h<22; h++) {
         for(let m=0; m<60; m+=5) {
@@ -382,6 +390,25 @@
         setInterval(updateCurrentTimeMarker, 60000);
     }
 
+    /* Collapse / Expand the Manual Entry Component */
+    function toggleManualFormVisibility() {
+        const contents = document.getElementById('manual-main-contents');
+        const configControls = document.getElementById('manual-config-controls');
+        const toggleBtn = document.getElementById('toggle-menu-btn');
+        
+        manualFormCollapsed = !manualFormCollapsed;
+        
+        if (manualFormCollapsed) {
+            contents.style.display = 'none';
+            configControls.style.display = 'none';
+            toggleBtn.innerText = "👀 Show Quick Panel";
+        } else {
+            contents.style.display = 'block';
+            configControls.style.display = 'flex';
+            toggleBtn.innerText = "🙈 Hide Quick Panel";
+        }
+    }
+
     /* Form Generation Engine for Entering Breaks Manually */
     function generateManualFormMenus() {
         const countInput = document.getElementById('manual-break-count');
@@ -408,11 +435,11 @@
                 <div class="flex items-center gap-1">
                     <label class="text-xs text-slate-500">Duration:</label>
                     <select id="manual-duration-${i}" class="px-2 py-1 border rounded bg-slate-50 text-xs font-semibold outline-none">
-                        <option value="15">15 Minutes</option>
+                        <option value="10">10 Minutes</option>
+                        <option value="15" selected>15 Minutes</option>
                         <option value="20">20 Minutes</option>
+                        <option value="25">25 Minutes</option>
                         <option value="30">30 Minutes</option>
-                        <option value="45">45 Minutes</option>
-                        <option value="60">60 Minutes</option>
                     </select>
                 </div>
             </div>`;
@@ -640,7 +667,6 @@
         await saveKeyToCloud("__chat__:messages", outboundPayloadSet);
     }
 
-    // UX-friendly context adjustments
     function renderChatUI() {
         const chatBox = document.getElementById('chat-messages-box');
         if (rawChatMessages.length === 0) {
