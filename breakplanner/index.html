@@ -42,7 +42,7 @@
         .table-header { display: flex; background: #f1f5f9; color: #475569; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; height: 40px; align-items: center; border-bottom: 1px solid #e2e8f0; }
         .scroll-body { max-height: 540px; overflow-y: auto; scroll-behavior: smooth; }
         
-        .grid-row { display: flex; height: 32px; align-items: center; border-bottom: 1px solid #f1f5f9; position: relative; transition: background-color 0.15s ease; }
+        .grid-row { display: flex; height: 36px; align-items: center; border-bottom: 1px solid #e2e8f0; position: relative; transition: background-color 0.15s ease; }
         .grid-row:last-child { border-bottom: none; }
         .grid-row:hover { background-color: #f8fafc; }
 
@@ -364,7 +364,6 @@
         `;
     }
 
-    // Core Interaction Engine Logic
     async function login() {
         const userField = document.getElementById('user');
         const inputVal = userField.value.trim();
@@ -381,7 +380,12 @@
         await sync();
         
         if(!syncIntervalId) {
-            syncIntervalId = setInterval(sync, 4000);
+            syncIntervalId = setInterval(async () => {
+                // Critical Fix: Pause incoming worker synchronization overrides while dragging
+                if (!dragging && !adminDragging) {
+                    await sync();
+                }
+            }, 6000);
         }
     }
 
@@ -612,6 +616,7 @@
         
         data[name] = userArr;
         renderGridState();
+        renderSummaryBlocks();
 
         try {
             await fetch(`${WORKER_URL}/api/schedule`, {
@@ -702,6 +707,7 @@
 
         data[name] = newSelections;
         renderGridState();
+        renderSummaryBlocks();
         
         try {
             await fetch(`${WORKER_URL}/api/schedule`, {
@@ -732,7 +738,6 @@
         renderGridState();
     }
 
-    // Chat Box Lounge Output Generation Engine
     function renderChatOutput() {
         const box = document.getElementById('chat-messages-box');
         if(!rawChatMessages || rawChatMessages.length === 0) {
@@ -781,7 +786,6 @@
 
     build();
     sync();
-    setInterval(sync, 10000);
 </script>
 </body>
 </html>
