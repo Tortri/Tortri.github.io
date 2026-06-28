@@ -26,6 +26,9 @@
             --icon-color: #a0a0a0;
             --icon-hover: #ffffff;
             --accent-blue: #4a90e2;
+            
+            /* Dynamic base value for input text size scaling */
+            --input-font-size: 0.95rem;
         }
 
         [data-theme="light"] {
@@ -72,7 +75,7 @@
         .container {
             position: relative;
             width: 100%;
-            max-width: 1300px; /* Big screen layout footprint optimization */
+            max-width: 1300px;
             background-color: var(--bg-container);
             padding: 35px;
             border-radius: 12px;
@@ -99,7 +102,50 @@
 
         .top-controls {
             display: flex;
+            align-items: center;
             gap: 12px;
+        }
+
+        /* Custom Dropdown Styling for Text Size Control */
+        .size-select-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: 6px;
+            padding: 2px 8px;
+            transition: border-color 0.2s;
+        }
+
+        .size-select-wrapper:focus-within {
+            border-color: var(--accent-blue);
+        }
+
+        .size-select-wrapper svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--icon-color);
+            margin-right: 4px;
+        }
+
+        .text-size-select {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            padding: 4px 20px 4px 4px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23a0a0a0' d='M0 0l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 4px center;
+        }
+
+        .text-size-select option {
+            background-color: var(--bg-container);
+            color: var(--text-main);
         }
 
         .icon-btn {
@@ -129,7 +175,7 @@
         /* Dynamic Split Screen Config Matrix */
         .workspace-grid {
             display: grid;
-            grid-template-columns: 1.3fr 1fr; /* Extra massive weight mapping assigned towards Notes */
+            grid-template-columns: 1.3fr 1fr;
             gap: 35px;
         }
 
@@ -139,7 +185,7 @@
         }
         .workspace-grid.flipped .form-group,
         .workspace-grid.flipped > div {
-            direction: ltr; /* Ensure inputs retain normal text alignment behaviors when layout flips */
+            direction: ltr;
         }
 
         @media (max-width: 900px) {
@@ -173,8 +219,8 @@
             border: 1px solid var(--border-input);
             border-radius: 6px;
             color: var(--text-heading);
-            font-size: 0.95rem;
-            transition: border-color 0.2s, background-color 0.2s;
+            font-size: var(--input-font-size); /* Uses globally configured variable variable scale mapping */
+            transition: border-color 0.2s, background-color 0.2s, font-size 0.15s;
             outline: none;
         }
 
@@ -183,7 +229,6 @@
             background-color: var(--bg-input-focus);
         }
 
-        /* Large Screen Note Auto-Scaling mechanics */
         .notes-textarea-wrapper {
             display: flex;
             flex-direction: column;
@@ -239,7 +284,6 @@
             color: #4caf50 !important;
         }
 
-        /* Action layout configuration specs */
         .actions {
             display: flex;
             justify-content: flex-end;
@@ -271,7 +315,7 @@
             fill: currentColor;
         }
 
-        /* --- Sidebar Logging Panels --- */
+        /* --- Sidebar Panel Drawer --- */
         .sidebar {
             position: fixed;
             top: 0;
@@ -340,7 +384,7 @@
 </head>
 <body>
 
-<!-- History Panels -->
+<!-- History Panels Drawer -->
 <div class="sidebar" id="history-sidebar">
     <div class="sidebar-header">
         <h3>Recent Bookings</h3>
@@ -349,7 +393,7 @@
         </button>
     </div>
     <ul class="history-list" id="history-list-element">
-        <!-- Structural storage parsed via javascript streams -->
+        <!-- Structural dynamic history entries managed via JS -->
     </ul>
 </div>
 
@@ -357,7 +401,18 @@
     <div class="header-bar">
         <h2>Booking Intake Notes</h2>
         <div class="top-controls">
-            <!-- Layout Orientation Switcher Trigger Button -->
+            <!-- New Global Text Size Controller Dropdown Selection -->
+            <div class="size-select-wrapper" title="Set Text Input Font Size">
+                <svg viewBox="0 0 24 24"><path d="M9 4v3h5v12h3V7h5V4H9zm-6 6v3h3v6h3v-6h3v-3H3z"/></svg>
+                <select id="text-size-picker" class="text-size-select" onchange="changeTextSize(this.value)">
+                    <option value="small">Small</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                </select>
+            </div>
+
+            <!-- Layout Orientation Direction Switcher Trigger Button -->
             <button class="icon-btn" onclick="toggleLayout()" title="Switch Layout Side (Left/Right)">
                 <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
             </button>
@@ -373,14 +428,14 @@
     </div>
 
     <div class="workspace-grid" id="main-workspace-grid">
-        <!-- INTENSIVE TEXT BLOCK: Massive Input Pad Stream -->
+        <!-- LEFT PANEL: Raw Fast Intake Textarea Field -->
         <div class="form-group notes-textarea-wrapper">
             <label class="label-text" for="notes">Notes</label>
             <textarea id="notes" oninput="autoSave()"></textarea>
             <button class="copy-btn" onclick="copyField('notes')">Copy</button>
         </div>
 
-        <!-- RIGHT SIDE: Structured Data Profile Extraction Fields -->
+        <!-- RIGHT PANEL: Structured Extracted Validation Targets -->
         <div>
             <!-- Guest Name -->
             <div class="form-group">
@@ -409,7 +464,7 @@
                 <button class="copy-btn" onclick="copyField('phone')">Copy</button>
             </div>
 
-            <!-- Double Column System References Setup Matrix -->
+            <!-- System References Setup Match Matrix -->
             <div class="form-group">
                 <label class="label-text">Ref</label>
                 <div class="grid-2">
@@ -426,7 +481,7 @@
         </div>
     </div>
 
-    <!-- Active Wipeouts / Backup Commit Actions (Bottom right layout flush) -->
+    <!-- Active System Cache Clear Trigger -->
     <div class="actions">
         <button class="btn-delete" onclick="archiveAndClearAll()" title="Archive to History and Clear Form Workspaces">
             <svg viewBox="0 0 24 24">
@@ -437,14 +492,11 @@
 </div>
 
 <script>
-    // Primary Field ID String Registries
     const STRING_FIELDS = ['guest-name', 'stay-dates', 'email', 'phone', 'ref-1', 'ref-2', 'notes'];
     
-    // UI Theme SVG Paths Constants
     const sunIconPath = `<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM7.05 18.01c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41z"/>`;
     const moonIconPath = `<path d="M12.3 2c4.4-.1 8 3.5 8 8 0 4.2-3.3 7.7-7.5 8-4.7.3-8.8-3.3-8.8-8 0-3.6 2.5-6.7 6.1-7.5-.4.7-.6 1.5-.6 2.4 0 3.9 3.1 7 7 7 1 0 1.9-.2 2.7-.6-1 3.2-3.9 5.6-7.4 5.6-4.4 0-8-3.6-8-8 0-3.9 2.8-7.1 6.6-7.7-.1.3-.1.6-.1.8z"/>`;
 
-    // Dynamic Style Theme Toggle
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -454,18 +506,29 @@
         localStorage.setItem('agent-theme', targetTheme);
     }
 
-    // Toggle Workspace Side Layout Columns Orientation Paths
     function toggleLayout() {
         const grid = document.getElementById('main-workspace-grid');
         const isFlipped = grid.classList.toggle('flipped');
         localStorage.setItem('agent-layout-flipped', isFlipped);
     }
 
+    // Interactive Font Scaling Engine
+    function changeTextSize(sizeValue) {
+        let targetRem = "0.95rem";
+        switch(sizeValue) {
+            case 'small':  targetRem = "0.82rem"; break;
+            case 'normal': targetRem = "0.95rem"; break;
+            case 'medium': targetRem = "1.1rem";  break;
+            case 'large':  targetRem = "1.3rem";  break;
+        }
+        document.documentElement.style.setProperty('--input-font-size', targetRem);
+        localStorage.setItem('agent-text-size-choice', sizeValue);
+    }
+
     function toggleHistory() {
         document.getElementById('history-sidebar').classList.toggle('open');
     }
 
-    // Individual Clipboard Controller Pipeline 
     function copyField(fieldId) {
         const input = document.getElementById(fieldId);
         if (!input.value) return;
@@ -482,7 +545,6 @@
         });
     }
 
-    // Silently parse active element arrays into history store queues
     function saveToHistoryLog() {
         const guestName = document.getElementById('guest-name').value.trim() || 'Unnamed Guest';
         const snapshot = {};
@@ -507,11 +569,9 @@
         renderHistoryList();
     }
 
-    // Build the structural listings inside history drawer
     function renderHistoryList() {
         const listContainer = document.getElementById('history-list-element');
         const log = JSON.parse(localStorage.getItem('agent-history-log')) || [];
-        
         listContainer.innerHTML = '';
 
         if (log.length === 0) {
@@ -523,7 +583,6 @@
             const li = document.createElement('li');
             li.className = 'history-item';
             li.onclick = () => restoreFromHistory(index);
-            
             const dateTag = entry['stay-dates'] ? ` • ${entry['stay-dates']}` : '';
 
             li.innerHTML = `
@@ -534,7 +593,6 @@
         });
     }
 
-    // Reload historical snapshots back down to operational views
     function restoreFromHistory(index) {
         const log = JSON.parse(localStorage.getItem('agent-history-log')) || [];
         const entry = log[index];
@@ -548,42 +606,41 @@
         toggleHistory();
     }
 
-    // Auto-Save Active Processing Input State cache limits locally
     function autoSave() {
         STRING_FIELDS.forEach(id => {
-            localStorage.setItem(`cache_v4_${id}`, document.getElementById(id).value);
+            localStorage.setItem(`cache_v5_${id}`, document.getElementById(id).value);
         });
     }
 
     function loadCache() {
-        // Hydrate Theme State Cache Configurations
         const savedTheme = localStorage.getItem('agent-theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
         document.getElementById('theme-icon').innerHTML = savedTheme === 'light' ? moonIconPath : sunIconPath;
 
-        // Hydrate Layout Column Orientation Cache Mappings
         const layoutFlipped = localStorage.getItem('agent-layout-flipped') === 'true';
         if (layoutFlipped) {
             document.getElementById('main-workspace-grid').classList.add('flipped');
         }
 
-        // Hydrate Input Fields
+        // Hydrate Font Size Options from Cache Memory Structures
+        const cachedSize = localStorage.getItem('agent-text-size-choice') || 'normal';
+        document.getElementById('text-size-picker').value = cachedSize;
+        changeTextSize(cachedSize);
+
         STRING_FIELDS.forEach(id => {
-            const cachedValue = localStorage.getItem(`cache_v4_${id}`);
+            const cachedValue = localStorage.getItem(`cache_v5_${id}`);
             if (cachedValue) document.getElementById(id).value = cachedValue;
         });
 
         renderHistoryList();
     }
 
-    // Preserve active elements inside historical arrays prior to carrying out field wipeouts
     function archiveAndClearAll() {
         if (confirm("Are you sure you want to clear this form? (Current details will be saved to History)")) {
             saveToHistoryLog();
-
             STRING_FIELDS.forEach(id => {
                 document.getElementById(id).value = '';
-                localStorage.removeItem(`cache_v4_${id}`);
+                localStorage.removeItem(`cache_v5_${id}`);
             });
             autoSave();
         }
