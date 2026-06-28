@@ -71,8 +71,6 @@
         .interactive-cell.limit-1 { background: #ffedd5; color: #9a3412; }
 
         .col-heatmap.full-capacity { background: #fee2e2 !important; color: #b91c1c !important; font-weight: 600; }
-        
-        /* NOTE: Current time slot red indication bar styles have been fully removed from here */
 
         .pane-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
         .pane-header-actions h3 { margin: 0; font-size: 15px; font-weight: 700; color: #1e293b; }
@@ -274,21 +272,17 @@
     slots.push("22:00");
 
     function getMaxAllowed(timeString) {
-        if (data["__limits__"]?.has(timeString + "-1")) return 1;
-        if (data["__limits__"]?.has(timeString + "-2")) return 2;
+        if (data["__limits__"] && data["__limits__"].includes(timeString + "-1")) return 1;
+        if (data["__limits__"] && data["__limits__"].includes(timeString + "-2")) return 2;
         return 3; 
     }
 
     function handleLoginKey(e) {
-        if (e.key === "Enter") {
-            login();
-        }
+        if (e.key === "Enter") login();
     }
 
     function handleChatKey(e) {
-        if (e.key === "Enter") {
-            sendChatMessage();
-        }
+        if (e.key === "Enter") sendChatMessage();
     }
 
     function copyNetworkPath() {
@@ -314,17 +308,16 @@
                 <div class="grid-row" data-rowtime="${t}" onmouseover="showDetail('${t}')" onmouseout="hideDetail()">
                     <div class="col-time">${t}</div>
                     <div class="col-edit">
-                        <div class="interactive-cell" data-time="${t}" 
+                        <div class="interactive-cell" id="cell-${t.replace(':', '-')}" data-time="${t}" 
                              onmousedown="handleCellMouseDown(event, '${t}')" 
                              onmouseover="handleCellMouseOver(event, '${t}')">
                         </div>
                     </div>
-                    <div class="col-heatmap" data-heatmap-time="${t}"></div>
+                    <div class="col-heatmap" id="heatmap-${t.replace(':', '-')}" data-heatmap-time="${t}"></div>
                 </div>`;
         });
         
         container.innerHTML = htmlContent;
-        // The red timeline calculation hook has been removed from execution inside build sequences
     }
 
     /* Isolated Tutorial Operations Engine */
@@ -371,8 +364,424 @@
         `;
     }
 
-    // Initialize schedule components
+    // Core Interaction Engine Logic
+    async function login() {
+        const userField = document.getElementById('user');
+        const inputVal = userField.value.trim();
+        if(!inputVal) return alert("Please enter a valid user profile name.");
+        
+        name = inputVal;
+        document.body.classList.add('logged-in');
+        document.getElementById('status-container').style.display = 'flex';
+        userField.disabled = true;
+        document.getElementById('login-btn').style.display = 'none';
+        
+        document.getElementById('board-title').innerText = `Workspace Schedule: ${name}`;
+        generateManualFormMenus();
+        await sync();
+        
+        if(!syncIntervalId) {
+            syncIntervalId = setInterval(sync, 4000);
+        }
+    }
+
+    async function sync() {
+        try {
+            const res = await fetch(`${WORKER_URL}/api/schedule`);
+            const payload = await res.json();
+            data = payload.schedule || {};
+            userStatuses = payload.statuses || {};
+            rawChatMessages = payload.chat || [];
+            renderGridState();
+            renderSummaryBlocks();
+            renderQuickStatuses();
+            renderChatOutput();
+        } catch(e) {
+            console.error("Sync Failure: ", e);
+        }
+    }
+
+    function renderGridState() {
+        slots.forEach(t => {
+            const cell = document.getElementById(`cell-${t.replace(':', '-')}`);
+            const heat = document.getElementById(`heatmap-${t.replace(':', '-')}`);
+            if(!cell || !heat) return;
+
+            let usersInSlot = [];
+            Object.keys(data).forEach(u => {
+                if(u !== "__limits__" && data[u] && data[u].includes(t)) {
+                    usersInSlot.push(u);
+                }
+            });
+
+            const maxAllowed = getMaxAllowed(t);
+            const isFull = usersInSlot.length >= maxAllowed;
+            const currentSelected = (name && data[name] && data[name].includes(t));
+
+            cell.className = "interactive-cell";
+            cell.innerText = "";
+
+            if(adminMode) {
+                if(maxAllowed === 1) cell.classList.add('limit-1');
+                else if(maxAllowed === 2) cell.classList.add('limit-2');
+                cell.innerText = `L: ${maxAllowed}`;
+            } else {
+                if(currentSelected) {
+                    cell.classList.add('selected');
+                    cell.innerText = "✓";
+                } else if(isFull && !currentSelected) {
+                    cell.classList.add('full-capacity');
+                    cell.innerText = "✕";
+                }
+            }
+
+            heat.className = "col-heatmap";
+            if(usersInSlot.length === 0) {
+                heat.innerText = "—";
+            } else {
+                heat.innerText = usersInSlot.join(", ");
+                if(isFull) {
+                    heat.classList.add('full-capacity');
+                    heat.innerText += " [FULL]";
+                }
+            }
+        });
+    }
+
+    function renderSummaryBlocks() {
+        const summaryUl = document.getElementById('summary-display');
+        summaryUl.innerHTML = "";
+        
+        let activeRecords = false;
+        Object.keys(data).forEach(u => {
+            if(u === "__limits__" || !data[u] || data[u].length === 0) return;
+            activeRecords = true;
+            
+            let structuredRanges = [];
+            let currentRange = [];
+            
+            let userSlots = [...data[u]].sort((a,b) => slots.indexOf(a) - slots.indexOf(b));
+            
+            userSlots.forEach(slotTime => {
+                if(currentRange.length === 0) {
+                    currentRange.push(slotTime);
+                } else {
+                    let lastIdx = slots.indexOf(currentRange[currentRange.length - 1]);
+                    let currentIdx = slots.indexOf(slotTime);
+                    if(currentIdx === lastIdx + 1) {
+                        currentRange.push(slotTime);
+                    } else {
+                        structuredRanges.push(formatTimeRangeBlock(currentRange));
+                        currentRange = [slotTime];
+                    }
+                }
+            });
+            if(currentRange.length > 0) {
+                structuredRanges.push(formatTimeRangeBlock(currentRange));
+            }
+            
+            let li = document.createElement('li');
+            li.innerHTML = `<b>${u}:</b> ${structuredRanges.join(', ')}`;
+            summaryUl.appendChild(li);
+        });
+
+        if(!activeRecords) {
+            summaryUl.innerHTML = `<span class="summary-empty">No breaks scheduled yet today.</span>`;
+        }
+    }
+
+    function formatTimeRangeBlock(arr) {
+        if(arr.length === 1) return arr[0];
+        let startTime = arr[0];
+        let lastSlot = arr[arr.length - 1];
+        let nextIndex = slots.indexOf(lastSlot) + 1;
+        let endTime = nextIndex < slots.length ? slots[nextIndex] : "22:05";
+        return `${startTime} - ${endTime}`;
+    }
+
+    function renderQuickStatuses() {
+        const container = document.getElementById('absence-display');
+        container.innerHTML = "";
+        
+        let absentUsers = Object.keys(userStatuses).filter(u => userStatuses[u] !== 'Present');
+        
+        if(absentUsers.length === 0) {
+            container.innerHTML = `<span style="font-size: 13px; color: #94a3b8; font-style: italic;">All users are currently present.</span>`;
+            if(name && userStatuses[name] === 'Present') {
+                toggleBackPresenceButtonMode(false);
+            }
+            return;
+        }
+
+        absentUsers.forEach(u => {
+            let label = userStatuses[u];
+            let badge = document.createElement('span');
+            badge.className = "absence-item";
+            badge.innerHTML = `⚠️ <b>${u}</b> is on ${label}`;
+            container.appendChild(badge);
+        });
+
+        if(name && userStatuses[name] && userStatuses[name] !== 'Present') {
+            toggleBackPresenceButtonMode(true);
+        } else {
+            toggleBackPresenceButtonMode(false);
+        }
+    }
+
+    function toggleBackPresenceButtonMode(isAway) {
+        document.getElementById('btn-out-break').style.display = isAway ? 'none' : 'inline-block';
+        document.getElementById('btn-out-restroom').style.display = isAway ? 'none' : 'inline-block';
+        document.getElementById('btn-out-water').style.display = isAway ? 'none' : 'inline-block';
+        document.getElementById('btn-back').style.display = isAway ? 'inline-block' : 'none';
+        document.getElementById('status-prompt').innerText = isAway ? "You are clocked away:" : "Quick Absence Checkout:";
+    }
+
+    async function setQuickStatus(statusType) {
+        if(!name) return;
+        try {
+            await fetch(`${WORKER_URL}/api/status`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user: name, status: statusType })
+            });
+            await sync();
+        } catch(e) { console.error(e); }
+    }
+
+    // Interactive Drag Selection Matrix Handlers
+    async function handleCellMouseDown(e, timeStr) {
+        if(!name) return alert("Please login by hitting 'Edit Grid' first.");
+        e.preventDefault();
+        
+        if(adminMode) {
+            adminDragging = true;
+            let currentLimit = getMaxAllowed(timeStr);
+            if(currentLimit === 3) adminTargetLimit = 2;
+            else if(currentLimit === 2) adminTargetLimit = 1;
+            else adminTargetLimit = 3;
+            await saveCapacityModification(timeStr, adminTargetLimit);
+            return;
+        }
+
+        dragging = true;
+        let usersInSlot = [];
+        Object.keys(data).forEach(u => {
+            if(u !== "__limits__" && data[u] && data[u].includes(timeStr)) usersInSlot.push(u);
+        });
+        
+        let maxAllowed = getMaxAllowed(timeStr);
+        let currentSelected = (data[name] && data[name].includes(timeStr));
+        
+        if(!currentSelected && usersInSlot.length >= maxAllowed) {
+            drawing = false; 
+            return; 
+        }
+
+        drawing = !currentSelected;
+        await mutateSlotState(timeStr, drawing);
+    }
+
+    async function handleCellMouseOver(e, timeStr) {
+        if(adminMode && adminDragging) {
+            await saveCapacityModification(timeStr, adminTargetLimit);
+            return;
+        }
+        if(!dragging) return;
+        await mutateSlotState(timeStr, drawing);
+    }
+
+    document.addEventListener('mouseup', () => {
+        dragging = false;
+        adminDragging = false;
+    });
+
+    async function mutateSlotState(timeStr, shouldAdd) {
+        if(!name || adminMode) return;
+        let userArr = data[name] ? [...data[name]] : [];
+        
+        if(shouldAdd) {
+            let usersInSlot = [];
+            Object.keys(data).forEach(u => {
+                if(u !== "__limits__" && data[u] && data[u].includes(timeStr)) usersInSlot.push(u);
+            });
+            if(usersInSlot.length >= getMaxAllowed(timeStr)) return; 
+            if(!userArr.includes(timeStr)) userArr.push(timeStr);
+        } else {
+            userArr = userArr.filter(item => item !== timeStr);
+        }
+        
+        data[name] = userArr;
+        renderGridState();
+
+        try {
+            await fetch(`${WORKER_URL}/api/schedule`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ user: name, slots: userArr })
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    async function saveCapacityModification(timeStr, targetLimit) {
+        let limitsArr = data["__limits__"] ? [...data["__limits__"]] : [];
+        limitsArr = limitsArr.filter(x => !x.startsWith(timeStr + "-"));
+        
+        if(targetLimit === 2) limitsArr.push(timeStr + "-2");
+        if(targetLimit === 1) limitsArr.push(timeStr + "-1");
+        
+        data["__limits__"] = limitsArr;
+        renderGridState();
+
+        try {
+            await fetch(`${WORKER_URL}/api/limits`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ limits: limitsArr })
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    // Manual Quick Generation Helpers
+    function generateManualFormMenus() {
+        const container = document.getElementById('manual-menus-container');
+        const count = parseInt(document.getElementById('manual-break-count').value) || 2;
+        container.innerHTML = "";
+        
+        for(let i = 1; i <= count; i++) {
+            let row = document.createElement('div');
+            row.className = "flex items-center gap-2 flex-wrap text-sm bg-white p-2 rounded border border-slate-200";
+            
+            let timeOptionsHtml = slots.map(t => `<option value="${t}">${t}</option>`).join('');
+            
+            row.innerHTML = `
+                <span class="font-bold text-slate-600 text-xs">Break #${i}:</span>
+                <select id="manual-start-${i}" class="px-2 py-1 border rounded bg-slate-50 text-xs">${timeOptionsHtml}</select>
+                <span class="text-xs text-slate-400">to</span>
+                <select id="manual-duration-${i}" class="px-2 py-1 border rounded bg-slate-50 text-xs">
+                    <option value="15">15 Mins</option>
+                    <option value="20">20 Mins</option>
+                    <option value="30" selected>30 Mins</option>
+                    <option value="45">45 Mins</option>
+                    <option value="60">60 Mins</option>
+                </select>
+            `;
+            container.appendChild(row);
+        }
+        document.getElementById('apply-manual-btn').classList.remove('hidden');
+    }
+
+    async function applyManualBreaksToGrid() {
+        if(!name) return;
+        const count = parseInt(document.getElementById('manual-break-count').value) || 2;
+        let newSelections = data[name] ? [...data[name]] : [];
+
+        for(let i = 1; i <= count; i++) {
+            let startVal = document.getElementById(`manual-start-${i}`).value;
+            let durationMins = parseInt(document.getElementById(`manual-duration-${i}`).value);
+            
+            let startIdx = slots.indexOf(startVal);
+            if(startIdx === -1) continue;
+            
+            let slotsNeeded = durationMins / 5;
+            for(let j = 0; j < slotsNeeded; j++) {
+                let targetIdx = startIdx + j;
+                if(targetIdx < slots.length) {
+                    let targetTime = slots[targetIdx];
+                    
+                    let usersInSlot = [];
+                    Object.keys(data).forEach(u => {
+                        if(u !== "__limits__" && data[u] && data[u].includes(targetTime)) usersInSlot.push(u);
+                    });
+                    
+                    if(usersInSlot.length < getMaxAllowed(targetTime) && !newSelections.includes(targetTime)) {
+                        newSelections.push(targetTime);
+                    }
+                }
+            }
+        }
+
+        data[name] = newSelections;
+        renderGridState();
+        
+        try {
+            await fetch(`${WORKER_URL}/api/schedule`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ user: name, slots: newSelections })
+            });
+            await sync();
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleManualFormVisibility() {
+        manualFormCollapsed = !manualFormCollapsed;
+        document.getElementById('manual-main-contents').style.display = manualFormCollapsed ? 'none' : 'block';
+        document.getElementById('toggle-menu-btn').innerText = manualFormCollapsed ? "👀 Show Menu" : "🙈 Hide Menu";
+    }
+
+    function toggleViewMode() {
+        document.body.classList.toggle('hide-edit');
+        let hidden = document.body.classList.contains('hide-edit');
+        document.getElementById('view-toggle-btn').innerText = hidden ? "👁️ Show Edit Grid Columns" : "👁️ View Heatmap Only";
+    }
+
+    function toggleAdminMode() {
+        adminMode = !adminMode;
+        document.body.classList.toggle('admin-mode', adminMode);
+        document.getElementById('col-header-interactive').innerText = adminMode ? "Modify Grid Capacity Limit Rule" : "Select Your Breaks";
+        renderGridState();
+    }
+
+    // Chat Box Lounge Output Generation Engine
+    function renderChatOutput() {
+        const box = document.getElementById('chat-messages-box');
+        if(!rawChatMessages || rawChatMessages.length === 0) {
+            box.innerHTML = `<span style="color: #94a3b8; font-style: italic;">No messages posted yet. Enter a name above to post.</span>`;
+            return;
+        }
+        
+        box.innerHTML = rawChatMessages.map(m => {
+            return `<div class="chat-msg-row">
+                <span class="chat-msg-time">[${m.time || '00:00'}]</span>
+                <span class="chat-msg-user">${m.user}:</span>
+                <span>${m.text}</span>
+            </div>`;
+        }).join('');
+        box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+        const field = document.getElementById('chat-input-field');
+        const txt = field.value.trim();
+        if(!txt) return;
+        if(!name) return alert("Please register a name in the edit profile field above first.");
+
+        field.value = "";
+        try {
+            await fetch(`${WORKER_URL}/api/chat`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ user: name, text: txt })
+            });
+            await sync();
+        } catch(e) { console.error(e); }
+    }
+
+    function showDetail(t) {
+        let usersInSlot = [];
+        Object.keys(data).forEach(u => {
+            if(u !== "__limits__" && data[u] && data[u].includes(t)) usersInSlot.push(u);
+        });
+        document.getElementById('tip').innerText = `Time ${t} | Occupied: ${usersInSlot.length} of ${getMaxAllowed(t)} max limit allowed. (${usersInSlot.join(', ') || 'None'})`;
+    }
+
+    function hideDetail() {
+        document.getElementById('tip').innerText = "Hover over rows to inspect filled structural metrics";
+    }
+
     build();
+    sync();
+    setInterval(sync, 10000);
 </script>
 </body>
 </html>
