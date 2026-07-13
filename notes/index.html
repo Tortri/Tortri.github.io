@@ -9,7 +9,6 @@
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
 
     <div class="max-w-4xl mx-auto p-4 sm:p-8">
-        <!-- Top Nav Bar -->
         <header class="flex justify-between items-baseline border-b border-slate-800 pb-3 mb-4">
             <h1 class="text-xl font-semibold tracking-tight text-slate-200">Notes</h1>
             <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-300 transition underline decoration-dotted">
@@ -17,37 +16,29 @@
             </button>
         </header>
 
-        <!-- Horizontal Scrollable Sections (Google Tasks Style) -->
         <div class="relative mb-6 border-b border-slate-800 pb-1">
             <div class="flex items-center justify-between">
-                <!-- Scrollable tabs container -->
                 <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
-                    <!-- Dynamic tabs will render here -->
-                </div>
-                <!-- Add Section "+" Button pinned to the right -->
+                    </div>
                 <button onclick="addSection()" class="absolute right-0 bg-slate-900 pl-4 pr-1 text-slate-400 hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
             </div>
         </div>
 
-        <!-- Main Portal Area -->
         <main>
-            <!-- Create Button -->
             <div class="flex justify-end mb-4">
                 <button onclick="createNewNote()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
                     +
                 </button>
             </div>
 
-            <!-- Notes Layout Grid -->
             <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
         </main>
     </div>
 
     <script>
-        // BE SURE to include your absolute "https://" scheme prefix here
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api"; 
         let itemsCache = [];
-        let sections = JSON.parse(localStorage.getItem("note_sections")) || ["all", "personal"];
+        let sections = ["all", "personal"]; // Fallback defaults
         let activeSection = localStorage.getItem("active_section") || "all";
 
         function getAuthHeader() {
@@ -74,6 +65,16 @@
                 const res = await fetch(`${API_BASE}/items`, { headers: getAuthHeader() });
                 if (res.status === 401) { alert("Incorrect password!"); logout(); return; }
                 itemsCache = await res.json();
+                
+                // Load global sections from database if they exist
+                const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
+                if (sectionsData) {
+                    try { sections = JSON.parse(sectionsData.content); } catch(e) { sections = ["all", "personal"]; }
+                } else {
+                    // Initialize system config if it doesn't exist in database yet
+                    saveSectionsToDatabase(["all", "personal"]);
+                }
+
                 renderUI();
             } catch (err) { console.error("Network error:", err); }
         }
@@ -121,10 +122,10 @@
         function createNewNote() {
             const newItem = {
                 id: crypto.randomUUID(),
-                type: activeSection === 'all' ? 'personal' : activeSection, // Default folder assignment
+                type: activeSection === 'all' ? 'personal' : activeSection,
                 title: '',
                 content: '',
-                is_completed: 0 // We'll keep 0 = plain text mode, and switch dynamically if checklist items are added.
+                is_completed: 0
             };
             itemsCache.unshift(newItem);
             renderUI();
@@ -152,8 +153,6 @@
             if (el.is_completed === 1) {
                 try { todos = JSON.parse(el.content || "[]"); } catch(e) { todos = []; }
             } else {
-                // If it was just text mode, we save the existing text into a temporary slot, or clear it.
-                // To keep it simple, we switch to checklist mode and start with a fresh list.
                 el.is_completed = 1;
             }
             
@@ -165,7 +164,6 @@
             if (newlyCreatedInput) newlyCreatedInput.focus();
         }
 
-        // Convert checklist back to standard plaintext
         async function convertToPlaintext(id) {
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
@@ -177,32 +175,45 @@
             saveItem(id);
         }
 
-        function addSection() {
+        async function saveSectionsToDatabase(updatedSectionsList) {
+            const sectionPayload = {
+                id: "SYSTEM_SECTIONS_CONFIG",
+                type: "SYSTEM_INTERNAL",
+                title: "SYSTEM_SECTIONS",
+                content: JSON.stringify(updatedSectionsList),
+                is_completed: 0
+            };
+            await fetch(`${API_BASE}/items`, {
+                method: "POST",
+                headers: getAuthHeader(),
+                body: JSON.stringify(sectionPayload)
+            });
+        }
+
+        async function addSection() {
             const name = prompt("Enter new section name:").toLowerCase().trim();
             if (name && !sections.includes(name)) {
                 sections.push(name);
-                localStorage.setItem("note_sections", JSON.stringify(sections));
+                await saveSectionsToDatabase(sections);
                 selectSection(name);
             }
         }
 
-        function deleteSection(name, event) {
-            event.stopPropagation(); // Stop click from triggering 'selectSection'
+        async function deleteSection(name, event) {
+            event.stopPropagation();
             if (name === "all" || name === "personal") {
                 alert("Cannot delete default sections.");
                 return;
             }
             if (confirm(`Delete the section "${name}"? This will untag its notes (they will stay in "all").`)) {
-                // Remove section from local list
                 sections = sections.filter(s => s !== name);
-                localStorage.setItem("note_sections", JSON.stringify(sections));
+                await saveSectionsToDatabase(sections);
                 
-                // If active section was deleted, fall back to "all"
                 if (activeSection === name) {
                     activeSection = "all";
                     localStorage.setItem("active_section", "all");
                 }
-                renderUI();
+                fetchItems();
             }
         }
 
@@ -234,12 +245,10 @@
                 tab.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${activeSection === s ? 'bg-slate-800 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`;
                 tab.onclick = () => selectSection(s);
                 
-                // Name text
                 const textSpan = document.createElement("span");
                 textSpan.textContent = s;
                 tab.appendChild(textSpan);
 
-                // Show a small delete "x" on custom sections
                 if (s !== "all" && s !== "personal") {
                     const deleteBtn = document.createElement("button");
                     deleteBtn.className = "text-[10px] text-slate-500 hover:text-red-400 font-bold px-1 rounded";
@@ -247,7 +256,6 @@
                     deleteBtn.onclick = (e) => deleteSection(s, e);
                     tab.appendChild(deleteBtn);
                 }
-                
                 sectContainer.appendChild(tab);
             });
 
@@ -255,24 +263,25 @@
             const grid = document.getElementById("notesGrid");
             grid.innerHTML = "";
 
-            const filtered = itemsCache.filter(item => activeSection === 'all' || item.type === activeSection);
+            // Filter out system configuration and filter by active section
+            const filtered = itemsCache.filter(item => 
+                item.id !== "SYSTEM_SECTIONS_CONFIG" && 
+                (activeSection === 'all' || item.type === activeSection)
+            );
 
             filtered.forEach(item => {
                 const card = document.createElement("div");
                 card.className = "p-4 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700/60 transition flex flex-col justify-between space-y-4";
                 
-                // Card Top Title
                 let upperArea = `
                     <div class="w-full">
                         <input id="title-${item.id}" onblur="saveItem('${item.id}')" value="${item.title}" placeholder="untitled" class="w-full bg-transparent font-medium text-slate-200 focus:outline-none placeholder-slate-600 text-base mb-2">`;
                 
                 if (item.is_completed === 0) {
-                    // Plain Text View Layout
                     upperArea += `
                         <textarea id="content-${item.id}" onblur="saveItem('${item.id}')" placeholder="write..." rows="5" class="w-full bg-transparent text-sm text-slate-300 resize-none focus:outline-none placeholder-slate-600 leading-relaxed">${item.content}</textarea>
                         <div class="mt-2 text-xs text-slate-500 pt-1 border-t border-slate-800/50 break-words">${linkify(item.content)}</div>`;
                 } else {
-                    // Checklist View Layout
                     upperArea += `<div class="space-y-2 mt-1 border-b border-slate-800/30 pb-2">`;
                     let todos = [];
                     try { todos = JSON.parse(item.content || "[]"); } catch(e) { todos = []; }
@@ -289,7 +298,6 @@
                     upperArea += `</div>`;
                 }
                 
-                // Always show the Add Item Option (so users can easily add tasks inside text notes!)
                 upperArea += `
                     <div class="flex gap-3 mt-2">
                         <button onclick="addChecklistItem('${item.id}')" class="text-xs text-slate-500 hover:text-slate-400 font-medium">+ add list item</button>
@@ -298,7 +306,6 @@
 
                 upperArea += `</div>`;
 
-                // Card Footer Toolbar
                 let options = sections.filter(s => s !== 'all').map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
                 
                 let footerArea = `
