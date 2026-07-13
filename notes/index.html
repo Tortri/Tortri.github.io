@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Note & To-Do Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="flex justify-between items-center border-b border-gray-700 pb-4 mb-6">
+            <h1 class="text-2xl font-bold tracking-tight text-emerald-400">📝 Central Workspace</h1>
+            <a href="https://your-team-name.cloudflareaccess.com/cdn-cgi/access/logout" 
+               class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded font-semibold transition">
+               Clear Session (Logout)
+            </a>
+        </header>
+
+        <div class="flex flex-wrap gap-3 mb-6">
+            <button onclick="createNewItem('note')" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded text-sm font-medium transition">+ New Note</button>
+            <button onclick="createNewItem('todo')" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-sm font-medium transition">+ New Task</button>
+        </div>
+
+        <div id="workspaceGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+
+    <script>
+        // Replace with your real deployed Cloudflare worker route endpoint URL string
+        const API_BASE = "https://your-worker-subdomain.workers.dev/api"; 
+        let itemsCache = [];
+
+        // Simple Regex function to turn plain URLs into clean html hyper-anchors
+        function linkify(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300 break-all">${url}</a>`);
+        }
+
+        async function fetchItems() {
+            try {
+                const res = await fetch(`${API_BASE}/items`);
+                itemsCache = await res.json();
+                renderWorkspace();
+            } catch (err) { console.error("Error loading elements:", err); }
+        }
+
+        async function saveItem(id) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            
+            el.title = document.getElementById(`title-${id}`).value;
+            if (el.type === 'note') {
+                el.content = document.getElementById(`content-${id}`).value;
+            }
+
+            await fetch(`${API_BASE}/items`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(el)
+            });
+        }
+
+        async function toggleTodo(id) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            el.is_completed = el.is_completed ? 0 : 1;
+            await fetch(`${API_BASE}/items`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(el)
+            });
+            renderWorkspace();
+        }
+
+        async function deleteItem(id) {
+            if (!confirm("Permanently erase this item?")) return;
+            await fetch(`${API_BASE}/items/${id}`, { method: "DELETE" });
+            fetchItems();
+        }
+
+        function createNewItem(type) {
+            const newItem = {
+                id: crypto.randomUUID(),
+                type: type,
+                title: type === 'note' ? 'New Note' : 'New Task Line',
+                content: '',
+                is_completed: 0
+            };
+            itemsCache.unshift(newItem);
+            renderWorkspace();
+        }
+
+        function renderWorkspace() {
+            const grid = document.getElementById("workspaceGrid");
+            grid.innerHTML = "";
+
+            itemsCache.forEach(item => {
+                const card = document.createElement("div");
+                card.className = `p-4 rounded-lg border shadow-sm ${item.type === 'note' ? 'bg-gray-800 border-gray-700' : 'bg-gray-850 border-slate-700'}`;
+                
+                if (item.type === 'note') {
+                    card.innerHTML = `
+                        <input id="title-${item.id}" onblur="saveItem('${item.id}')" value="${item.title}" class="w-full bg-transparent font-bold text-lg text-white mb-2 focus:outline-none focus:border-b border-emerald-500">
+                        <textarea id="content-${item.id}" onblur="saveItem('${item.id}')" rows="4" class="w-full bg-transparent text-sm text-gray-300 resize-none focus:outline-none">${item.content}</textarea>
+                        <div class="mt-2 text-xs text-gray-500 border-t border-gray-700 pt-2 break-words">
+                            ${linkify(item.content)}
+                        </div>
+                        <div class="flex justify-end mt-2">
+                            <button onclick="deleteItem('${item.id}')" class="text-red-400 text-xs hover:underline">Delete</button>
+                        </div>`;
+                } else {
+                    card.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" ${item.is_completed ? 'checked' : ''} onchange="toggleTodo('${item.id}')" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
+                            <input id="title-${item.id}" onblur="saveItem('${item.id}')" value="${item.title}" class="w-full bg-transparent font-medium text-sm text-white ${item.is_completed ? 'line-through text-gray-500' : ''} focus:outline-none">
+                            <button onclick="deleteItem('${item.id}')" class="text-red-400 text-xs hover:underline ml-auto">Delete</button>
+                        </div>
+                        <div class="mt-1 text-xs px-7">${linkify(item.title)}</div>`;
+                }
+                grid.appendChild(card);
+            });
+        }
+
+        // Initial entry run
+        fetchItems();
+    </script>
+</body>
+</html>
