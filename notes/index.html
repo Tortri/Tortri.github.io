@@ -64,6 +64,15 @@
             return (text || "").replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300 break-all">${url}</a>`);
         }
 
+        function escapeHtml(text) {
+            return (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function autoGrow(el) {
+            el.style.height = "auto";
+            el.style.height = el.scrollHeight + "px";
+        }
+
         // --- Line model -----------------------------------------------------
         // A note's content is stored as JSON: an ordered array of lines.
         //   { id, text, checked: null }        -> plain text line
