@@ -36,10 +36,14 @@
     </div>
 
     <script>
-        const API_BASE = "https://notes-backend.tortrix03.workers.dev/api"; 
+        const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
         let itemsCache = [];
-        let sections = ["all", "personal"]; // Fallback defaults
+        let sections = ["all"]; // "all" is the only fixed section; the rest are user-defined
         let activeSection = localStorage.getItem("active_section") || "all";
+
+        function uid() {
+            return crypto.randomUUID().slice(0, 8);
+        }
 
         function getAuthHeader() {
             let key = localStorage.getItem("notes_api_key");
@@ -57,22 +61,60 @@
 
         function linkify(text) {
             const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300 break-all">${url}</a>`);
+            return (text || "").replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300 break-all">${url}</a>`);
+        }
+
+        // --- Line model -----------------------------------------------------
+        // A note's content is stored as JSON: an ordered array of lines.
+        //   { id, text, checked: null }        -> plain text line
+        //   { id, text, checked: true/false }   -> checkbox line
+        // Typing "*()" at the start of a line turns it into a checkbox line.
+
+        function normalizeItem(item) {
+            if (item.lines) return item;
+
+            let lines = [];
+            try {
+                const parsed = JSON.parse(item.content);
+                if (Array.isArray(parsed)) {
+                    lines = parsed.map(p => {
+                        if ('type' in p) {
+                            // previous block-based format
+                            return { id: uid(), text: p.text || '', checked: p.type === 'check' ? !!p.completed : null };
+                        }
+                        // original checklist-only format
+                        return { id: uid(), text: p.text || '', checked: !!p.completed };
+                    });
+                } else if (item.content) {
+                    lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
+                }
+            } catch (e) {
+                if (item.content) lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
+            }
+            if (lines.length === 0) lines = [{ id: uid(), text: '', checked: null }];
+            item.lines = lines;
+            return item;
+        }
+
+        function serializeLines(item) {
+            item.content = JSON.stringify(item.lines || []);
+            return item.content;
         }
 
         async function fetchItems() {
             try {
                 const res = await fetch(`${API_BASE}/items`, { headers: getAuthHeader() });
                 if (res.status === 401) { alert("Incorrect password!"); logout(); return; }
-                itemsCache = await res.json();
-                
-                // Load global sections from database if they exist
+                itemsCache = (await res.json()).map(normalizeItem);
+
                 const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
                 if (sectionsData) {
-                    try { sections = JSON.parse(sectionsData.content); } catch(e) { sections = ["all", "personal"]; }
+                    try {
+                        const loaded = JSON.parse(sectionsData.content);
+                        sections = loaded.includes("all") ? loaded : ["all", ...loaded];
+                    } catch (e) { sections = ["all"]; }
                 } else {
-                    // Initialize system config if it doesn't exist in database yet
-                    saveSectionsToDatabase(["all", "personal"]);
+                    saveSectionsToDatabase(["all"]);
                 }
 
                 renderUI();
@@ -82,9 +124,7 @@
         async function saveItem(id) {
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
-            
-            el.title = document.getElementById(`title-${id}`).value;
-            el.content = document.getElementById(`content-${id}`).value;
+            serializeLines(el);
 
             const res = await fetch(`${API_BASE}/items`, {
                 method: "POST",
@@ -92,24 +132,6 @@
                 body: JSON.stringify(el)
             });
             if (res.status === 401) { logout(); }
-        }
-
-        async function saveTodoState(id, todoIndex, checkbox) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            
-            let todos = [];
-            try { todos = JSON.parse(el.is_completed ? el.content : "[]"); } catch(e) { todos = []; }
-            todos[todoIndex].completed = checkbox.checked;
-            el.content = JSON.stringify(todos);
-
-            const res = await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(el)
-            });
-            if (res.status === 401) { logout(); }
-            renderUI();
         }
 
         async function deleteItem(id) {
@@ -120,60 +142,134 @@
         }
 
         function createNewNote() {
+            const firstLineId = uid();
             const newItem = {
                 id: crypto.randomUUID(),
-                type: activeSection === 'all' ? 'personal' : activeSection,
+                type: activeSection === 'all' ? null : activeSection,
                 title: '',
-                content: '',
+                lines: [{ id: firstLineId, text: '', checked: null }],
                 is_completed: 0
             };
             itemsCache.unshift(newItem);
             renderUI();
+            focusLine(newItem.id, firstLineId, 0);
         }
 
-        async function updateTodoText(id, todoIndex, newText) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            let todos = JSON.parse(el.content || "[]");
-            todos[todoIndex].text = newText;
-            el.content = JSON.stringify(todos);
-            
-            await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(el)
-            });
-        }
+        // --- Line editing -----------------------------------------------------
 
-        function addChecklistItem(id) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            
-            let todos = [];
-            if (el.is_completed === 1) {
-                try { todos = JSON.parse(el.content || "[]"); } catch(e) { todos = []; }
-            } else {
-                el.is_completed = 1;
+        function focusLine(itemId, lineId, caretPos) {
+            const node = document.getElementById(`line-${itemId}-${lineId}`);
+            if (!node) return;
+            node.focus();
+            if (typeof caretPos === 'number') {
+                node.setSelectionRange(caretPos, caretPos);
             }
-            
-            todos.push({ text: '', completed: false });
-            el.content = JSON.stringify(todos);
-            renderUI();
-            
-            const newlyCreatedInput = document.getElementById(`todo-${id}-${todos.length - 1}`);
-            if (newlyCreatedInput) newlyCreatedInput.focus();
         }
 
-        async function convertToPlaintext(id) {
+        function updateTitle(id, value) {
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
-            let todos = [];
-            try { todos = JSON.parse(el.content || "[]"); } catch(e) { todos = []; }
-            el.is_completed = 0;
-            el.content = todos.map(t => t.text).join('\n');
-            renderUI();
+            el.title = value;
             saveItem(id);
         }
+
+        function handleLineInput(id, lineId, inputEl) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            const line = el.lines.find(l => l.id === lineId);
+            if (!line) return;
+
+            let value = inputEl.value;
+
+            // Shorthand: typing *() at the very start of a plain line makes it a checkbox
+            if (line.checked === null) {
+                const match = value.match(/^\*\(\)\s?(.*)$/);
+                if (match) {
+                    line.checked = false;
+                    line.text = match[1];
+                    saveItem(id);
+                    renderUI();
+                    focusLine(id, lineId, line.text.length);
+                    return;
+                }
+            }
+
+            line.text = value;
+            saveItem(id);
+        }
+
+        function toggleCheck(id, lineId, checkbox) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            const line = el.lines.find(l => l.id === lineId);
+            if (!line) return;
+            line.checked = checkbox.checked;
+            saveItem(id);
+            renderUI();
+        }
+
+        function handleLineKeydown(e, id, lineId) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            const idx = el.lines.findIndex(l => l.id === lineId);
+            if (idx === -1) return;
+            const line = el.lines[idx];
+            const inputEl = e.target;
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const caret = inputEl.selectionStart;
+                const before = line.text.slice(0, caret);
+                const after = line.text.slice(caret);
+                line.text = before;
+
+                const newLine = { id: uid(), text: after, checked: line.checked !== null ? false : null };
+                el.lines.splice(idx + 1, 0, newLine);
+                saveItem(id);
+                renderUI();
+                focusLine(id, newLine.id, 0);
+                return;
+            }
+
+            if (e.key === 'Backspace') {
+                const atStart = inputEl.selectionStart === 0 && inputEl.selectionEnd === 0;
+                if (!atStart) return; // let default behavior handle normal deletion
+
+                if (line.checked !== null) {
+                    // Stop the checklist: revert this line back to plain text
+                    e.preventDefault();
+                    line.checked = null;
+                    saveItem(id);
+                    renderUI();
+                    focusLine(id, lineId, 0);
+                    return;
+                }
+
+                if (idx > 0) {
+                    // Merge empty/plain line into the previous line
+                    e.preventDefault();
+                    const prev = el.lines[idx - 1];
+                    const mergeCaret = prev.text.length;
+                    prev.text = prev.text + line.text;
+                    el.lines.splice(idx, 1);
+                    saveItem(id);
+                    renderUI();
+                    focusLine(id, prev.id, mergeCaret);
+                }
+                return;
+            }
+
+            if (e.key === 'ArrowUp' && idx > 0) {
+                e.preventDefault();
+                focusLine(id, el.lines[idx - 1].id, el.lines[idx - 1].text.length);
+            }
+            if (e.key === 'ArrowDown' && idx < el.lines.length - 1) {
+                e.preventDefault();
+                focusLine(id, el.lines[idx + 1].id, 0);
+            }
+        }
+
+        // --- Sections -----------------------------------------------------
 
         async function saveSectionsToDatabase(updatedSectionsList) {
             const sectionPayload = {
@@ -191,7 +287,9 @@
         }
 
         async function addSection() {
-            const name = prompt("Enter new section name:").toLowerCase().trim();
+            const raw = prompt("Enter new section name:");
+            if (!raw) return;
+            const name = raw.toLowerCase().trim();
             if (name && !sections.includes(name)) {
                 sections.push(name);
                 await saveSectionsToDatabase(sections);
@@ -201,14 +299,14 @@
 
         async function deleteSection(name, event) {
             event.stopPropagation();
-            if (name === "all" || name === "personal") {
-                alert("Cannot delete default sections.");
+            if (name === "all") {
+                alert("Cannot delete the 'all' section.");
                 return;
             }
-            if (confirm(`Delete the section "${name}"? This will untag its notes (they will stay in "all").`)) {
+            if (confirm(`Delete the section "${name}"? Its notes will become uncategorized (still visible in "all").`)) {
                 sections = sections.filter(s => s !== name);
                 await saveSectionsToDatabase(sections);
-                
+
                 if (activeSection === name) {
                     activeSection = "all";
                     localStorage.setItem("active_section", "all");
@@ -226,7 +324,7 @@
         async function changeNoteSection(id, selectElement) {
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
-            el.type = selectElement.value;
+            el.type = selectElement.value || null;
             await fetch(`${API_BASE}/items`, {
                 method: "POST",
                 headers: getAuthHeader(),
@@ -235,21 +333,22 @@
             renderUI();
         }
 
+        // --- Rendering -----------------------------------------------------
+
         function renderUI() {
-            // Render Horizontal Section Tabs
             const sectContainer = document.getElementById("sectionsContainer");
             sectContainer.innerHTML = "";
-            
+
             sections.forEach(s => {
                 const tab = document.createElement("div");
                 tab.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${activeSection === s ? 'bg-slate-800 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`;
                 tab.onclick = () => selectSection(s);
-                
+
                 const textSpan = document.createElement("span");
                 textSpan.textContent = s;
                 tab.appendChild(textSpan);
 
-                if (s !== "all" && s !== "personal") {
+                if (s !== "all") {
                     const deleteBtn = document.createElement("button");
                     deleteBtn.className = "text-[10px] text-slate-500 hover:text-red-400 font-bold px-1 rounded";
                     deleteBtn.textContent = "×";
@@ -259,68 +358,65 @@
                 sectContainer.appendChild(tab);
             });
 
-            // Render Notes Grid
             const grid = document.getElementById("notesGrid");
             grid.innerHTML = "";
 
-            // Filter out system configuration and filter by active section
-            const filtered = itemsCache.filter(item => 
-                item.id !== "SYSTEM_SECTIONS_CONFIG" && 
+            const filtered = itemsCache.filter(item =>
+                item.id !== "SYSTEM_SECTIONS_CONFIG" &&
                 (activeSection === 'all' || item.type === activeSection)
             );
 
             filtered.forEach(item => {
                 const card = document.createElement("div");
-                card.className = "p-4 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700/60 transition flex flex-col justify-between space-y-4";
-                
-                let upperArea = `
+                card.className = "p-4 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700/60 transition flex flex-col justify-between space-y-3";
+
+                let inner = `
                     <div class="w-full">
-                        <input id="title-${item.id}" onblur="saveItem('${item.id}')" value="${item.title}" placeholder="untitled" class="w-full bg-transparent font-medium text-slate-200 focus:outline-none placeholder-slate-600 text-base mb-2">`;
-                
-                if (item.is_completed === 0) {
-                    upperArea += `
-                        <textarea id="content-${item.id}" onblur="saveItem('${item.id}')" placeholder="write..." rows="5" class="w-full bg-transparent text-sm text-slate-300 resize-none focus:outline-none placeholder-slate-600 leading-relaxed">${item.content}</textarea>
-                        <div class="mt-2 text-xs text-slate-500 pt-1 border-t border-slate-800/50 break-words">${linkify(item.content)}</div>`;
-                } else {
-                    upperArea += `<div class="space-y-2 mt-1 border-b border-slate-800/30 pb-2">`;
-                    let todos = [];
-                    try { todos = JSON.parse(item.content || "[]"); } catch(e) { todos = []; }
-                    
-                    todos.forEach((todo, idx) => {
-                        upperArea += `
+                        <input id="title-${item.id}" value="${item.title || ''}" placeholder="untitled" class="w-full bg-transparent font-medium text-slate-200 focus:outline-none placeholder-slate-600 text-base mb-2">
+                        <div class="space-y-0.5">`;
+
+                (item.lines || []).forEach(line => {
+                    if (line.checked === null) {
+                        inner += `
+                            <input id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" value="${(line.text || '').replace(/"/g, '&quot;')}" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-300 focus:outline-none placeholder-slate-600 py-0.5">`;
+                    } else {
+                        inner += `
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="saveTodoState('${item.id}', ${idx}, this)" class="h-3.5 w-3.5 rounded border-slate-700 bg-slate-900 checked:bg-slate-500 focus:ring-0">
-                                <input id="todo-${item.id}-${idx}" onblur="updateTodoText('${item.id}', ${idx}, this.value)" value="${todo.text}" placeholder="task..." class="w-full bg-transparent text-sm text-slate-300 focus:outline-none ${todo.completed ? 'line-through text-slate-500' : ''}">
-                            </div>
-                            <div class="text-xs px-5 text-slate-500 break-all">${linkify(todo.text)}</div>`;
-                    });
-                    
-                    upperArea += `</div>`;
-                }
-                
-                upperArea += `
-                    <div class="flex gap-3 mt-2">
-                        <button onclick="addChecklistItem('${item.id}')" class="text-xs text-slate-500 hover:text-slate-400 font-medium">+ add list item</button>
-                        ${item.is_completed === 1 ? `<button onclick="convertToPlaintext('${item.id}')" class="text-xs text-slate-500 hover:text-slate-400">convert to text</button>` : ''}
+                                <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 rounded border-slate-700 bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
+                                <input id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" value="${(line.text || '').replace(/"/g, '&quot;')}" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 ${line.checked ? 'line-through text-slate-500' : 'text-slate-300'}">
+                            </div>`;
+                    }
+                });
+
+                inner += `
+                        </div>
                     </div>`;
 
-                upperArea += `</div>`;
+                const customSections = sections.filter(s => s !== 'all');
+                let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
+                    customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
 
-                let options = sections.filter(s => s !== 'all').map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
-                
                 let footerArea = `
-                    <div class="flex justify-between items-center border-t border-slate-800/50 pt-2 text-xs text-slate-500">
-                        <span class="text-[10px] uppercase text-slate-600 font-semibold">${item.is_completed ? 'List + Text' : 'Plain Text'}</span>
+                    <div class="flex justify-end items-center border-t border-slate-800/50 pt-2 text-xs text-slate-500">
                         <div class="flex items-center gap-3">
-                            <select onchange="changeNoteSection('${item.id}', this)" class="bg-transparent text-slate-500 hover:text-slate-400 border-none focus:ring-0 cursor-pointer text-xs p-0 w-20">
+                            <select onchange="changeNoteSection('${item.id}', this)" class="bg-transparent text-slate-500 hover:text-slate-400 border-none focus:ring-0 cursor-pointer text-xs p-0 w-24">
                                 ${options}
                             </select>
                             <button onclick="deleteItem('${item.id}')" class="text-slate-600 hover:text-red-400 transition">delete</button>
                         </div>
                     </div>`;
 
-                card.innerHTML = upperArea + footerArea;
+                card.innerHTML = inner + footerArea;
                 grid.appendChild(card);
+
+                const titleInput = card.querySelector(`#title-${CSS.escape(item.id)}`);
+                if (titleInput) titleInput.addEventListener('blur', () => updateTitle(item.id, titleInput.value));
+
+                card.querySelectorAll('.line-input').forEach(inputEl => {
+                    const lineId = inputEl.dataset.line;
+                    inputEl.addEventListener('input', () => handleLineInput(item.id, lineId, inputEl));
+                    inputEl.addEventListener('keydown', (e) => handleLineKeydown(e, item.id, lineId));
+                });
             });
         }
 
