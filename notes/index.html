@@ -87,7 +87,11 @@
                 const parsed = JSON.parse(item.content);
                 if (Array.isArray(parsed)) {
                     lines = parsed.map(p => {
-                        if ('type' in p) {
+                        if (p && typeof p === 'object' && 'checked' in p) {
+                            // current format: preserve as-is (checked may be null or a boolean)
+                            return { id: p.id || uid(), text: p.text || '', checked: p.checked };
+                        }
+                        if (p && typeof p === 'object' && 'type' in p) {
                             // previous block-based format
                             return { id: uid(), text: p.text || '', checked: p.type === 'check' ? !!p.completed : null };
                         }
