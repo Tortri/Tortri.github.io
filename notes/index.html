@@ -3,17 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notes & Vault</title>
+    <title>Portal - Notes & Vault</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
 
     <div class="max-w-4xl mx-auto p-4 sm:p-8">
-        <header class="flex justify-between items-baseline border-b border-slate-800 pb-3 mb-4">
-            <h1 class="text-xl font-semibold tracking-tight text-slate-200">Portal</h1>
+        <!-- HEADER -->
+        <header class="flex justify-between items-center border-b border-slate-800 pb-3 mb-6">
+            <div class="flex items-center gap-6">
+                <h1 class="text-xl font-bold tracking-tight text-slate-200">Portal</h1>
+                <!-- MAIN MODE SWITCHER (Notes vs Separate Passwords Vault) -->
+                <nav class="flex bg-slate-800/80 p-1 rounded-lg border border-slate-700/50">
+                    <button id="btnModeNotes" onclick="switchMode('notes')" class="px-3 py-1 text-xs font-medium rounded-md transition bg-slate-700 text-white shadow-sm">
+                        📝 Notes
+                    </button>
+                    <button id="btnModeVault" onclick="switchMode('vault')" class="px-3 py-1 text-xs font-medium rounded-md transition text-slate-400 hover:text-slate-200">
+                        🔒 Vault
+                    </button>
+                </nav>
+            </div>
+            
             <div class="flex items-center gap-4">
                 <button onclick="downloadDatabaseBackup()" class="text-xs text-slate-400 hover:text-slate-200 transition underline decoration-dotted">
-                    backup database
+                    backup
                 </button>
                 <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-300 transition underline decoration-dotted">
                     logout
@@ -21,17 +34,19 @@
             </div>
         </header>
 
-        <div class="relative mb-6 border-b border-slate-800 pb-1">
-            <div class="flex items-center justify-between">
-                <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
-                </div>
-                <button onclick="addSection()" class="absolute right-0 bg-slate-900 pl-4 pr-1 text-slate-400 hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
-            </div>
-        </div>
-
         <main>
-            <!-- NOTES VIEW -->
-            <div id="notesView">
+            <!-- NOTES VIEW MODE -->
+            <div id="viewNotesMode">
+                <!-- SECTIONS / CATEGORIES BAR -->
+                <div class="relative mb-6 border-b border-slate-800 pb-1">
+                    <div class="flex items-center justify-between">
+                        <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
+                            <!-- Dynamic Section Tabs Rendered Here -->
+                        </div>
+                        <button onclick="addSection()" class="absolute right-0 bg-slate-900 pl-4 pr-1 text-slate-400 hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
+                    </div>
+                </div>
+
                 <div class="flex justify-end mb-4">
                     <button onclick="createNewNote()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
                         +
@@ -40,16 +55,16 @@
                 <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
             </div>
 
-            <!-- PASSWORDS VAULT VIEW -->
-            <div id="vaultView" class="hidden space-y-4">
+            <!-- DEDICATED PASSWORDS VAULT VIEW MODE -->
+            <div id="viewVaultMode" class="hidden space-y-4">
                 <div class="bg-slate-800/60 p-4 rounded-lg border border-slate-800 space-y-3">
-                    <h2 class="text-sm font-medium text-slate-300">Add New Password Entry</h2>
+                    <h2 class="text-sm font-medium text-slate-300">Add New Secure Entry</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <input id="vaultService" type="text" placeholder="Service (e.g. GitHub)" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500">
                         <input id="vaultUsername" type="text" placeholder="Username / Email" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500">
                         <div class="flex gap-1">
                             <input id="vaultPassword" type="password" placeholder="Password" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500 flex-1">
-                            <button onclick="generateRandomPassword()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2 py-1.5 rounded transition" title="Generate Random Password">⚡</button>
+                            <button onclick="generateRandomPassword()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2 py-1.5 rounded transition" title="Generate Password">⚡</button>
                         </div>
                     </div>
                     <button onclick="saveVaultItem()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium py-2 rounded transition">
@@ -66,8 +81,9 @@
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
         let itemsCache = [];
         let vaultCache = [];
-        let sections = ["all", "passwords"]; // Fixed system tabs
+        let sections = ["all"]; // System tab only, custom user tabs appended here
         let activeSection = localStorage.getItem("active_section") || "all";
+        let currentMode = "notes"; // "notes" or "vault"
         let masterCryptoKey = null;
 
         function uid() {
@@ -152,7 +168,30 @@
             document.getElementById("vaultPassword").value = pass;
         }
 
-        // --- Line model & Notes logic ----------------------------------------
+        // --- MODE SWITCHER (Notes vs Vault) ---
+        function switchMode(mode) {
+            currentMode = mode;
+            const btnNotes = document.getElementById("btnModeNotes");
+            const btnVault = document.getElementById("btnModeVault");
+            const viewNotes = document.getElementById("viewNotesMode");
+            const viewVault = document.getElementById("viewVaultMode");
+
+            if (mode === "vault") {
+                btnVault.className = "px-3 py-1 text-xs font-medium rounded-md transition bg-slate-700 text-white shadow-sm";
+                btnNotes.className = "px-3 py-1 text-xs font-medium rounded-md transition text-slate-400 hover:text-slate-200";
+                viewNotes.classList.add("hidden");
+                viewVault.classList.remove("hidden");
+                fetchVaultItems();
+            } else {
+                btnNotes.className = "px-3 py-1 text-xs font-medium rounded-md transition bg-slate-700 text-white shadow-sm";
+                btnVault.className = "px-3 py-1 text-xs font-medium rounded-md transition text-slate-400 hover:text-slate-200";
+                viewVault.classList.add("hidden");
+                viewNotes.classList.remove("hidden");
+                renderUI();
+            }
+        }
+
+        // --- Line model & Notes logic ---
         function normalizeItem(item) {
             if (item.lines) return item;
             let lines = [];
@@ -190,14 +229,13 @@
                 if (sectionsData) {
                     try {
                         const loaded = JSON.parse(sectionsData.content);
-                        const cleanLoaded = loaded.filter(s => s !== "passwords");
-                        sections = ["all", "passwords", ...cleanLoaded];
-                    } catch (e) { sections = ["all", "passwords"]; }
+                        const cleanLoaded = loaded.filter(s => s !== "passwords" && s !== "all");
+                        sections = ["all", ...cleanLoaded];
+                    } catch (e) { sections = ["all"]; }
                 } else {
                     saveSectionsToDatabase(["all"]);
                 }
 
-                if (activeSection === "passwords") fetchVaultItems();
                 renderUI();
             } catch (err) { console.error("Network error:", err); }
         }
@@ -445,9 +483,9 @@
             copyText(parts.join('\n'), btn);
         }
 
-        // --- Sections Logic ---------------------------------------------------
+        // --- Sections Logic ---
         async function saveSectionsToDatabase(updatedSectionsList) {
-            const cleanList = updatedSectionsList.filter(s => s !== "passwords");
+            const cleanList = updatedSectionsList.filter(s => s !== "passwords" && s !== "all");
             const sectionPayload = {
                 id: "SYSTEM_SECTIONS_CONFIG",
                 type: "SYSTEM_INTERNAL",
@@ -475,7 +513,7 @@
 
         async function deleteSection(name, event) {
             event.stopPropagation();
-            if (name === "all" || name === "passwords") return;
+            if (name === "all") return;
             if (confirm(`Delete the section "${name}"?`)) {
                 sections = sections.filter(s => s !== name);
                 await saveSectionsToDatabase(sections);
@@ -487,7 +525,6 @@
         function selectSection(name) {
             activeSection = name;
             localStorage.setItem("active_section", name);
-            if (name === "passwords") fetchVaultItems();
             renderUI();
         }
 
@@ -503,7 +540,7 @@
             renderUI();
         }
 
-        // --- Render UI Views --------------------------------------------------
+        // --- Render UI ---
         function renderUI() {
             const sectContainer = document.getElementById("sectionsContainer");
             sectContainer.innerHTML = "";
@@ -517,7 +554,7 @@
                 textSpan.textContent = s;
                 tab.appendChild(textSpan);
 
-                if (s !== "all" && s !== "passwords") {
+                if (s !== "all") {
                     const deleteBtn = document.createElement("button");
                     deleteBtn.className = "text-[10px] text-slate-500 hover:text-red-400 font-bold px-1 rounded";
                     deleteBtn.textContent = "×";
@@ -527,18 +564,7 @@
                 sectContainer.appendChild(tab);
             });
 
-            const notesView = document.getElementById("notesView");
-            const vaultView = document.getElementById("vaultView");
-
-            if (activeSection === "passwords") {
-                notesView.classList.add("hidden");
-                vaultView.classList.remove("hidden");
-                renderVaultUI();
-            } else {
-                vaultView.classList.add("hidden");
-                notesView.classList.remove("hidden");
-                renderNotesGrid();
-            }
+            renderNotesGrid();
         }
 
         function renderNotesGrid() {
@@ -574,7 +600,7 @@
 
                 inner += `</div></div>`;
 
-                const customSections = sections.filter(s => s !== 'all' && s !== 'passwords');
+                const customSections = sections.filter(s => s !== 'all');
                 let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
                     customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
 
