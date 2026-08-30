@@ -13,8 +13,6 @@
     <style>
         .sortable-ghost { opacity: 0.3; }
         .sortable-drag { cursor: grabbing !important; }
-        .dropdown-menu { display: none; }
-        .group:hover .dropdown-menu, .group:focus-within .dropdown-menu { display: block; }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
@@ -36,12 +34,12 @@
             </div>
         </header>
 
-        <!-- Bookmarks Bar (Folders & Link Shortcuts) -->
-        <div class="mb-4 p-2 bg-slate-200/50 dark:bg-slate-800/40 rounded-lg border border-slate-300 dark:border-slate-800/60 flex items-center justify-between gap-2 overflow-x-auto">
-            <div id="bookmarksContainer" class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 select-none flex-1">
+        <!-- Improved Bookmarks Bar (Text-Only, Click-to-Open Dropdowns, Wrap Layout) -->
+        <div class="mb-4 p-2 bg-slate-200/50 dark:bg-slate-800/40 rounded-lg border border-slate-300 dark:border-slate-800/60 flex items-center justify-between gap-2">
+            <div id="bookmarksContainer" class="flex flex-wrap items-center gap-2 select-none flex-1">
                 <!-- Dynamically rendered shortcuts/folders -->
             </div>
-            <button onclick="addBookmarkPrompt()" class="text-xs font-semibold px-2 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded transition shrink-0" title="Add Bookmark or Folder">
+            <button onclick="addBookmarkPrompt()" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded transition shrink-0">
                 + Link / Folder
             </button>
         </div>
@@ -73,6 +71,7 @@
         let sections = ["ALL"];
         let bookmarks = [];
         let activeSection = localStorage.getItem("active_section") || "ALL";
+        let activeOpenFolderId = null; // Track open dropdown folder
 
         function initTheme() {
             const savedTheme = localStorage.getItem("theme");
@@ -120,13 +119,10 @@
             el.style.height = el.scrollHeight + "px";
         }
 
-        // Helper to detect URL inside note line text
         function extractFirstURL(text) {
             if (!text) return null;
-            // Detect markdown link: [title](url)
             const mdMatch = text.match(/\[.*?\]\((https?:\/\/[^\s\)]+)\)/);
             if (mdMatch) return mdMatch[1];
-            // Detect standard URL
             const urlMatch = text.match(/(https?:\/\/[^\s]+)/);
             if (urlMatch) return urlMatch[1];
             return null;
@@ -267,7 +263,6 @@
             line.text = value;
             saveItem(id);
 
-            // Update visible clickable link button dynamically
             const url = extractFirstURL(value);
             const linkBtnNode = document.getElementById(`url-btn-${id}-${lineId}`);
             if (linkBtnNode) {
@@ -411,11 +406,11 @@
         }
 
         function addBookmarkPrompt() {
-            const choice = prompt("Type 'link' to add a Link Shortcut, or 'folder' to create a Folder:", "link");
+            const choice = prompt("Type 'link' to add a Direct Link, or 'folder' to create a Folder:", "link");
             if (!choice) return;
 
             if (choice.toLowerCase() === 'folder') {
-                const folderTitle = prompt("Folder Title:");
+                const folderTitle = prompt("Folder Name:");
                 if (folderTitle) {
                     bookmarks.push({ id: uid(), type: 'folder', title: folderTitle.trim(), children: [] });
                     saveBookmarksToDatabase();
@@ -434,7 +429,8 @@
             }
         }
 
-        function addLinkToFolder(folderId) {
+        function addLinkToFolder(folderId, event) {
+            if (event) event.stopPropagation();
             const folder = bookmarks.find(b => b.id === folderId);
             if (!folder) return;
 
@@ -449,24 +445,40 @@
             renderUI();
         }
 
-        function deleteBookmark(id, folderId = null) {
+        function deleteBookmark(id, folderId = null, event) {
+            if (event) event.stopPropagation();
             if (!confirm("Delete this bookmark?")) return;
             if (folderId) {
                 const folder = bookmarks.find(b => b.id === folderId);
                 if (folder) folder.children = folder.children.filter(c => c.id !== id);
             } else {
                 bookmarks = bookmarks.filter(b => b.id !== id);
+                if (activeOpenFolderId === id) activeOpenFolderId = null;
             }
             saveBookmarksToDatabase();
             renderUI();
         }
+
+        function toggleFolderDropdown(folderId, event) {
+            if (event) event.stopPropagation();
+            activeOpenFolderId = (activeOpenFolderId === folderId) ? null : folderId;
+            renderBookmarks();
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (activeOpenFolderId && !e.target.closest('#bookmarksContainer')) {
+                activeOpenFolderId = null;
+                renderBookmarks();
+            }
+        });
 
         function renderBookmarks() {
             const container = document.getElementById("bookmarksContainer");
             container.innerHTML = "";
 
             if (bookmarks.length === 0) {
-                container.innerHTML = `<span class="text-xs text-slate-400 dark:text-slate-500 italic pl-1">No shortcuts added yet. Click "+ Link / Folder" to add.</span>`;
+                container.innerHTML = `<span class="text-xs text-slate-400 dark:text-slate-500 italic pl-1">No shortcuts added yet. Click "+ Link / Folder".</span>`;
                 return;
             }
 
@@ -475,37 +487,42 @@
                 itemDiv.dataset.id = bm.id;
 
                 if (bm.type === 'link') {
-                    itemDiv.className = "flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1 rounded text-xs border border-slate-200 dark:border-slate-700/60 shadow-sm shrink-0 group";
+                    itemDiv.className = "flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1 rounded text-xs border border-slate-200 dark:border-slate-700/60 shadow-sm group";
                     itemDiv.innerHTML = `
                         <a href="${escapeHtml(bm.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline text-slate-700 dark:text-slate-200 font-medium">
-                            🌐 ${escapeHtml(bm.title)}
+                            ${escapeHtml(bm.title)}
                         </a>
-                        <button onclick="deleteBookmark('${bm.id}')" class="text-slate-400 hover:text-red-500 font-bold ml-1 opacity-0 group-hover:opacity-100 transition">×</button>
+                        <button onclick="deleteBookmark('${bm.id}', null, event)" class="text-slate-400 hover:text-red-500 font-bold ml-1 opacity-0 group-hover:opacity-100 transition">×</button>
                     `;
                 } else if (bm.type === 'folder') {
-                    itemDiv.className = "relative group shrink-0";
+                    const isOpen = activeOpenFolderId === bm.id;
+                    itemDiv.className = "relative inline-block";
+
                     let childrenHtml = (bm.children || []).map(child => `
                         <div class="flex items-center justify-between gap-3 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200">
                             <a href="${escapeHtml(child.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline truncate">
-                                🔗 ${escapeHtml(child.title)}
+                                ${escapeHtml(child.title)}
                             </a>
-                            <button onclick="deleteBookmark('${child.id}', '${bm.id}')" class="text-slate-400 hover:text-red-500 font-bold">×</button>
+                            <button onclick="deleteBookmark('${child.id}', '${bm.id}', event)" class="text-slate-400 hover:text-red-500 font-bold ml-2">×</button>
                         </div>
                     `).join('');
 
                     itemDiv.innerHTML = `
-                        <button class="flex items-center gap-1 bg-slate-200 dark:bg-slate-700/80 px-2.5 py-1 rounded text-xs font-semibold text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600">
-                            📁 ${escapeHtml(bm.title)}
-                            <span class="text-[9px] text-slate-400">▼</span>
+                        <button onclick="toggleFolderDropdown('${bm.id}', event)" class="flex items-center gap-1 bg-slate-200 dark:bg-slate-700/80 hover:bg-slate-300 dark:hover:bg-slate-600 px-2.5 py-1 rounded text-xs font-medium text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition">
+                            <span>${escapeHtml(bm.title)}</span>
+                            <span class="text-[9px] text-slate-400 ml-1">${isOpen ? '▲' : '▼'}</span>
                         </button>
-                        <div class="dropdown-menu absolute top-full left-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-50 py-1">
-                            ${childrenHtml}
-                            <button onclick="addLinkToFolder('${bm.id}')" class="w-full text-left px-3 py-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 border-t border-slate-200 dark:border-slate-700 mt-1">
-                                + Add Link
-                            </button>
-                            <button onclick="deleteBookmark('${bm.id}')" class="w-full text-left px-3 py-1 text-[11px] font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">
-                                Delete Folder
-                            </button>
+
+                        <div class="${isOpen ? 'block' : 'hidden'} absolute top-full left-0 mt-1.5 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-50 py-1">
+                            ${childrenHtml || '<div class="px-3 py-1 text-[11px] text-slate-400 italic">Folder empty</div>'}
+                            <div class="border-t border-slate-200 dark:border-slate-700 mt-1 pt-1 flex justify-between px-2 py-0.5">
+                                <button onclick="addLinkToFolder('${bm.id}', event)" class="text-[11px] font-semibold text-blue-500 hover:underline">
+                                    + Add Link
+                                </button>
+                                <button onclick="deleteBookmark('${bm.id}', null, event)" class="text-[11px] font-semibold text-red-500 hover:underline">
+                                    Delete Folder
+                                </button>
+                            </div>
                         </div>
                     `;
                 }
@@ -744,13 +761,11 @@
                 card.innerHTML = inner + footerArea;
                 grid.appendChild(card);
 
-                // Setup Editable Title Event
                 const titleInput = card.querySelector(`#title-${CSS.escape(item.id)}`);
                 if (titleInput) {
                     titleInput.addEventListener('input', () => updateTitle(item.id, titleInput.value));
                 }
 
-                // Setup Editable Lines
                 card.querySelectorAll('.line-input').forEach(inputEl => {
                     const lineId = inputEl.dataset.line;
                     autoGrow(inputEl);
@@ -764,7 +779,6 @@
                     });
                 });
 
-                // Make Lines inside this card draggable
                 const linesContainer = card.querySelector('.lines-list');
                 new Sortable(linesContainer, {
                     handle: '.line-handle',
@@ -782,7 +796,6 @@
                 });
             });
 
-            // Make Entire Cards Draggable in Grid
             new Sortable(grid, {
                 handle: '.card-handle',
                 animation: 150,
