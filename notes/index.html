@@ -13,6 +13,8 @@
     <style>
         .sortable-ghost { opacity: 0.3; }
         .sortable-drag { cursor: grabbing !important; }
+        /* Prevent touch delay on interactive elements */
+        button, a { touch-action: manipulation; }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
@@ -34,7 +36,7 @@
             </div>
         </header>
 
-        <!-- Improved Bookmarks Bar (Text-Only, Click-to-Open Dropdowns, Wrap Layout) -->
+        <!-- Bookmarks Bar -->
         <div class="mb-4 p-2 bg-slate-200/50 dark:bg-slate-800/40 rounded-lg border border-slate-300 dark:border-slate-800/60 flex items-center justify-between gap-2">
             <div id="bookmarksContainer" class="flex flex-wrap items-center gap-2 select-none flex-1">
                 <!-- Dynamically rendered shortcuts/folders -->
@@ -71,7 +73,7 @@
         let sections = ["ALL"];
         let bookmarks = [];
         let activeSection = localStorage.getItem("active_section") || "ALL";
-        let activeOpenFolderId = null; // Track open dropdown folder
+        let activeOpenFolderId = null;
 
         function initTheme() {
             const savedTheme = localStorage.getItem("theme");
@@ -166,7 +168,6 @@
                 if (res.status === 401) { alert("Incorrect password!"); logout(); return; }
                 itemsCache = (await res.json()).map(normalizeItem);
 
-                // Load Sections Config
                 const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
                 if (sectionsData) {
                     try {
@@ -178,7 +179,6 @@
                     saveSectionsToDatabase(["ALL"]);
                 }
 
-                // Load Bookmarks Config
                 const bookmarksData = itemsCache.find(i => i.id === "SYSTEM_BOOKMARKS_CONFIG");
                 if (bookmarksData) {
                     try { bookmarks = JSON.parse(bookmarksData.content); } catch (e) { bookmarks = []; }
@@ -430,7 +430,7 @@
         }
 
         function addLinkToFolder(folderId, event) {
-            if (event) event.stopPropagation();
+            if (event) { event.preventDefault(); event.stopPropagation(); }
             const folder = bookmarks.find(b => b.id === folderId);
             if (!folder) return;
 
@@ -446,7 +446,7 @@
         }
 
         function deleteBookmark(id, folderId = null, event) {
-            if (event) event.stopPropagation();
+            if (event) { event.preventDefault(); event.stopPropagation(); }
             if (!confirm("Delete this bookmark?")) return;
             if (folderId) {
                 const folder = bookmarks.find(b => b.id === folderId);
@@ -460,18 +460,20 @@
         }
 
         function toggleFolderDropdown(folderId, event) {
-            if (event) event.stopPropagation();
+            if (event) { event.preventDefault(); event.stopPropagation(); }
             activeOpenFolderId = (activeOpenFolderId === folderId) ? null : folderId;
             renderBookmarks();
         }
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
+        // Close dropdown when clicking outside (Touch + Click)
+        const closeDropdownHandler = (e) => {
             if (activeOpenFolderId && !e.target.closest('#bookmarksContainer')) {
                 activeOpenFolderId = null;
                 renderBookmarks();
             }
-        });
+        };
+        document.addEventListener('click', closeDropdownHandler);
+        document.addEventListener('touchstart', closeDropdownHandler, { passive: true });
 
         function renderBookmarks() {
             const container = document.getElementById("bookmarksContainer");
@@ -492,18 +494,18 @@
                         <a href="${escapeHtml(bm.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline text-slate-700 dark:text-slate-200 font-medium">
                             ${escapeHtml(bm.title)}
                         </a>
-                        <button onclick="deleteBookmark('${bm.id}', null, event)" class="text-slate-400 hover:text-red-500 font-bold ml-1 opacity-0 group-hover:opacity-100 transition">×</button>
+                        <button onclick="deleteBookmark('${bm.id}', null, event)" class="text-slate-400 hover:text-red-500 font-bold ml-1 sm:opacity-0 group-hover:opacity-100 transition">×</button>
                     `;
                 } else if (bm.type === 'folder') {
                     const isOpen = activeOpenFolderId === bm.id;
                     itemDiv.className = "relative inline-block";
 
                     let childrenHtml = (bm.children || []).map(child => `
-                        <div class="flex items-center justify-between gap-3 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200">
-                            <a href="${escapeHtml(child.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline truncate">
+                        <div class="flex items-center justify-between gap-3 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200">
+                            <a href="${escapeHtml(child.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline truncate py-0.5">
                                 ${escapeHtml(child.title)}
                             </a>
-                            <button onclick="deleteBookmark('${child.id}', '${bm.id}', event)" class="text-slate-400 hover:text-red-500 font-bold ml-2">×</button>
+                            <button onclick="deleteBookmark('${child.id}', '${bm.id}', event)" class="text-slate-400 hover:text-red-500 font-bold ml-2 p-1">×</button>
                         </div>
                     `).join('');
 
@@ -515,11 +517,11 @@
 
                         <div class="${isOpen ? 'block' : 'hidden'} absolute top-full left-0 mt-1.5 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-50 py-1">
                             ${childrenHtml || '<div class="px-3 py-1 text-[11px] text-slate-400 italic">Folder empty</div>'}
-                            <div class="border-t border-slate-200 dark:border-slate-700 mt-1 pt-1 flex justify-between px-2 py-0.5">
-                                <button onclick="addLinkToFolder('${bm.id}', event)" class="text-[11px] font-semibold text-blue-500 hover:underline">
+                            <div class="border-t border-slate-200 dark:border-slate-700 mt-1 pt-1 flex justify-between px-2 py-1">
+                                <button onclick="addLinkToFolder('${bm.id}', event)" class="text-[11px] font-semibold text-blue-500 hover:underline p-0.5">
                                     + Add Link
                                 </button>
-                                <button onclick="deleteBookmark('${bm.id}', null, event)" class="text-[11px] font-semibold text-red-500 hover:underline">
+                                <button onclick="deleteBookmark('${bm.id}', null, event)" class="text-[11px] font-semibold text-red-500 hover:underline p-0.5">
                                     Delete Folder
                                 </button>
                             </div>
@@ -529,9 +531,11 @@
                 container.appendChild(itemDiv);
             });
 
-            // Make Bookmarks Reorderable
+            // Make Bookmarks Reorderable with Mobile Delay Safety
             new Sortable(container, {
                 animation: 150,
+                delay: 150, // Brief delay on touch prevents accidental drag when tapping
+                delayOnTouchOnly: true,
                 onEnd: function () {
                     const newOrderIds = Array.from(container.children).map(child => child.dataset.id);
                     bookmarks = newOrderIds.map(id => bookmarks.find(b => b.id === id)).filter(Boolean);
@@ -685,6 +689,8 @@
 
             new Sortable(sectContainer, {
                 animation: 150,
+                delay: 150,
+                delayOnTouchOnly: true,
                 onEnd: function () {
                     const newOrder = Array.from(sectContainer.children).map(child => child.dataset.section);
                     sections = newOrder;
@@ -710,7 +716,7 @@
                 let inner = `
                     <div class="w-full">
                         <div class="flex items-center gap-2 mb-2">
-                            <span class="card-handle cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 text-sm select-none" title="Drag card">⋮⋮</span>
+                            <span class="card-handle cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 text-sm select-none p-1" title="Drag card">⋮⋮</span>
                             <input id="title-${item.id}" value="${escapeHtml(item.title || '')}" placeholder="Untitled" class="w-full bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 text-base">
                         </div>
                         <div class="lines-list space-y-1">`;
@@ -722,18 +728,18 @@
                     if (line.checked === null) {
                         inner += `
                             <div data-line-id="${line.id}" class="line-item flex items-start gap-1 group">
-                                <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-0 group-hover:opacity-100 transition">⋮⋮</span>
+                                <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-50 sm:opacity-0 group-hover:opacity-100 transition p-0.5">⋮⋮</span>
                                 <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 py-0.5 resize-none overflow-hidden leading-snug break-words">${escapeHtml(line.text)}</textarea>
-                                <a id="url-btn-${item.id}-${line.id}" href="${foundUrl || '#'}" target="_blank" rel="noopener noreferrer" class="${linkBtnClass} shrink-0 text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded mt-0.5 opacity-0 group-hover:opacity-100 transition">↗ open</a>
+                                <a id="url-btn-${item.id}-${line.id}" href="${foundUrl || '#'}" target="_blank" rel="noopener noreferrer" class="${linkBtnClass} shrink-0 text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded mt-0.5 transition">↗ open</a>
                             </div>`;
                     } else {
                         inner += `
                             <div data-line-id="${line.id}" class="line-item flex items-start gap-1 group">
-                                <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-0 group-hover:opacity-100 transition">⋮⋮</span>
+                                <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-50 sm:opacity-0 group-hover:opacity-100 transition p-0.5">⋮⋮</span>
                                 <div class="flex items-start gap-2 w-full">
                                     <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
                                     <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}">${escapeHtml(line.text)}</textarea>
-                                    <a id="url-btn-${item.id}-${line.id}" href="${foundUrl || '#'}" target="_blank" rel="noopener noreferrer" class="${linkBtnClass} shrink-0 text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded mt-0.5 opacity-0 group-hover:opacity-100 transition">↗ open</a>
+                                    <a id="url-btn-${item.id}-${line.id}" href="${foundUrl || '#'}" target="_blank" rel="noopener noreferrer" class="${linkBtnClass} shrink-0 text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded mt-0.5 transition">↗ open</a>
                                 </div>
                             </div>`;
                     }
