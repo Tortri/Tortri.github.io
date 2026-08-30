@@ -3,92 +3,372 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Vault</title>
-  <!-- jsPDF CDN for client-side PDF generation -->
+  <title>Zero-Knowledge Password Vault</title>
+  <!-- jsPDF Library for client-side PDF generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-      margin: 0;
-      padding: 2rem;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+      min-height: 100vh;
     }
+
     .container {
+      width: 100%;
       max-width: 800px;
-      margin: 0 auto;
     }
-    .header {
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h1, h2 { margin-bottom: 1rem; }
+    
+    .header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
     }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #090d16;
+      color: var(--text);
+      font-size: 1rem;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
     .btn-group {
       display: flex;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
+
     button {
-      padding: 0.5rem 1rem;
+      padding: 0.65rem 1.25rem;
       border: none;
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
+      background: var(--primary);
+      color: #fff;
       transition: background 0.2s;
     }
-    .btn-json {
-      background: #3b82f6;
-      color: #ffffff;
+    button:hover { background: var(--primary-hover); }
+
+    button.btn-pdf { background: var(--danger); }
+    button.btn-pdf:hover { background: var(--danger-hover); }
+
+    button.btn-secondary { background: #475569; }
+    button.btn-secondary:hover { background: #334155; }
+
+    .vault-item {
+      background: #090d16;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .btn-json:hover { background: #2563eb; }
-    .btn-pdf {
-      background: #ef4444;
-      color: #ffffff;
-    }
-    .btn-pdf:hover { background: #dc2626; }
-    .status {
-      margin-top: 1rem;
+    .item-details h4 { color: var(--text); margin-bottom: 0.25rem; }
+    .item-details p { color: var(--text-dim); font-size: 0.85rem; }
+    
+    .status-msg {
       padding: 0.75rem;
       border-radius: 6px;
+      margin-bottom: 1rem;
       display: none;
+      font-size: 0.9rem;
     }
-    .status.error { background: #7f1d1d; color: #fca5a5; display: block; }
-    .status.success { background: #14532d; color: #86efac; display: block; }
+    .status-msg.error { background: #7f1d1d; color: #fca5a5; display: block; }
+    .status-msg.success { background: #14532d; color: #86efac; display: block; }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <div class="header">
-      <h2>My Encrypted Vault</h2>
-      <div class="btn-group">
-        <button class="btn-json" onclick="exportVaultJSON()">Export JSON</button>
-        <button class="btn-pdf" onclick="exportVaultPDF()">Export PDF</button>
-      </div>
+
+    <!-- Status Banner -->
+    <div id="statusMsg" class="status-msg"></div>
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="loginCard" class="card">
+      <h2>Unlock Vault</h2>
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="masterPassword">Master Password</label>
+          <input type="password" id="masterPassword" required autocomplete="current-password" placeholder="Enter your key...">
+        </div>
+        <button type="submit">Unlock & Decrypt</button>
+      </form>
     </div>
 
-    <div id="statusMessage" class="status"></div>
+    <!-- 2. VAULT DASHBOARD -->
+    <div id="vaultDashboard" class="card hidden">
+      <div class="header-row">
+        <h2>My Passwords</h2>
+        <div class="btn-group">
+          <button class="btn-secondary" onclick="exportVaultJSON()">Export JSON</button>
+          <button class="btn-pdf" onclick="exportVaultPDF()">Export PDF</button>
+          <button class="btn-secondary" onclick="handleLogout()">Lock Vault</button>
+        </div>
+      </div>
+
+      <!-- Add Item Form -->
+      <form id="addForm" onsubmit="handleAddItem(event)" style="margin-bottom: 2rem;">
+        <h3>Add New Credential</h3>
+        <div class="form-group" style="margin-top: 0.75rem;">
+          <input type="text" id="itemTitle" placeholder="Title (e.g. GitHub)" required>
+        </div>
+        <div class="form-group">
+          <input type="text" id="itemUsername" placeholder="Username / Email" required>
+        </div>
+        <div class="form-group">
+          <input type="password" id="itemPassword" placeholder="Password" required>
+        </div>
+        <div class="form-group">
+          <input type="url" id="itemUrl" placeholder="URL (optional)">
+        </div>
+        <button type="submit">Encrypt & Save</button>
+      </form>
+
+      <hr style="border-color: var(--border); margin-bottom: 1.5rem;">
+
+      <!-- Vault List Container -->
+      <div id="vaultItemsContainer"></div>
+    </div>
+
   </div>
 
   <script>
-    // Global array keeping decrypted items in memory
-    // (This should be populated when your app decrypts the vault on login)
-    window.decryptedVaultItems = window.decryptedVaultItems || [];
+    // --- GLOBAL APP STATE ---
+    let derivedCryptoKey = null;
+    let decryptedVaultItems = [];
 
-    function showStatus(msg, isError = false) {
-      const el = document.getElementById('statusMessage');
-      el.textContent = msg;
-      el.className = `status ${isError ? 'error' : 'success'}`;
-      setTimeout(() => { el.style.display = 'none'; }, 5000);
+    // --- MESSAGING HELPER ---
+    function showStatus(message, isError = false) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = message;
+      el.className = `status-msg ${isError ? 'error' : 'success'}`;
+      setTimeout(() => { el.style.display = 'none'; }, 6000);
     }
 
+    // --- CRYPTOGRAPHIC UTILITIES (PBKDF2 + AES-GCM) ---
+    async function deriveKey(masterPassword, salt) {
+      const encoder = new TextEncoder();
+      const passBuffer = encoder.encode(masterPassword);
+      
+      const keyMaterial = await window.crypto.subtle.importKey(
+        'raw', passBuffer, 'PBKDF2', false, ['deriveKey']
+      );
+
+      return await window.crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: encoder.encode(salt),
+          iterations: 100000,
+          hash: 'SHA-256'
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    async function encryptData(plainText, key) {
+      const encoder = new TextEncoder();
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await window.crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        encoder.encode(plainText)
+      );
+
+      return {
+        ciphertext: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
+        iv: btoa(String.fromCharCode(...iv))
+      };
+    }
+
+    async function decryptData(ciphertextB64, ivB64, key) {
+      const decoder = new TextDecoder();
+      const ciphertext = Uint8Array.from(atob(ciphertextB64), c => c.charCodeAt(0));
+      const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+
+      const decrypted = await window.crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        ciphertext
+      );
+
+      return decoder.decode(decrypted);
+    }
+
+    // --- AUTH & VAULT LOGIC ---
+    async function handleLogin(e) {
+      e.preventDefault();
+      const password = document.getElementById('masterPassword').value;
+
+      try {
+        // Derive key using static salt (In production, salt can be user-specific)
+        derivedCryptoKey = await deriveKey(password, 'static-user-salt-2026');
+        
+        // Save temporary session indicator
+        sessionStorage.setItem('session_token', 'active_session');
+
+        // Fetch encrypted data from backend API
+        await fetchAndDecryptVault();
+
+        // Toggle UI
+        document.getElementById('loginCard').classList.add('hidden');
+        document.getElementById('vaultDashboard').classList.remove('hidden');
+        document.getElementById('masterPassword').value = '';
+        showStatus('Vault successfully unlocked.');
+      } catch (err) {
+        showStatus('Failed to unlock vault. Incorrect master password or server error.', true);
+      }
+    }
+
+    async function fetchAndDecryptVault() {
+      const token = sessionStorage.getItem('session_token');
+      const response = await fetch('/api/items', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch vault items');
+
+      const rawItems = await response.json();
+      decryptedVaultItems = [];
+
+      for (const item of rawItems) {
+        try {
+          const decryptedPayload = await decryptData(item.ciphertext, item.iv, derivedCryptoKey);
+          const parsed = JSON.parse(decryptedPayload);
+          decryptedVaultItems.push({ id: item.id, ...parsed });
+        } catch (err) {
+          console.error(`Failed to decrypt item ${item.id}`);
+        }
+      }
+
+      renderVaultItems();
+    }
+
+    function renderVaultItems() {
+      const container = document.getElementById('vaultItemsContainer');
+      container.innerHTML = '';
+
+      if (decryptedVaultItems.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-dim);">No credentials stored yet.</p>';
+        return;
+      }
+
+      decryptedVaultItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'vault-item';
+        div.innerHTML = `
+          <div class="item-details">
+            <h4>${escapeHtml(item.title)}</h4>
+            <p><strong>Username:</strong> ${escapeHtml(item.username)}</p>
+            <p><strong>Password:</strong> ${escapeHtml(item.password)}</p>
+            ${item.url ? `<p><strong>URL:</strong> <a href="${escapeHtml(item.url)}" target="_blank" style="color:var(--primary);">${escapeHtml(item.url)}</a></p>` : ''}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function handleAddItem(e) {
+      e.preventDefault();
+      const title = document.getElementById('itemTitle').value;
+      const username = document.getElementById('itemUsername').value;
+      const password = document.getElementById('itemPassword').value;
+      const url = document.getElementById('itemUrl').value;
+
+      const payload = JSON.stringify({ title, username, password, url });
+      const encrypted = await encryptData(payload, derivedCryptoKey);
+
+      const token = sessionStorage.getItem('session_token');
+      const response = await fetch('/api/items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(encrypted)
+      });
+
+      if (response.ok) {
+        document.getElementById('addForm').reset();
+        await fetchAndDecryptVault();
+        showStatus('Credential encrypted and saved!');
+      } else {
+        showStatus('Failed to save item to database.', true);
+      }
+    }
+
+    function handleLogout() {
+      derivedCryptoKey = null;
+      decryptedVaultItems = [];
+      sessionStorage.removeItem('session_token');
+      document.getElementById('vaultDashboard').classList.add('hidden');
+      document.getElementById('loginCard').classList.remove('hidden');
+      showStatus('Vault locked.');
+    }
+
+    // --- BACKUP & EXPORT FUNCTIONS ---
+
     /**
-     * Fetches fresh encrypted data from API and exports as a raw JSON backup
+     * 1. JSON Export: Downloads complete encrypted raw dataset from server
      */
     async function exportVaultJSON() {
       const token = sessionStorage.getItem('session_token');
       if (!token) {
-        showStatus('Export failed: No active session. Please log in first.', true);
+        showStatus('Please log in first to export your vault.', true);
         return;
       }
 
@@ -97,35 +377,32 @@
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!response.ok) {
-          throw new Error(`Server returned HTTP status ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Status ${response.status}`);
 
         const items = await response.json();
 
-        // Create download blob
         const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        const downloadUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href = downloadUrl;
         a.download = `vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(downloadUrl);
 
-        showStatus('JSON Backup successfully exported!');
+        showStatus('JSON Backup exported successfully!');
       } catch (err) {
         showStatus('Error downloading JSON backup: ' + err.message, true);
       }
     }
 
     /**
-     * Generates a printable plain-text PDF document from local decrypted items
+     * 2. PDF Export: Renders decrypted credentials into a printable PDF
      */
     async function exportVaultPDF() {
-      if (!window.decryptedVaultItems || window.decryptedVaultItems.length === 0) {
-        showStatus('Export failed: No decrypted vault items found in memory. Log in and unlock your vault first.', true);
+      if (!decryptedVaultItems || decryptedVaultItems.length === 0) {
+        showStatus('Export failed: No decrypted vault items available to print.', true);
         return;
       }
 
@@ -133,21 +410,19 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        // Header styling
+        // Header
         doc.setFontSize(18);
         doc.text("Password Vault Backup", 14, 20);
         doc.setFontSize(9);
         doc.setTextColor(100);
-        doc.text(`Generated: ${new Date().toLocaleString()} | Unencrypted File`, 14, 27);
+        doc.text(`Generated: ${new Date().toLocaleString()} | Unencrypted Plain-Text File`, 14, 27);
         doc.setLineWidth(0.5);
         doc.line(14, 31, 196, 31);
         
         let y = 40;
         doc.setTextColor(0);
 
-        // Render each decrypted item
-        window.decryptedVaultItems.forEach((item, index) => {
-          // Add a new page if reaching the bottom margin
+        decryptedVaultItems.forEach((item, index) => {
           if (y > 260) {
             doc.addPage();
             y = 20;
@@ -161,6 +436,7 @@
           doc.setFont("helvetica", "normal");
           doc.text(`Username: ${item.username || '—'}`, 20, y + 6);
           doc.text(`Password: ${item.password || '—'}`, 20, y + 12);
+          
           if (item.url) {
             doc.text(`URL: ${item.url}`, 20, y + 18);
             y += 26;
@@ -170,10 +446,18 @@
         });
 
         doc.save(`vault-backup-${new Date().toISOString().slice(0, 10)}.pdf`);
-        showStatus('PDF Backup successfully exported!');
+        showStatus('PDF Backup exported successfully!');
       } catch (err) {
-        showStatus('Error generating PDF: ' + err.message, true);
+        showStatus('Error generating PDF backup: ' + err.message, true);
       }
+    }
+
+    // Helper to prevent HTML injection in rendered item lists
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
     }
   </script>
 </body>
