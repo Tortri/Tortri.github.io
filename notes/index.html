@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notes</title>
+    <title>Notes (E2EE)</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
 
     <div class="max-w-4xl mx-auto p-4 sm:p-8">
         <header class="flex justify-between items-baseline border-b border-slate-800 pb-3 mb-4">
-            <h1 class="text-xl font-semibold tracking-tight text-slate-200">Notes</h1>
+            <h1 class="text-xl font-semibold tracking-tight text-slate-200">Notes <span class="text-xs font-mono text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 rounded ml-2">E2EE Active</span></h1>
             <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-300 transition underline decoration-dotted">
                 logout
             </button>
@@ -38,24 +38,91 @@
     <script>
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
         let itemsCache = [];
-        let sections = ["all"]; // "all" is the only fixed section; the rest are user-defined
+        let sections = ["all"];
         let activeSection = localStorage.getItem("active_section") || "all";
+        let cryptoKey = null;
 
         function uid() {
             return crypto.randomUUID().slice(0, 8);
         }
 
-        function getAuthHeader() {
-            let key = localStorage.getItem("notes_api_key");
-            if (!key) {
-                key = prompt("Enter portal password:");
-                if (key) localStorage.setItem("notes_api_key", key);
+        // --- Crypto Engine (AES-GCM + PBKDF2) -------------------------------
+
+        async function getCryptoKey() {
+            if (cryptoKey) return cryptoKey;
+
+            let pass = localStorage.getItem("notes_encryption_key");
+            if (!pass) {
+                pass = prompt("Enter portal password / encryption key:");
+                if (pass) localStorage.setItem("notes_encryption_key", pass);
+                else throw new Error("Key required");
             }
+
+            // Derive 256-bit AES-GCM key from password using PBKDF2
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                "raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]
+            );
+
+            // Fixed salt so key remains identical across sessions for the same password
+            const salt = enc.encode("notes_static_salt_v1");
+            cryptoKey = await crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["encrypt", "decrypt"]
+            );
+
+            return cryptoKey;
+        }
+
+        async function encryptText(plainText) {
+            if (!plainText) return "";
+            const key = await getCryptoKey();
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encoded = new TextEncoder().encode(plainText);
+
+            const ciphertext = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv },
+                key,
+                encoded
+            );
+
+            // Return payload as base64 format: iv:ciphertext
+            const ivB64 = btoa(String.fromCharCode(...iv));
+            const cipherB64 = btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
+            return `ENC:${ivB64}:${cipherB64}`;
+        }
+
+        async function decryptText(encryptedText) {
+            if (!encryptedText || !encryptedText.startsWith("ENC:")) return encryptedText || "";
+            try {
+                const key = await getCryptoKey();
+                const parts = encryptedText.split(":");
+                const iv = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
+                const cipherBytes = Uint8Array.from(atob(parts[2]), c => c.charCodeAt(0));
+
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv },
+                    key,
+                    cipherBytes
+                );
+
+                return new TextDecoder().decode(decrypted);
+            } catch (err) {
+                console.error("Decryption failed:", err);
+                return "[Decryption Failed - Wrong Key]";
+            }
+        }
+
+        function getAuthHeader() {
+            let key = localStorage.getItem("notes_encryption_key");
             return { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" };
         }
 
         function logout() {
-            localStorage.removeItem("notes_api_key");
+            localStorage.removeItem("notes_encryption_key");
             window.location.reload();
         }
 
@@ -68,45 +135,58 @@
             el.style.height = el.scrollHeight + "px";
         }
 
-        // --- Line model -----------------------------------------------------
+        // --- Data Handling & Decryption -------------------------------------
 
-        function normalizeItem(item) {
+        async function normalizeItem(item) {
+            // Decrypt Title
+            if (item.title && item.title.startsWith("ENC:")) {
+                item.title = await decryptText(item.title);
+            }
+
             if (item.lines) return item;
 
             let lines = [];
+            let contentStr = item.content;
+
+            // Decrypt content payload if encrypted
+            if (contentStr && contentStr.startsWith("ENC:")) {
+                contentStr = await decryptText(contentStr);
+            }
+
             try {
-                const parsed = JSON.parse(item.content);
+                const parsed = JSON.parse(contentStr);
                 if (Array.isArray(parsed)) {
-                    lines = parsed.map(p => {
-                        if (p && typeof p === 'object' && 'checked' in p) {
-                            return { id: p.id || uid(), text: p.text || '', checked: p.checked };
-                        }
-                        if (p && typeof p === 'object' && 'type' in p) {
-                            return { id: uid(), text: p.text || '', checked: p.type === 'check' ? !!p.completed : null };
-                        }
-                        return { id: uid(), text: p.text || '', checked: !!p.completed };
-                    });
-                } else if (item.content) {
-                    lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
+                    lines = parsed.map(p => ({
+                        id: p.id || uid(),
+                        text: p.text || '',
+                        checked: 'checked' in p ? p.checked : null
+                    }));
+                } else if (contentStr) {
+                    lines = contentStr.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
                 }
             } catch (e) {
-                if (item.content) lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
+                if (contentStr) lines = contentStr.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
             }
+
             if (lines.length === 0) lines = [{ id: uid(), text: '', checked: null }];
             item.lines = lines;
             return item;
         }
 
-        function serializeLines(item) {
-            item.content = JSON.stringify(item.lines || []);
-            return item.content;
+        async function serializeLines(item) {
+            const rawJson = JSON.stringify(item.lines || []);
+            // Return encrypted content string
+            return await encryptText(rawJson);
         }
 
         async function fetchItems() {
             try {
                 const res = await fetch(`${API_BASE}/items`, { headers: getAuthHeader() });
                 if (res.status === 401) { alert("Incorrect password!"); logout(); return; }
-                itemsCache = (await res.json()).map(normalizeItem);
+                const rawItems = await res.json();
+
+                // Decrypt all items asynchronously
+                itemsCache = await Promise.all(rawItems.map(normalizeItem));
 
                 const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
                 if (sectionsData) {
@@ -125,12 +205,22 @@
         async function saveItem(id) {
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
-            serializeLines(el);
+
+            const encryptedTitle = await encryptText(el.title);
+            const encryptedContent = await serializeLines(el);
+
+            const payload = {
+                id: el.id,
+                type: el.type,
+                title: encryptedTitle,
+                content: encryptedContent,
+                is_completed: el.is_completed || 0
+            };
 
             const res = await fetch(`${API_BASE}/items`, {
                 method: "POST",
                 headers: getAuthHeader(),
-                body: JSON.stringify(el)
+                body: JSON.stringify(payload)
             });
             if (res.status === 401) { logout(); }
         }
@@ -184,7 +274,6 @@
 
             let value = inputEl.value;
 
-            // Shorthand: typing *() at the start of a plain line converts to checkbox
             if (line.checked === null) {
                 const match = value.match(/^\*\(\)\s?(.*)$/);
                 if (match) {
@@ -345,11 +434,8 @@
 
         async function deleteSection(name, event) {
             event.stopPropagation();
-            if (name === "all") {
-                alert("Cannot delete the 'all' section.");
-                return;
-            }
-            if (confirm(`Delete the section "${name}"? Its notes will become uncategorized (still visible in "all").`)) {
+            if (name === "all") return;
+            if (confirm(`Delete the section "${name}"?`)) {
                 sections = sections.filter(s => s !== name);
                 await saveSectionsToDatabase(sections);
 
@@ -371,11 +457,7 @@
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
             el.type = selectElement.value || null;
-            await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(el)
-            });
+            await saveItem(id);
             renderUI();
         }
 
@@ -418,7 +500,7 @@
 
                 let inner = `
                     <div class="w-full">
-                        <input id="title-${item.id}" value="${item.title || ''}" placeholder="untitled" class="w-full bg-transparent font-medium text-slate-200 focus:outline-none placeholder-slate-600 text-base mb-2">
+                        <input id="title-${item.id}" value="${escapeHtml(item.title || '')}" placeholder="untitled" class="w-full bg-transparent font-medium text-slate-200 focus:outline-none placeholder-slate-600 text-base mb-2">
                         <div class="space-y-0.5">`;
 
                 (item.lines || []).forEach(line => {
