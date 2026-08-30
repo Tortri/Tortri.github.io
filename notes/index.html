@@ -681,21 +681,85 @@
 
             y += 30;
 
-            // Divider Line
+            // Header Divider Line
             doc.setDrawColor(226, 232, 240); // Slate-200
             doc.setLineWidth(1);
             doc.line(margin, y, pageWidth - margin, y);
             y += 20;
 
-            function checkNewPage(neededHeight = 20) {
-                if (y + neededHeight > pageHeight - margin) {
-                    doc.addPage();
-                    y = margin;
-                    return true;
-                }
-                return false;
+            // --- SECTION 1: BOOKMARKS EXPORT ---
+            if (bookmarks.length > 0) {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(14);
+                doc.setTextColor(30, 41, 59);
+                doc.text("Bookmarks & Shortcuts", margin, y);
+                y += 14;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9.5);
+
+                bookmarks.forEach(bm => {
+                    if (bm.type === 'link') {
+                        if (y + 16 > pageHeight - margin) { doc.addPage(); y = margin; }
+                        doc.setTextColor(51, 65, 85);
+                        doc.text(`• ${bm.title}: `, margin + 10, y);
+                        const titleWidth = doc.getTextWidth(`• ${bm.title}: `);
+                        doc.setTextColor(37, 99, 235); // Blue link
+                        doc.textWithLink(bm.url, margin + 10 + titleWidth, y, { url: bm.url });
+                        y += 14;
+                    } else if (bm.type === 'folder') {
+                        if (y + 24 > pageHeight - margin) { doc.addPage(); y = margin; }
+                        doc.setFont("helvetica", "bold");
+                        doc.setTextColor(71, 85, 105);
+                        doc.text(`📁 ${bm.title}`, margin + 5, y);
+                        y += 14;
+
+                        doc.setFont("helvetica", "normal");
+                        if (!bm.children || bm.children.length === 0) {
+                            doc.setTextColor(148, 163, 184);
+                            doc.text("(empty folder)", margin + 20, y);
+                            y += 14;
+                        } else {
+                            bm.children.forEach(child => {
+                                if (y + 16 > pageHeight - margin) { doc.addPage(); y = margin; }
+                                doc.setTextColor(51, 65, 85);
+                                doc.text(`• ${child.title}: `, margin + 20, y);
+                                const childTitleWidth = doc.getTextWidth(`• ${child.title}: `);
+                                doc.setTextColor(37, 99, 235);
+                                doc.textWithLink(child.url, margin + 20 + childTitleWidth, y, { url: child.url });
+                                y += 14;
+                            });
+                        }
+                    }
+                });
+
+                y += 10;
+                doc.setDrawColor(241, 245, 249);
+                doc.setLineWidth(0.5);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 20;
             }
 
+            // --- Helper: Estimate Note Height ---
+            function calculateNoteHeight(item) {
+                let h = 16; // Top padding inside card
+                const titleText = item.title || "Untitled Note";
+                const splitTitle = doc.splitTextToSize(titleText, contentWidth - 24);
+                h += (splitTitle.length * 14) + 4; // Title height
+                h += 10; // Divider spacing
+
+                (item.lines || []).forEach(line => {
+                    const textStr = line.text || "";
+                    const textIndent = line.checked !== null ? 44 : 24;
+                    const splitText = doc.splitTextToSize(textStr, contentWidth - textIndent);
+                    h += (splitText.length * 13) + (line.checked !== null ? 4 : 2);
+                });
+
+                h += 6; // Bottom padding inside card
+                return h;
+            }
+
+            // --- SECTION 2: NOTES EXPORT ---
             if (filtered.length === 0) {
                 doc.setFont("helvetica", "italic");
                 doc.setFontSize(11);
@@ -704,9 +768,16 @@
             }
 
             filtered.forEach((item, index) => {
-                checkNewPage(40);
+                const estimatedHeight = calculateNoteHeight(item);
+                const printableAreaHeight = pageHeight - (margin * 2);
 
-                // Note Container Box (Card) Setup
+                // Prevent Note Splitting Across Pages: 
+                // If a note fits entirely on one page, but doesn't fit in remaining space on current page, start a clean new page.
+                if (estimatedHeight <= printableAreaHeight && (y + estimatedHeight > pageHeight - margin)) {
+                    doc.addPage();
+                    y = margin;
+                }
+
                 const cardStartY = y;
                 let cardInternalY = y + 16;
 
@@ -732,6 +803,12 @@
 
                 (item.lines || []).forEach(line => {
                     const textStr = line.text || "";
+
+                    // Multi-page fallback check for exceptionally large notes (> 1 full page)
+                    if (cardInternalY > pageHeight - margin - 20) {
+                        doc.addPage();
+                        cardInternalY = margin + 15;
+                    }
 
                     if (line.checked !== null) {
                         // Task / Checklist Item
@@ -772,12 +849,6 @@
                         const splitText = doc.splitTextToSize(textStr, contentWidth - 24);
                         doc.text(splitText, margin + 12, cardInternalY);
                         cardInternalY += (splitText.length * 13) + 2;
-                    }
-
-                    // Check page height inside lines iteration
-                    if (cardInternalY > pageHeight - margin - 20) {
-                        doc.addPage();
-                        cardInternalY = margin + 15;
                     }
                 });
 
