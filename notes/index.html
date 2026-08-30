@@ -10,7 +10,6 @@
             darkMode: 'class'
         }
     </script>
-    <!-- jsPDF library for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
@@ -53,10 +52,9 @@
     <script>
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
         let itemsCache = [];
-        let sections = ["ALL"]; // "ALL" is the default fixed section
+        let sections = ["ALL"];
         let activeSection = localStorage.getItem("active_section") || "ALL";
 
-        // --- Theme Engine ---
         function initTheme() {
             const savedTheme = localStorage.getItem("theme");
             if (savedTheme === "light") {
@@ -103,8 +101,6 @@
             el.style.height = el.scrollHeight + "px";
         }
 
-        // --- Line model ---
-
         function normalizeItem(item) {
             if (item.lines) return item;
 
@@ -147,7 +143,6 @@
                 if (sectionsData) {
                     try {
                         const loaded = JSON.parse(sectionsData.content);
-                        // Map legacy "all" to "ALL"
                         const updatedLoaded = loaded.map(s => s === "all" ? "ALL" : s);
                         sections = updatedLoaded.includes("ALL") ? updatedLoaded : ["ALL", ...updatedLoaded];
                     } catch (e) { sections = ["ALL"]; }
@@ -192,8 +187,6 @@
             renderUI();
             focusLine(newItem.id, firstLineId, 0);
         }
-
-        // --- Line editing ---
 
         function focusLine(itemId, lineId, caretPos) {
             setTimeout(() => {
@@ -351,62 +344,50 @@
             }
         }
 
-        // --- Drag and Drop Reordering ---
-        let draggedNoteIndex = null;
-        let draggedLineInfo = null;
+        // --- Drag and Drop Logic ---
+        let draggedCardIdx = null;
+        let draggedLineData = null;
 
-        function handleNoteDragStart(e, index) {
-            draggedNoteIndex = index;
+        function onCardDragStart(e, idx) {
+            draggedCardIdx = idx;
             e.dataTransfer.effectAllowed = "move";
         }
 
-        function handleNoteDragOver(e) {
+        function onCardDrop(e, targetIdx) {
             e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-        }
-
-        function handleNoteDrop(e, targetIndex) {
-            e.preventDefault();
-            if (draggedNoteIndex === null || draggedNoteIndex === targetIndex) return;
-            const movedItem = itemsCache.splice(draggedNoteIndex, 1)[0];
-            itemsCache.splice(targetIndex, 0, movedItem);
-            draggedNoteIndex = null;
+            if (draggedCardIdx === null || draggedCardIdx === targetIdx) return;
+            const moved = itemsCache.splice(draggedCardIdx, 1)[0];
+            itemsCache.splice(targetIdx, 0, moved);
+            draggedCardIdx = null;
             renderUI();
         }
 
-        function handleLineDragStart(e, itemId, lineId) {
+        function onLineDragStart(e, itemId, lineId) {
             e.stopPropagation();
-            draggedLineInfo = { itemId, lineId };
+            draggedLineData = { itemId, lineId };
             e.dataTransfer.effectAllowed = "move";
         }
 
-        function handleLineDragOver(e) {
+        function onLineDrop(e, targetItemId, targetLineId) {
             e.preventDefault();
             e.stopPropagation();
-            e.dataTransfer.dropEffect = "move";
-        }
-
-        function handleLineDrop(e, targetItemId, targetLineId) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!draggedLineInfo || draggedLineInfo.itemId !== targetItemId) return;
+            if (!draggedLineData || draggedLineData.itemId !== targetItemId) return;
 
             const note = itemsCache.find(i => i.id === targetItemId);
             if (!note) return;
 
-            const fromIdx = note.lines.findIndex(l => l.id === draggedLineInfo.lineId);
+            const fromIdx = note.lines.findIndex(l => l.id === draggedLineData.lineId);
             const toIdx = note.lines.findIndex(l => l.id === targetLineId);
 
             if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-                const [movedLine] = note.lines.splice(fromIdx, 1);
-                note.lines.splice(toIdx, 0, movedLine);
+                const [moved] = note.lines.splice(fromIdx, 1);
+                note.lines.splice(toIdx, 0, moved);
                 saveItem(targetItemId);
                 renderUI();
             }
-            draggedLineInfo = null;
+            draggedLineData = null;
         }
 
-        // --- PDF Export ---
         function exportToPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -450,13 +431,11 @@
                     y += (splitText.length * 5);
                 });
 
-                y += 6; // Spacing between notes
+                y += 6;
             });
 
             doc.save(`notes_${activeSection.toLowerCase()}_${Date.now()}.pdf`);
         }
-
-        // --- Sections ---
 
         async function saveSectionsToDatabase(updatedSectionsList) {
             const sectionPayload = {
@@ -476,7 +455,7 @@
         async function addSection() {
             const raw = prompt("Enter new section name:");
             if (!raw) return;
-            const name = raw.trim(); // Preserves exact capitalization
+            const name = raw.trim();
             if (name && !sections.includes(name)) {
                 sections.push(name);
                 await saveSectionsToDatabase(sections);
@@ -520,8 +499,6 @@
             renderUI();
         }
 
-        // --- Rendering ---
-
         function renderUI() {
             const sectContainer = document.getElementById("sectionsContainer");
             sectContainer.innerHTML = "";
@@ -559,31 +536,34 @@
 
             filtered.forEach((item, index) => {
                 const card = document.createElement("div");
-                card.draggable = true;
-                card.ondragstart = (e) => handleNoteDragStart(e, index);
-                card.ondragover = handleNoteDragOver;
-                card.ondrop = (e) => handleNoteDrop(e, index);
+                card.ondragover = (e) => e.preventDefault();
+                card.ondrop = (e) => onCardDrop(e, index);
 
-                card.className = "p-4 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/60 transition flex flex-col justify-between space-y-3 shadow-sm dark:shadow-none cursor-grab active:cursor-grabbing";
+                card.className = "p-4 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/60 transition flex flex-col justify-between space-y-3 shadow-sm dark:shadow-none";
 
                 let inner = `
                     <div class="w-full">
-                        <input id="title-${item.id}" value="${item.title || ''}" placeholder="Untitled" class="w-full bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 text-base mb-2">
-                        <div class="space-y-0.5">`;
+                        <div class="flex items-center gap-1.5 mb-2">
+                            <span draggable="true" ondragstart="onCardDragStart(event, ${index})" class="cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400 text-xs px-0.5 select-none" title="Drag to move card">⋮⋮</span>
+                            <input id="title-${item.id}" value="${escapeHtml(item.title || '')}" placeholder="Untitled" class="w-full bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 text-base">
+                        </div>
+                        <div class="space-y-1">`;
 
                 (item.lines || []).forEach(line => {
-                    const lineDragEvents = `draggable="true" ondragstart="handleLineDragStart(event, '${item.id}', '${line.id}')" ondragover="handleLineDragOver(event)" ondrop="handleLineDrop(event, '${item.id}', '${line.id}')"`;
-                    
                     if (line.checked === null) {
                         inner += `
-                            <div ${lineDragEvents} class="cursor-move">
+                            <div ondragover="e => e.preventDefault()" ondrop="onLineDrop(event, '${item.id}', '${line.id}')" class="flex items-start gap-1 group">
+                                <span draggable="true" ondragstart="onLineDragStart(event, '${item.id}', '${line.id}')" class="cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-0 group-hover:opacity-100 transition">⋮⋮</span>
                                 <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 py-0.5 resize-none overflow-hidden leading-snug break-words">${escapeHtml(line.text)}</textarea>
                             </div>`;
                     } else {
                         inner += `
-                            <div ${lineDragEvents} class="flex items-start gap-2 cursor-move">
-                                <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
-                                <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}">${escapeHtml(line.text)}</textarea>
+                            <div ondragover="e => e.preventDefault()" ondrop="onLineDrop(event, '${item.id}', '${line.id}')" class="flex items-start gap-1 group">
+                                <span draggable="true" ondragstart="onLineDragStart(event, '${item.id}', '${line.id}')" class="cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-0 group-hover:opacity-100 transition">⋮⋮</span>
+                                <div class="flex items-start gap-2 w-full">
+                                    <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
+                                    <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}">${escapeHtml(line.text)}</textarea>
+                                </div>
                             </div>`;
                     }
                 });
@@ -611,7 +591,9 @@
                 grid.appendChild(card);
 
                 const titleInput = card.querySelector(`#title-${CSS.escape(item.id)}`);
-                if (titleInput) titleInput.addEventListener('blur', () => updateTitle(item.id, titleInput.value));
+                if (titleInput) {
+                    titleInput.addEventListener('input', () => updateTitle(item.id, titleInput.value));
+                }
 
                 card.querySelectorAll('.line-input').forEach(inputEl => {
                     const lineId = inputEl.dataset.line;
