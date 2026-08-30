@@ -1,683 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal - Notes & Vault</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Vault</title>
+  <!-- jsPDF CDN for client-side PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-json {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+    .btn-json:hover { background: #2563eb; }
+    .btn-pdf {
+      background: #ef4444;
+      color: #ffffff;
+    }
+    .btn-pdf:hover { background: #dc2626; }
+    .status {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 6px;
+      display: none;
+    }
+    .status.error { background: #7f1d1d; color: #fca5a5; display: block; }
+    .status.success { background: #14532d; color: #86efac; display: block; }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
+<body>
 
-    <div class="max-w-4xl mx-auto p-4 sm:p-8">
-        <!-- HEADER -->
-        <header class="flex justify-between items-center border-b border-slate-800 pb-3 mb-6">
-            <div class="flex items-center gap-6">
-                <h1 class="text-xl font-bold tracking-tight text-slate-200">Portal</h1>
-                <!-- MAIN MODE SWITCHER (Notes vs Separate Passwords Vault) -->
-                <nav class="flex bg-slate-800/80 p-1 rounded-lg border border-slate-700/50">
-                    <button id="btnModeNotes" onclick="switchMode('notes')" class="px-3 py-1 text-xs font-medium rounded-md transition bg-slate-700 text-white shadow-sm">
-                        📝 Notes
-                    </button>
-                    <button id="btnModeVault" onclick="switchMode('vault')" class="px-3 py-1 text-xs font-medium rounded-md transition text-slate-400 hover:text-slate-200">
-                        🔒 Vault
-                    </button>
-                </nav>
-            </div>
-            
-            <div class="flex items-center gap-4">
-                <button onclick="downloadDatabaseBackup()" class="text-xs text-slate-400 hover:text-slate-200 transition underline decoration-dotted">
-                    backup
-                </button>
-                <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-300 transition underline decoration-dotted">
-                    logout
-                </button>
-            </div>
-        </header>
-
-        <main>
-            <!-- NOTES VIEW MODE -->
-            <div id="viewNotesMode">
-                <!-- SECTIONS / CATEGORIES BAR -->
-                <div class="relative mb-6 border-b border-slate-800 pb-1">
-                    <div class="flex items-center justify-between">
-                        <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
-                            <!-- Dynamic Section Tabs Rendered Here -->
-                        </div>
-                        <button onclick="addSection()" class="absolute right-0 bg-slate-900 pl-4 pr-1 text-slate-400 hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
-                    </div>
-                </div>
-
-                <div class="flex justify-end mb-4">
-                    <button onclick="createNewNote()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
-                        +
-                    </button>
-                </div>
-                <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-            </div>
-
-            <!-- DEDICATED PASSWORDS VAULT VIEW MODE -->
-            <div id="viewVaultMode" class="hidden space-y-4">
-                <div class="bg-slate-800/60 p-4 rounded-lg border border-slate-800 space-y-3">
-                    <h2 class="text-sm font-medium text-slate-300">Add New Secure Entry</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input id="vaultService" type="text" placeholder="Service (e.g. GitHub)" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500">
-                        <input id="vaultUsername" type="text" placeholder="Username / Email" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500">
-                        <div class="flex gap-1">
-                            <input id="vaultPassword" type="password" placeholder="Password" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500 flex-1">
-                            <button onclick="generateRandomPassword()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2 py-1.5 rounded transition" title="Generate Password">⚡</button>
-                        </div>
-                    </div>
-                    <button onclick="saveVaultItem()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium py-2 rounded transition">
-                        Encrypt & Save Entry
-                    </button>
-                </div>
-
-                <div id="vaultGrid" class="grid grid-cols-1 gap-3"></div>
-            </div>
-        </main>
+  <div class="container">
+    <div class="header">
+      <h2>My Encrypted Vault</h2>
+      <div class="btn-group">
+        <button class="btn-json" onclick="exportVaultJSON()">Export JSON</button>
+        <button class="btn-pdf" onclick="exportVaultPDF()">Export PDF</button>
+      </div>
     </div>
 
-    <script>
-        const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
-        let itemsCache = [];
-        let vaultCache = [];
-        let sections = ["all"]; // System tab only, custom user tabs appended here
-        let activeSection = localStorage.getItem("active_section") || "all";
-        let currentMode = "notes"; // "notes" or "vault"
-        let masterCryptoKey = null;
+    <div id="statusMessage" class="status"></div>
+  </div>
 
-        function uid() {
-            return crypto.randomUUID().slice(0, 8);
+  <script>
+    // Global array keeping decrypted items in memory
+    // (This should be populated when your app decrypts the vault on login)
+    window.decryptedVaultItems = window.decryptedVaultItems || [];
+
+    function showStatus(msg, isError = false) {
+      const el = document.getElementById('statusMessage');
+      el.textContent = msg;
+      el.className = `status ${isError ? 'error' : 'success'}`;
+      setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    /**
+     * Fetches fresh encrypted data from API and exports as a raw JSON backup
+     */
+    async function exportVaultJSON() {
+      const token = sessionStorage.getItem('session_token');
+      if (!token) {
+        showStatus('Export failed: No active session. Please log in first.', true);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/items', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server returned HTTP status ${response.status}`);
         }
 
-        function getAuthHeader() {
-            let key = localStorage.getItem("notes_api_key");
-            if (!key) {
-                key = prompt("Enter portal password:");
-                if (key) localStorage.setItem("notes_api_key", key);
-            }
-            return { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" };
-        }
-
-        function logout() {
-            localStorage.removeItem("notes_api_key");
-            window.location.reload();
-        }
-
-        function escapeHtml(text) {
-            return (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        function autoGrow(el) {
-            el.style.height = "auto";
-            el.style.height = el.scrollHeight + "px";
-        }
-
-        // --- ZERO KNOWLEDGE CRYPTO ENGINE ---
-        async function getMasterCryptoKey() {
-            if (masterCryptoKey) return masterCryptoKey;
-            const key = localStorage.getItem("notes_api_key");
-            if (!key) return null;
-
-            const enc = new TextEncoder();
-            const salt = enc.encode("d1_zero_knowledge_vault_salt");
-            const baseKey = await window.crypto.subtle.importKey("raw", enc.encode(key), { name: "PBKDF2" }, false, ["deriveKey"]);
-
-            masterCryptoKey = await window.crypto.subtle.deriveKey(
-                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
-                baseKey,
-                { name: "AES-GCM", length: 256 },
-                false,
-                ["encrypt", "decrypt"]
-            );
-            return masterCryptoKey;
-        }
-
-        async function encryptData(plainText) {
-            const cryptoKey = await getMasterCryptoKey();
-            const enc = new TextEncoder();
-            const iv = window.crypto.getRandomValues(new Uint8Array(12));
-            const ciphertextBuffer = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, cryptoKey, enc.encode(plainText));
-
-            return {
-                ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertextBuffer))),
-                iv: btoa(String.fromCharCode(...iv))
-            };
-        }
-
-        async function decryptData(ciphertextB64, ivB64) {
-            try {
-                const cryptoKey = await getMasterCryptoKey();
-                const ciphertext = Uint8Array.from(atob(ciphertextB64), c => c.charCodeAt(0));
-                const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
-                const decryptedBuffer = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, cryptoKey, ciphertext);
-                return new TextDecoder().decode(decryptedBuffer);
-            } catch (e) {
-                return "[Decryption Failed]";
-            }
-        }
-
-        function generateRandomPassword() {
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
-            let pass = "";
-            const values = new Uint32Array(16);
-            window.crypto.getRandomValues(values);
-            for (let i = 0; i < 16; i++) {
-                pass += chars[values[i] % chars.length];
-            }
-            document.getElementById("vaultPassword").value = pass;
-        }
-
-        // --- MODE SWITCHER (Notes vs Vault) ---
-        function switchMode(mode) {
-            currentMode = mode;
-            const btnNotes = document.getElementById("btnModeNotes");
-            const btnVault = document.getElementById("btnModeVault");
-            const viewNotes = document.getElementById("viewNotesMode");
-            const viewVault = document.getElementById("viewVaultMode");
-
-            if (mode === "vault") {
-                btnVault.className = "px-3 py-1 text-xs font-medium rounded-md transition bg-slate-700 text-white shadow-sm";
-                btnNotes.className = "px-3 py-1 text-xs font-medium rounded-md transition text-slate-400 hover:text-slate-200";
-                viewNotes.classList.add("hidden");
-                viewVault.classList.remove("hidden");
-                fetchVaultItems();
-            } else {
-                btnNotes.className = "px-3 py-1 text-xs font-medium rounded-md transition bg-slate-700 text-white shadow-sm";
-                btnVault.className = "px-3 py-1 text-xs font-medium rounded-md transition text-slate-400 hover:text-slate-200";
-                viewVault.classList.add("hidden");
-                viewNotes.classList.remove("hidden");
-                renderUI();
-            }
-        }
-
-        // --- Line model & Notes logic ---
-        function normalizeItem(item) {
-            if (item.lines) return item;
-            let lines = [];
-            try {
-                const parsed = JSON.parse(item.content);
-                if (Array.isArray(parsed)) {
-                    lines = parsed.map(p => ({
-                        id: p.id || uid(),
-                        text: p.text || '',
-                        checked: 'checked' in p ? p.checked : null
-                    }));
-                } else if (item.content) {
-                    lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
-                }
-            } catch (e) {
-                if (item.content) lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
-            }
-            if (lines.length === 0) lines = [{ id: uid(), text: '', checked: null }];
-            item.lines = lines;
-            return item;
-        }
-
-        function serializeLines(item) {
-            item.content = JSON.stringify(item.lines || []);
-            return item.content;
-        }
-
-        async function fetchItems() {
-            try {
-                const res = await fetch(`${API_BASE}/items`, { headers: getAuthHeader() });
-                if (res.status === 401) { alert("Incorrect password!"); logout(); return; }
-                itemsCache = (await res.json()).map(normalizeItem);
-
-                const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
-                if (sectionsData) {
-                    try {
-                        const loaded = JSON.parse(sectionsData.content);
-                        const cleanLoaded = loaded.filter(s => s !== "passwords" && s !== "all");
-                        sections = ["all", ...cleanLoaded];
-                    } catch (e) { sections = ["all"]; }
-                } else {
-                    saveSectionsToDatabase(["all"]);
-                }
-
-                renderUI();
-            } catch (err) { console.error("Network error:", err); }
-        }
-
-        async function fetchVaultItems() {
-            try {
-                const res = await fetch(`${API_BASE}/vault`, { headers: getAuthHeader() });
-                if (res.status === 401) { logout(); return; }
-                vaultCache = await res.json();
-                renderVaultUI();
-            } catch (err) { console.error("Vault fetch error:", err); }
-        }
-
-        async function saveVaultItem() {
-            const service = document.getElementById("vaultService").value.trim();
-            const username = document.getElementById("vaultUsername").value.trim();
-            const password = document.getElementById("vaultPassword").value;
-
-            if (!service || !password) {
-                alert("Please provide at least a service name and password.");
-                return;
-            }
-
-            const payloadText = JSON.stringify({ service, username, password });
-            const encrypted = await encryptData(payloadText);
-            const newItem = { id: crypto.randomUUID(), ciphertext: encrypted.ciphertext, iv: encrypted.iv };
-
-            const res = await fetch(`${API_BASE}/vault`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(newItem)
-            });
-
-            if (res.status === 401) logout();
-
-            document.getElementById("vaultService").value = "";
-            document.getElementById("vaultUsername").value = "";
-            document.getElementById("vaultPassword").value = "";
-            fetchVaultItems();
-        }
-
-        async function deleteVaultItem(id) {
-            if (!confirm("Delete this password entry?")) return;
-            const res = await fetch(`${API_BASE}/vault/${id}`, { method: "DELETE", headers: getAuthHeader() });
-            if (res.status === 401) logout();
-            fetchVaultItems();
-        }
-
-        async function downloadDatabaseBackup() {
-            try {
-                const res = await fetch(`${API_BASE}/export`, { headers: getAuthHeader() });
-                if (!res.ok) throw new Error("Failed to export database");
-
-                const data = await res.json();
-                const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
-                
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", jsonString);
-                downloadAnchor.setAttribute("download", `database_backup_${new Date().toISOString().slice(0, 10)}.json`);
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                downloadAnchor.remove();
-            } catch (err) {
-                alert("Error downloading backup: " + err.message);
-            }
-        }
-
-        async function saveItem(id) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            serializeLines(el);
-
-            const res = await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(el)
-            });
-            if (res.status === 401) logout();
-        }
-
-        async function deleteItem(id) {
-            if (!confirm("Delete this note?")) return;
-            const res = await fetch(`${API_BASE}/items/${id}`, { method: "DELETE", headers: getAuthHeader() });
-            if (res.status === 401) logout();
-            fetchItems();
-        }
-
-        function createNewNote() {
-            const firstLineId = uid();
-            const newItem = {
-                id: crypto.randomUUID(),
-                type: activeSection === 'all' ? null : activeSection,
-                title: '',
-                lines: [{ id: firstLineId, text: '', checked: null }],
-                is_completed: 0
-            };
-            itemsCache.unshift(newItem);
-            renderUI();
-            focusLine(newItem.id, firstLineId, 0);
-        }
-
-        function focusLine(itemId, lineId, caretPos) {
-            const node = document.getElementById(`line-${itemId}-${lineId}`);
-            if (!node) return;
-            node.focus();
-            if (typeof caretPos === 'number') node.setSelectionRange(caretPos, caretPos);
-        }
-
-        function updateTitle(id, value) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            el.title = value;
-            saveItem(id);
-        }
-
-        function handleLineInput(id, lineId, inputEl) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const line = el.lines.find(l => l.id === lineId);
-            if (!line) return;
-
-            let value = inputEl.value;
-
-            if (line.checked === null) {
-                const match = value.match(/^\*\(\)\s?(.*)$/);
-                if (match) {
-                    line.checked = false;
-                    line.text = match[1];
-                    saveItem(id);
-                    renderUI();
-                    focusLine(id, lineId, line.text.length);
-                    return;
-                }
-            }
-
-            line.text = value;
-            saveItem(id);
-        }
-
-        function toggleCheck(id, lineId, checkbox) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const line = el.lines.find(l => l.id === lineId);
-            if (!line) return;
-            line.checked = checkbox.checked;
-            saveItem(id);
-            renderUI();
-        }
-
-        function performEnterSplit(id, lineId, textareaEl) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const idx = el.lines.findIndex(l => l.id === lineId);
-            if (idx === -1) return;
-            const line = el.lines[idx];
-
-            const caret = textareaEl.selectionStart;
-            const before = line.text.slice(0, caret);
-            const after = line.text.slice(caret);
-            line.text = before;
-
-            const newLine = { id: uid(), text: after, checked: line.checked !== null ? false : null };
-            el.lines.splice(idx + 1, 0, newLine);
-            saveItem(id);
-            renderUI();
-            focusLine(id, newLine.id, 0);
-        }
-
-        function handleLineKeydown(e, id, lineId) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const idx = el.lines.findIndex(l => l.id === lineId);
-            if (idx === -1) return;
-            const line = el.lines[idx];
-            const inputEl = e.target;
-
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                performEnterSplit(id, lineId, inputEl);
-                return;
-            }
-
-            if (e.key === 'Backspace') {
-                const atStart = inputEl.selectionStart === 0 && inputEl.selectionEnd === 0;
-                if (!atStart) return;
-
-                if (line.checked !== null) {
-                    e.preventDefault();
-                    line.checked = null;
-                    saveItem(id);
-                    renderUI();
-                    focusLine(id, lineId, 0);
-                    return;
-                }
-
-                if (idx > 0) {
-                    e.preventDefault();
-                    const prev = el.lines[idx - 1];
-                    const mergeCaret = prev.text.length;
-                    prev.text = prev.text + line.text;
-                    el.lines.splice(idx, 1);
-                    saveItem(id);
-                    renderUI();
-                    focusLine(id, prev.id, mergeCaret);
-                }
-                return;
-            }
-
-            if (e.key === 'ArrowUp' && idx > 0 && inputEl.selectionStart === 0) {
-                e.preventDefault();
-                focusLine(id, el.lines[idx - 1].id, el.lines[idx - 1].text.length);
-            }
-            if (e.key === 'ArrowDown' && idx < el.lines.length - 1 && inputEl.selectionStart === line.text.length) {
-                e.preventDefault();
-                focusLine(id, el.lines[idx + 1].id, 0);
-            }
-        }
-
-        async function copyText(text, btn) {
-            try { await navigator.clipboard.writeText(text); } catch (e) {
-                const ta = document.createElement('textarea');
-                ta.value = text;
-                ta.style.position = 'fixed';
-                ta.style.opacity = '0';
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-            }
-            if (btn) {
-                const original = btn.textContent;
-                btn.textContent = 'copied';
-                setTimeout(() => { btn.textContent = original; }, 1200);
-            }
-        }
-
-        async function copyNote(id, btn) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const parts = [];
-            if (el.title) parts.push(el.title);
-            (el.lines || []).forEach(line => {
-                parts.push(line.checked === null ? (line.text || '') : `${line.checked ? '[x]' : '[ ]'} ${line.text || ''}`);
-            });
-            copyText(parts.join('\n'), btn);
-        }
-
-        // --- Sections Logic ---
-        async function saveSectionsToDatabase(updatedSectionsList) {
-            const cleanList = updatedSectionsList.filter(s => s !== "passwords" && s !== "all");
-            const sectionPayload = {
-                id: "SYSTEM_SECTIONS_CONFIG",
-                type: "SYSTEM_INTERNAL",
-                title: "SYSTEM_SECTIONS",
-                content: JSON.stringify(cleanList),
-                is_completed: 0
-            };
-            await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(sectionPayload)
-            });
-        }
-
-        async function addSection() {
-            const raw = prompt("Enter new section name:");
-            if (!raw) return;
-            const name = raw.toLowerCase().trim();
-            if (name && !sections.includes(name)) {
-                sections.push(name);
-                await saveSectionsToDatabase(sections);
-                selectSection(name);
-            }
-        }
-
-        async function deleteSection(name, event) {
-            event.stopPropagation();
-            if (name === "all") return;
-            if (confirm(`Delete the section "${name}"?`)) {
-                sections = sections.filter(s => s !== name);
-                await saveSectionsToDatabase(sections);
-                if (activeSection === name) selectSection("all");
-                else renderUI();
-            }
-        }
-
-        function selectSection(name) {
-            activeSection = name;
-            localStorage.setItem("active_section", name);
-            renderUI();
-        }
-
-        async function changeNoteSection(id, selectElement) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            el.type = selectElement.value || null;
-            await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(el)
-            });
-            renderUI();
-        }
-
-        // --- Render UI ---
-        function renderUI() {
-            const sectContainer = document.getElementById("sectionsContainer");
-            sectContainer.innerHTML = "";
-
-            sections.forEach(s => {
-                const tab = document.createElement("div");
-                tab.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${activeSection === s ? 'bg-slate-800 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`;
-                tab.onclick = () => selectSection(s);
-
-                const textSpan = document.createElement("span");
-                textSpan.textContent = s;
-                tab.appendChild(textSpan);
-
-                if (s !== "all") {
-                    const deleteBtn = document.createElement("button");
-                    deleteBtn.className = "text-[10px] text-slate-500 hover:text-red-400 font-bold px-1 rounded";
-                    deleteBtn.textContent = "×";
-                    deleteBtn.onclick = (e) => deleteSection(s, e);
-                    tab.appendChild(deleteBtn);
-                }
-                sectContainer.appendChild(tab);
-            });
-
-            renderNotesGrid();
-        }
-
-        function renderNotesGrid() {
-            const grid = document.getElementById("notesGrid");
-            grid.innerHTML = "";
-
-            const filtered = itemsCache.filter(item =>
-                item.id !== "SYSTEM_SECTIONS_CONFIG" &&
-                (activeSection === 'all' || item.type === activeSection)
-            );
-
-            filtered.forEach(item => {
-                const card = document.createElement("div");
-                card.className = "p-4 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700/60 transition flex flex-col justify-between space-y-3";
-
-                let inner = `
-                    <div class="w-full">
-                        <input id="title-${item.id}" value="${item.title || ''}" placeholder="untitled" class="w-full bg-transparent font-medium text-slate-200 focus:outline-none placeholder-slate-600 text-base mb-2">
-                        <div class="space-y-0.5">`;
-
-                (item.lines || []).forEach(line => {
-                    if (line.checked === null) {
-                        inner += `
-                            <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-300 focus:outline-none placeholder-slate-600 py-0.5 resize-none overflow-hidden leading-snug break-words">${escapeHtml(line.text)}</textarea>`;
-                    } else {
-                        inner += `
-                            <div class="flex items-start gap-2">
-                                <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-700 bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
-                                <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-500' : 'text-slate-300'}">${escapeHtml(line.text)}</textarea>
-                            </div>`;
-                    }
-                });
-
-                inner += `</div></div>`;
-
-                const customSections = sections.filter(s => s !== 'all');
-                let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
-                    customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
-
-                let footerArea = `
-                    <div class="flex justify-end items-center border-t border-slate-800/50 pt-2 text-xs text-slate-500">
-                        <div class="flex items-center gap-3">
-                            <button onclick="copyNote('${item.id}', this)" class="text-slate-600 hover:text-slate-300 transition">copy</button>
-                            <select onchange="changeNoteSection('${item.id}', this)" class="bg-transparent text-slate-500 hover:text-slate-400 border-none focus:ring-0 cursor-pointer text-xs p-0 w-24">
-                                ${options}
-                            </select>
-                            <button onclick="deleteItem('${item.id}')" class="text-slate-600 hover:text-red-400 transition">delete</button>
-                        </div>
-                    </div>`;
-
-                card.innerHTML = inner + footerArea;
-                grid.appendChild(card);
-
-                const titleInput = card.querySelector(`#title-${CSS.escape(item.id)}`);
-                if (titleInput) titleInput.addEventListener('blur', () => updateTitle(item.id, titleInput.value));
-
-                card.querySelectorAll('.line-input').forEach(inputEl => {
-                    const lineId = inputEl.dataset.line;
-                    autoGrow(inputEl);
-                    inputEl.addEventListener('input', () => { autoGrow(inputEl); handleLineInput(item.id, lineId, inputEl); });
-                    inputEl.addEventListener('keydown', (e) => handleLineKeydown(e, item.id, lineId));
-                    inputEl.addEventListener('beforeinput', (e) => {
-                        if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') {
-                            e.preventDefault();
-                            performEnterSplit(item.id, lineId, inputEl);
-                        }
-                    });
-                });
-            });
-        }
-
-        async function renderVaultUI() {
-            const grid = document.getElementById("vaultGrid");
-            grid.innerHTML = "";
-
-            for (const item of vaultCache) {
-                const decryptedStr = await decryptData(item.ciphertext, item.iv);
-                let data = { service: "Encrypted Entry", username: "", password: "" };
-                try { data = JSON.parse(decryptedStr); } catch (e) {}
-
-                const card = document.createElement("div");
-                card.className = "p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-center justify-between";
-
-                card.innerHTML = `
-                    <div class="space-y-0.5">
-                        <div class="text-sm font-medium text-slate-200">${escapeHtml(data.service)}</div>
-                        <div class="text-xs text-slate-400 font-mono">${escapeHtml(data.username || 'No username')}</div>
-                        <div class="text-xs text-slate-500 font-mono flex items-center gap-2">
-                            <span id="pass-${item.id}">••••••••••••</span>
-                            <button onclick="togglePasswordVisibility('${item.id}', \`${escapeHtml(data.password).replace(/`/g, '\\`')}\`)" class="hover:text-slate-300">👁️</button>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3 text-xs">
-                        <button onclick="copyText(\`${escapeHtml(data.password).replace(/`/g, '\\`')}\`, this)" class="text-slate-500 hover:text-slate-300">copy pass</button>
-                        <button onclick="deleteVaultItem('${item.id}')" class="text-slate-600 hover:text-red-400">delete</button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            }
-        }
-
-        function togglePasswordVisibility(id, plainPassword) {
-            const el = document.getElementById(`pass-${id}`);
-            if (el.textContent === "••••••••••••") {
-                el.textContent = plainPassword;
-                el.classList.add("text-blue-400");
-            } else {
-                el.textContent = "••••••••••••";
-                el.classList.remove("text-blue-400");
-            }
-        }
-
-        fetchItems();
-    </script>
+        const items = await response.json();
+
+        // Create download blob
+        const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showStatus('JSON Backup successfully exported!');
+      } catch (err) {
+        showStatus('Error downloading JSON backup: ' + err.message, true);
+      }
+    }
+
+    /**
+     * Generates a printable plain-text PDF document from local decrypted items
+     */
+    async function exportVaultPDF() {
+      if (!window.decryptedVaultItems || window.decryptedVaultItems.length === 0) {
+        showStatus('Export failed: No decrypted vault items found in memory. Log in and unlock your vault first.', true);
+        return;
+      }
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Header styling
+        doc.setFontSize(18);
+        doc.text("Password Vault Backup", 14, 20);
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text(`Generated: ${new Date().toLocaleString()} | Unencrypted File`, 14, 27);
+        doc.setLineWidth(0.5);
+        doc.line(14, 31, 196, 31);
+        
+        let y = 40;
+        doc.setTextColor(0);
+
+        // Render each decrypted item
+        window.decryptedVaultItems.forEach((item, index) => {
+          // Add a new page if reaching the bottom margin
+          if (y > 260) {
+            doc.addPage();
+            y = 20;
+          }
+          
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "bold");
+          doc.text(`${index + 1}. ${item.title || 'Untitled Entry'}`, 14, y);
+          
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.text(`Username: ${item.username || '—'}`, 20, y + 6);
+          doc.text(`Password: ${item.password || '—'}`, 20, y + 12);
+          if (item.url) {
+            doc.text(`URL: ${item.url}`, 20, y + 18);
+            y += 26;
+          } else {
+            y += 20;
+          }
+        });
+
+        doc.save(`vault-backup-${new Date().toISOString().slice(0, 10)}.pdf`);
+        showStatus('PDF Backup successfully exported!');
+      } catch (err) {
+        showStatus('Error generating PDF: ' + err.message, true);
+      }
+    }
+  </script>
 </body>
 </html>
