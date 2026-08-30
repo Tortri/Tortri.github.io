@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Client-Side PDF Merger</title>
+  <!-- Load pdf-lib directly from a CDN -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
+    button { margin-top: 10px; padding: 10px 15px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h2>Pure Client-Side PDF Merger</h2>
+  <input type="file" id="pdf-inputs" multiple accept="application/pdf" />
+  <br>
+  <button onclick="mergePDFs()">Merge & Download</button>
+
+  <script>
+    async function mergePDFs() {
+      const files = document.getElementById('pdf-inputs').files;
+      if (files.length < 2) return alert('Please select at least 2 PDF files.');
+
+      // Create a new merged document
+      const mergedPdf = await PDFLib.PDFDocument.create();
+
+      for (let file of files) {
+        const fileBuffer = await file.arrayBuffer();
+        const pdf = await PDFLib.PDFDocument.load(fileBuffer);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+      }
+
+      // Save and trigger download
+      const mergedBytes = await mergedPdf.save();
+      const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'merged.pdf';
+      link.click();
+    }
+  </script>
+
+</body>
+</html>
