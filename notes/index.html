@@ -22,26 +22,28 @@
     <div class="max-w-4xl mx-auto p-4 sm:p-8">
         <!-- Header -->
         <header class="flex justify-between items-baseline border-b border-slate-300 dark:border-slate-800 pb-3 mb-3 relative">
-            <!-- Dynamic Date & Week Title with Dropdown Trigger -->
-            <div class="relative">
-                <button id="dateHeaderBtn" onclick="toggleCalendarDropdown(event)" class="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-200 hover:opacity-80 transition flex items-center gap-2">
-                    <span id="headerDateText">...</span>
-                    <span id="headerWeekText" class="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">...</span>
+            
+            <!-- Date & Week Title with Calendar Dropdown -->
+            <div class="relative inline-block" id="calendarWrapper">
+                <button onclick="toggleCalendar(event)" class="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-200 hover:text-slate-600 dark:hover:text-slate-400 transition text-left">
+                    <span id="pageDateTitle">Loading date...</span>
                     <span class="text-xs text-slate-400">▼</span>
                 </button>
 
-                <!-- Dropdown Calendar Widget -->
-                <div id="calendarDropdown" class="hidden absolute top-full left-0 mt-2 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 p-3">
-                    <div class="flex justify-between items-center mb-3">
-                        <button onclick="changeCalendarMonth(-1, event)" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-xs font-bold text-slate-600 dark:text-slate-300">‹ Prev</button>
-                        <span id="calMonthYearTitle" class="text-sm font-semibold text-slate-800 dark:text-slate-200"></span>
-                        <button onclick="changeCalendarMonth(1, event)" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-xs font-bold text-slate-600 dark:text-slate-300">Next ›</button>
+                <!-- Calendar Dropdown -->
+                <div id="calendarDropdown" class="hidden absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 p-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <button onclick="changeMonth(-1, event)" class="p-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">◄</button>
+                        <span id="calMonthYear" class="text-xs font-bold text-slate-700 dark:text-slate-200"></span>
+                        <button onclick="changeMonth(1, event)" class="p-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">►</button>
                     </div>
-                    <!-- Weekday Grid -->
-                    <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-slate-400 mb-1">
-                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+
+                    <!-- Days of Week Header -->
+                    <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-1">
+                        <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
                     </div>
-                    <!-- Days Grid -->
+
+                    <!-- Calendar Grid -->
                     <div id="calDaysGrid" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
                 </div>
             </div>
@@ -98,9 +100,97 @@
         let activeSection = localStorage.getItem("active_section") || "ALL";
         let activeOpenFolderId = null;
 
-        // Calendar Date State
-        let calendarCurrentDate = new Date();
+        // --- DATE & CALENDAR SYSTEM ---
+        let calendarDate = new Date();
 
+        function getWeekNumber(d) {
+            const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            const dayNum = date.getUTCDay() || 7;
+            date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+            return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+        }
+
+        function renderDateTitle() {
+            const now = new Date();
+            const week = getWeekNumber(now);
+            const options = { weekday: 'short', month: 'short', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('en-US', options);
+            document.getElementById("pageDateTitle").textContent = `${dateStr} • Week ${week}`;
+        }
+
+        function toggleCalendar(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const dropdown = document.getElementById("calendarDropdown");
+            const isOpen = !dropdown.classList.contains("hidden");
+            if (isOpen) {
+                dropdown.classList.add("hidden");
+            } else {
+                dropdown.classList.remove("hidden");
+                calendarDate = new Date();
+                renderCalendarGrid();
+            }
+        }
+
+        function changeMonth(offset, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            calendarDate.setMonth(calendarDate.getMonth() + offset);
+            renderCalendarGrid();
+        }
+
+        function renderCalendarGrid() {
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+            const today = new Date();
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById("calMonthYear").textContent = `${monthNames[month]} ${year}`;
+
+            const grid = document.getElementById("calDaysGrid");
+            grid.innerHTML = "";
+
+            const firstDay = new Date(year, month, 1);
+            let startingDay = firstDay.getDay() - 1; // Convert Sunday=0 to Monday=0
+            if (startingDay === -1) startingDay = 6;
+
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Blank slots for alignment
+            for (let i = 0; i < startingDay; i++) {
+                const blank = document.createElement("div");
+                grid.appendChild(blank);
+            }
+
+            // Days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement("div");
+                dayCell.textContent = day;
+                dayCell.className = "py-1 rounded text-slate-700 dark:text-slate-300";
+
+                const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+                if (isToday) {
+                    dayCell.className += " bg-blue-500 text-white font-bold";
+                }
+
+                grid.appendChild(dayCell);
+            }
+        }
+
+        // Close dropdowns on outside clicks
+        const closeAllDropdowns = (e) => {
+            if (activeOpenFolderId && !e.target.closest('#bookmarksContainer')) {
+                activeOpenFolderId = null;
+                renderBookmarks();
+            }
+            if (!e.target.closest('#calendarWrapper')) {
+                const calDropdown = document.getElementById("calendarDropdown");
+                if (calDropdown) calDropdown.classList.add("hidden");
+            }
+        };
+        document.addEventListener('click', closeAllDropdowns);
+        document.addEventListener('touchstart', closeAllDropdowns, { passive: true });
+
+        // --- APP INITIALIZATION & THEME ---
         function initTheme() {
             const savedTheme = localStorage.getItem("theme");
             if (savedTheme === "light") {
@@ -119,117 +209,727 @@
         }
 
         initTheme();
+        renderDateTitle();
 
-        // --- DATE & CALENDAR FUNCTIONS ---
-        function getWeekNumber(date) {
-            const target = new Date(date.valueOf());
-            const dayNr = (date.getDay() + 6) % 7;
-            target.setDate(target.getDate() - dayNr + 3);
-            const firstThursday = target.valueOf();
-            target.setMonth(0, 1);
-            if (target.getDay() !== 4) {
-                target.setMonth(0, 1 + ((Here is the updated code. The primary header now displays the **current date** and **week number of the year** (e.g., *Week 35*). 
+        function uid() {
+            return crypto.randomUUID().slice(0, 8);
+        }
 
-Clicking or tapping on the date/week header opens an interactive **dropdown month calendar** with day-of-the-week headers. You can navigate between months using the arrow controls.
+        function getAuthHeader() {
+            let key = localStorage.getItem("notes_api_key");
+            if (!key) {
+                key = prompt("Enter portal password:");
+                if (key) localStorage.setItem("notes_api_key", key);
+            }
+            return { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" };
+        }
 
-### Summary of Additions
-* **Dynamic Header Title:** Automatically calculates and displays today's date and the current ISO week number (e.g., `Monday, Sep 1 • Week 36`).
-* **Interactive Dropdown Calendar:** Clicking the header opens a clean dropdown showing the full month layout (Mon–Sun) with the current day highlighted.
-* **Mobile-Safe Events:** Uses touch-friendly events so the dropdown opens reliably on mobile devices without conflicting with drag handles.
+        function logout() {
+            localStorage.removeItem("notes_api_key");
+            window.location.reload();
+        }
 
----
+        function escapeHtml(text) {
+            return (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
 
-### Complete Code
+        function autoGrow(el) {
+            el.style.height = "auto";
+            el.style.height = el.scrollHeight + "px";
+        }
 
-```html
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notes & Bookmarks</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' };
-    </script>
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js](https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js)"></script>
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js](https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js)"></script>
-    <style>
-        .sortable-ghost { opacity: 0.3; }
-        .sortable-drag { cursor: grabbing !important; }
-        /* Prevent touch delay on interactive elements */
-        button, a { touch-action: manipulation; }
-    </style>
-</head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
+        function extractFirstURL(text) {
+            if (!text) return null;
+            const mdMatch = text.match(/\[.*?\]\((https?:\/\/[^\s\)]+)\)/);
+            if (mdMatch) return mdMatch[1];
+            const urlMatch = text.match(/(https?:\/\/[^\s]+)/);
+            if (urlMatch) return urlMatch[1];
+            return null;
+        }
 
-    <div class="max-w-4xl mx-auto p-4 sm:p-8">
-        <!-- Header -->
-        <header class="flex justify-between items-baseline border-b border-slate-300 dark:border-slate-800 pb-3 mb-3 relative">
+        function normalizeItem(item) {
+            if (item.lines) return item;
+
+            let lines = [];
+            try {
+                const parsed = JSON.parse(item.content);
+                if (Array.isArray(parsed)) {
+                    lines = parsed.map(p => {
+                        if (p && typeof p === 'object' && 'checked' in p) {
+                            return { id: p.id || uid(), text: p.text || '', checked: p.checked };
+                        }
+                        if (p && typeof p === 'object' && 'type' in p) {
+                            return { id: uid(), text: p.text || '', checked: p.type === 'check' ? !!p.completed : null };
+                        }
+                        return { id: uid(), text: p.text || '', checked: !!p.completed };
+                    });
+                } else if (item.content) {
+                    lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
+                }
+            } catch (e) {
+                if (item.content) lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
+            }
+            if (lines.length === 0) lines = [{ id: uid(), text: '', checked: null }];
+            item.lines = lines;
+            return item;
+        }
+
+        function serializeLines(item) {
+            item.content = JSON.stringify(item.lines || []);
+            return item.content;
+        }
+
+        async function fetchItems() {
+            try {
+                const res = await fetch(`${API_BASE}/items`, { headers: getAuthHeader() });
+                if (res.status === 401) { alert("Incorrect password!"); logout(); return; }
+                itemsCache = (await res.json()).map(normalizeItem);
+
+                const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
+                if (sectionsData) {
+                    try {
+                        const loaded = JSON.parse(sectionsData.content);
+                        const updatedLoaded = loaded.map(s => s === "all" ? "ALL" : s);
+                        sections = updatedLoaded.includes("ALL") ? updatedLoaded : ["ALL", ...updatedLoaded];
+                    } catch (e) { sections = ["ALL"]; }
+                } else {
+                    saveSectionsToDatabase(["ALL"]);
+                }
+
+                const bookmarksData = itemsCache.find(i => i.id === "SYSTEM_BOOKMARKS_CONFIG");
+                if (bookmarksData) {
+                    try { bookmarks = JSON.parse(bookmarksData.content); } catch (e) { bookmarks = []; }
+                }
+
+                renderUI();
+            } catch (err) { console.error("Network error:", err); }
+        }
+
+        async function saveItem(id) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            serializeLines(el);
+
+            const res = await fetch(`${API_BASE}/items`, {
+                method: "POST",
+                headers: getAuthHeader(),
+                body: JSON.stringify(el)
+            });
+            if (res.status === 401) { logout(); }
+        }
+
+        async function deleteItem(id) {
+            if (!confirm("Delete this item?")) return;
+            const res = await fetch(`${API_BASE}/items/${id}`, { method: "DELETE", headers: getAuthHeader() });
+            if (res.status === 401) { logout(); }
+            fetchItems();
+        }
+
+        function createNewNote() {
+            const firstLineId = uid();
+            const newItem = {
+                id: crypto.randomUUID(),
+                type: activeSection === 'ALL' ? null : activeSection,
+                title: '',
+                lines: [{ id: firstLineId, text: '', checked: null }],
+                is_completed: 0
+            };
+            itemsCache.unshift(newItem);
+            renderUI();
+            focusLine(newItem.id, firstLineId, 0);
+        }
+
+        function focusLine(itemId, lineId, caretPos) {
+            setTimeout(() => {
+                const node = document.getElementById(`line-${itemId}-${lineId}`);
+                if (!node) return;
+                node.focus();
+                if (typeof caretPos === 'number') {
+                    node.setSelectionRange(caretPos, caretPos);
+                }
+            }, 0);
+        }
+
+        function updateTitle(id, value) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            el.title = value;
+            saveItem(id);
+        }
+
+        function handleLineInput(id, lineId, inputEl) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            const line = el.lines.find(l => l.id === lineId);
+            if (!line) return;
+
+            let value = inputEl.value;
+
+            if (line.checked === null) {
+                const match = value.match(/^\*\(\)\s?(.*)$/);
+                if (match) {
+                    line.checked = false;
+                    line.text = match[1];
+                    saveItem(id);
+                    renderUI();
+                    focusLine(id, lineId, line.text.length);
+                    return;
+                }
+            }
+
+            line.text = value;
+            saveItem(id);
+
+            const url = extractFirstURL(value);
+            const linkBtnNode = document.getElementById(`url-btn-${id}-${lineId}`);
+            if (linkBtnNode) {
+                if (url) {
+                    linkBtnNode.href = url;
+                    linkBtnNode.classList.remove('hidden');
+                } else {
+                    linkBtnNode.classList.add('hidden');
+                }
+            }
+        }
+
+        function toggleCheck(id, lineId, checkbox) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            const line = el.lines.find(l => l.id === lineId);
+            if (!line) return;
+            line.checked = checkbox.checked;
+            saveItem(id);
+            renderUI();
+        }
+
+        function performEnterSplit(id, lineId, textareaEl) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            const idx = el.lines.findIndex(l => l.id === lineId);
+            if (idx === -1) return;
+            const line = el.lines[idx];
+
+            const caret = textareaEl.selectionStart;
+            const before = line.text.slice(0, caret);
+            const after = line.text.slice(caret);
+            line.text = before;
+
+            const newLine = { id: uid(), text: after, checked: line.checked !== null ? false : null };
+            el.lines.splice(idx + 1, 0, newLine);
+            saveItem(id);
+            renderUI();
+            focusLine(id, newLine.id, 0);
+        }
+
+        function handleLineKeydown(e, id, lineId) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            const idx = el.lines.findIndex(l => l.id === lineId);
+            if (idx === -1) return;
+            const line = el.lines[idx];
+            const inputEl = e.target;
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performEnterSplit(id, lineId, inputEl);
+                return;
+            }
+
+            if (e.key === 'Backspace') {
+                const atStart = inputEl.selectionStart === 0 && inputEl.selectionEnd === 0;
+                if (!atStart) return;
+
+                if (line.checked !== null) {
+                    e.preventDefault();
+                    line.checked = null;
+                    saveItem(id);
+                    renderUI();
+                    focusLine(id, lineId, 0);
+                    return;
+                }
+
+                if (idx > 0) {
+                    e.preventDefault();
+                    const prev = el.lines[idx - 1];
+                    const mergeCaret = prev.text.length;
+                    prev.text = prev.text + line.text;
+                    el.lines.splice(idx, 1);
+                    saveItem(id);
+                    renderUI();
+                    focusLine(id, prev.id, mergeCaret);
+                }
+                return;
+            }
+
+            if (e.key === 'ArrowUp' && idx > 0 && inputEl.selectionStart === 0) {
+                e.preventDefault();
+                focusLine(id, el.lines[idx - 1].id, el.lines[idx - 1].text.length);
+            }
+            if (e.key === 'ArrowDown' && idx < el.lines.length - 1 && inputEl.selectionStart === line.text.length) {
+                e.preventDefault();
+                focusLine(id, el.lines[idx + 1].id, 0);
+            }
+        }
+
+        async function copyNote(id, btn) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+
+            const parts = [];
+            if (el.title) parts.push(el.title);
+            (el.lines || []).forEach(line => {
+                if (line.checked === null) {
+                    parts.push(line.text || '');
+                } else {
+                    parts.push(`${line.checked ? '[x]' : '[ ]'} ${line.text || ''}`);
+                }
+            });
+            const text = parts.join('\n');
+
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+
+            if (btn) {
+                const original = btn.textContent;
+                btn.textContent = 'copied';
+                setTimeout(() => { btn.textContent = original; }, 1200);
+            }
+        }
+
+        // --- BOOKMARKS & FOLDERS ---
+        async function saveBookmarksToDatabase() {
+            const payload = {
+                id: "SYSTEM_BOOKMARKS_CONFIG",
+                type: "SYSTEM_INTERNAL",
+                title: "SYSTEM_BOOKMARKS",
+                content: JSON.stringify(bookmarks),
+                is_completed: 0
+            };
+            await fetch(`${API_BASE}/items`, {
+                method: "POST",
+                headers: getAuthHeader(),
+                body: JSON.stringify(payload)
+            });
+        }
+
+        function addBookmarkPrompt() {
+            const choice = prompt("Type 'link' to add a Direct Link, or 'folder' to create a Folder:", "link");
+            if (!choice) return;
+
+            if (choice.toLowerCase() === 'folder') {
+                const folderTitle = prompt("Folder Name:");
+                if (folderTitle) {
+                    bookmarks.push({ id: uid(), type: 'folder', title: folderTitle.trim(), children: [] });
+                    saveBookmarksToDatabase();
+                    renderUI();
+                }
+            } else if (choice.toLowerCase() === 'link') {
+                const title = prompt("Link Title:");
+                if (!title) return;
+                let url = prompt("Link URL:");
+                if (!url) return;
+                if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+
+                bookmarks.push({ id: uid(), type: 'link', title: title.trim(), url: url.trim() });
+                saveBookmarksToDatabase();
+                renderUI();
+            }
+        }
+
+        function addLinkToFolder(folderId, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const folder = bookmarks.find(b => b.id === folderId);
+            if (!folder) return;
+
+            const title = prompt("Link Title:");
+            if (!title) return;
+            let url = prompt("Link URL:");
+            if (!url) return;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+
+            folder.children.push({ id: uid(), type: 'link', title: title.trim(), url: url.trim() });
+            saveBookmarksToDatabase();
+            renderUI();
+        }
+
+        function deleteBookmark(id, folderId = null, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            if (!confirm("Delete this bookmark?")) return;
+            if (folderId) {
+                const folder = bookmarks.find(b => b.id === folderId);
+                if (folder) folder.children = folder.children.filter(c => c.id !== id);
+            } else {
+                bookmarks = bookmarks.filter(b => b.id !== id);
+                if (activeOpenFolderId === id) activeOpenFolderId = null;
+            }
+            saveBookmarksToDatabase();
+            renderUI();
+        }
+
+        function toggleFolderDropdown(folderId, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            activeOpenFolderId = (activeOpenFolderId === folderId) ? null : folderId;
+            renderBookmarks();
+        }
+
+        function renderBookmarks() {
+            const container = document.getElementById("bookmarksContainer");
+            container.innerHTML = "";
+
+            if (bookmarks.length === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-400 dark:text-slate-500 italic pl-1">No shortcuts added yet. Click "+ Link / Folder".</span>`;
+                return;
+            }
+
+            bookmarks.forEach(bm => {
+                const itemDiv = document.createElement("div");
+                itemDiv.dataset.id = bm.id;
+
+                if (bm.type === 'link') {
+                    itemDiv.className = "flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1 rounded text-xs border border-slate-200 dark:border-slate-700/60 shadow-sm group";
+                    itemDiv.innerHTML = `
+                        <a href="${escapeHtml(bm.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline text-slate-700 dark:text-slate-200 font-medium">
+                            ${escapeHtml(bm.title)}
+                        </a>
+                        <button onclick="deleteBookmark('${bm.id}', null, event)" class="text-slate-400 hover:text-red-500 font-bold ml-1 sm:opacity-0 group-hover:opacity-100 transition">×</button>
+                    `;
+                } else if (bm.type === 'folder') {
+                    const isOpen = activeOpenFolderId === bm.id;
+                    itemDiv.className = "relative inline-block";
+
+                    let childrenHtml = (bm.children || []).map(child => `
+                        <div class="flex items-center justify-between gap-3 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200">
+                            <a href="${escapeHtml(child.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline truncate py-0.5">
+                                ${escapeHtml(child.title)}
+                            </a>
+                            <button onclick="deleteBookmark('${child.id}', '${bm.id}', event)" class="text-slate-400 hover:text-red-500 font-bold ml-2 p-1">×</button>
+                        </div>
+                    `).join('');
+
+                    itemDiv.innerHTML = `
+                        <button onclick="toggleFolderDropdown('${bm.id}', event)" class="flex items-center gap-1 bg-slate-200 dark:bg-slate-700/80 hover:bg-slate-300 dark:hover:bg-slate-600 px-2.5 py-1 rounded text-xs font-medium text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition">
+                            <span>${escapeHtml(bm.title)}</span>
+                            <span class="text-[9px] text-slate-400 ml-1">${isOpen ? '▲' : '▼'}</span>
+                        </button>
+
+                        <div class="${isOpen ? 'block' : 'hidden'} absolute top-full left-0 mt-1.5 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-50 py-1">
+                            ${childrenHtml || '<div class="px-3 py-1 text-[11px] text-slate-400 italic">Folder empty</div>'}
+                            <div class="border-t border-slate-200 dark:border-slate-700 mt-1 pt-1 flex justify-between px-2 py-1">
+                                <button onclick="addLinkToFolder('${bm.id}', event)" class="text-[11px] font-semibold text-blue-500 hover:underline p-0.5">
+                                    + Add Link
+                                </button>
+                                <button onclick="deleteBookmark('${bm.id}', null, event)" class="text-[11px] font-semibold text-red-500 hover:underline p-0.5">
+                                    Delete Folder
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.appendChild(itemDiv);
+            });
+
+            new Sortable(container, {
+                animation: 150,
+                delay: 150,
+                delayOnTouchOnly: true,
+                onEnd: function () {
+                    const newOrderIds = Array.from(container.children).map(child => child.dataset.id);
+                    bookmarks = newOrderIds.map(id => bookmarks.find(b => b.id === id)).filter(Boolean);
+                    saveBookmarksToDatabase();
+                }
+            });
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
             
-            <!-- Date & Week Title with Calendar Dropdown -->
-            <div class="relative inline-block" id="calendarWrapper">
-                <button onclick="toggleCalendar(event)" class="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-200 hover:text-slate-600 dark:hover:text-slate-400 transition text-left">
-                    <span id="pageDateTitle">Loading date...</span>
-                    <span class="text-xs text-slate-400">▼</span>
-                </button>
+            const filtered = itemsCache.filter(item =>
+                item.id !== "SYSTEM_SECTIONS_CONFIG" &&
+                item.id !== "SYSTEM_BOOKMARKS_CONFIG" &&
+                (activeSection === 'ALL' || item.type === activeSection)
+            );
 
-                <!-- Calendar Dropdown -->
-                <div id="calendarDropdown" class="hidden absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 p-3">
-                    <div class="flex justify-between items-center mb-2">
-                        <button onclick="changeMonth(-1, event)" class="p-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">◄</button>
-                        <span id="calMonthYear" class="text-xs font-bold text-slate-700 dark:text-slate-200"></span>
-                        <button onclick="changeMonth(1, event)" class="p-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">►</button>
-                    </div>
+            let y = 15;
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(18);
+            doc.text(`Notes - ${activeSection}`, 14, y);
+            y += 10;
 
-                    <!-- Days of Week Header -->
-                    <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-1">
-                        <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
-                    </div>
+            doc.setFontSize(11);
 
-                    <!-- Calendar Grid -->
-                    <div id="calDaysGrid" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
-                </div>
-            </div>
+            filtered.forEach((item, index) => {
+                if (y > 270) {
+                    doc.addPage();
+                    y = 15;
+                }
 
-            <div class="flex items-center gap-3">
-                <button onclick="exportToPDF()" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
-                    export pdf
-                </button>
-                <button onclick="toggleTheme()" id="themeToggleBtn" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
-                    light mode
-                </button>
-                <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
-                    logout
-                </button>
-            </div>
-        </header>
+                doc.setFont("Helvetica", "bold");
+                const titleText = item.title || `Note #${index + 1}`;
+                doc.text(titleText, 14, y);
+                y += 6;
 
-        <!-- Bookmarks Bar -->
-        <div class="mb-4 p-2 bg-slate-200/50 dark:bg-slate-800/40 rounded-lg border border-slate-300 dark:border-slate-800/60 flex items-center justify-between gap-2">
-            <div id="bookmarksContainer" class="flex flex-wrap items-center gap-2 select-none flex-1">
-                <!-- Dynamically rendered shortcuts/folders -->
-            </div>
-            <button onclick="addBookmarkPrompt()" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded transition shrink-0">
-                + Link / Folder
-            </button>
-        </div>
+                doc.setFont("Helvetica", "normal");
+                (item.lines || []).forEach(line => {
+                    if (y > 275) {
+                        doc.addPage();
+                        y = 15;
+                    }
+                    let lineStr = line.text || "";
+                    if (line.checked !== null) {
+                        lineStr = `[${line.checked ? "x" : " "}] ${lineStr}`;
+                    }
+                    const splitText = doc.splitTextToSize(lineStr, 180);
+                    doc.text(splitText, 18, y);
+                    y += (splitText.length * 5);
+                });
 
-        <!-- Section / Type Navigation Header -->
-        <div class="relative mb-6 border-b border-slate-300 dark:border-slate-800 pb-1">
-            <div class="flex items-center justify-between">
-                <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
-                </div>
-                <button onclick="addSection()" class="absolute right-0 bg-slate-100 dark:bg-slate-900 pl-4 pr-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
-            </div>
-        </div>
+                y += 6;
+            });
 
-        <main>
-            <div class="flex justify-end mb-4">
-                <button onclick="createNewNote()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
-                    +
-                </button>
-            </div>
+            doc.save(`notes_${activeSection.toLowerCase()}_${Date.now()}.pdf`);
+        }
 
-            <!-- Notes Grid -->
-            <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        async function saveSectionsToDatabase(updatedSectionsList) {
+            const sectionPayload = {
+                id: "SYSTEM_SECTIONS_CONFIG",
+                type: "SYSTEM_INTERNAL",
+                title: "SYSTEM_SECTIONS",
+                content: JSON.stringify(updatedSectionsList),
+                is_completed: 0
+            };
+            await fetch(`${API_BASE}/items`, {
+                method: "POST",
+                headers: getAuthHeader(),
+                body: JSON.stringify(sectionPayload)
+            });
+        }
+
+        async function addSection() {
+            const raw = prompt("Enter new section/type name:");
+            if (!raw) return;
+            const name = raw.trim();
+            if (name && !sections.includes(name)) {
+                sections.push(name);
+                await saveSectionsToDatabase(sections);
+                selectSection(name);
+            }
+        }
+
+        async function deleteSection(name, event) {
+            event.stopPropagation();
+            if (name === "ALL") {
+                alert("Cannot delete the 'ALL' section.");
+                return;
+            }
+            if (confirm(`Delete section "${name}"? Notes in it will remain under ALL.`)) {
+                sections = sections.filter(s => s !== name);
+                await saveSectionsToDatabase(sections);
+
+                if (activeSection === name) {
+                    activeSection = "ALL";
+                    localStorage.setItem("active_section", "ALL");
+                }
+                fetchItems();
+            }
+        }
+
+        function selectSection(name) {
+            activeSection = name;
+            localStorage.setItem("active_section", name);
+            renderUI();
+        }
+
+        async function changeNoteSection(id, selectElement) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            el.type = selectElement.value || null;
+            await fetch(`${API_BASE}/items`, {
+                method: "POST",
+                headers: getAuthHeader(),
+                body: JSON.stringify(el)
+            });
+            renderUI();
+        }
+
+        function renderUI() {
+            renderBookmarks();
+
+            // --- Render Section Tabs ---
+            const sectContainer = document.getElementById("sectionsContainer");
+            sectContainer.innerHTML = "";
+
+            sections.forEach(s => {
+                const tab = document.createElement("div");
+                tab.dataset.section = s;
+                tab.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
+                    activeSection === s 
+                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100' 
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`;
+                tab.onclick = () => selectSection(s);
+
+                const textSpan = document.createElement("span");
+                textSpan.textContent = s;
+                tab.appendChild(textSpan);
+
+                if (s !== "ALL") {
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.className = "text-[10px] text-slate-400 dark:text-slate-500 hover:text-red-500 font-bold px-1 rounded";
+                    deleteBtn.textContent = "×";
+                    deleteBtn.onclick = (e) => deleteSection(s, e);
+                    tab.appendChild(deleteBtn);
+                }
+                sectContainer.appendChild(tab);
+            });
+
+            new Sortable(sectContainer, {
+                animation: 150,
+                delay: 150,
+                delayOnTouchOnly: true,
+                onEnd: function () {
+                    const newOrder = Array.from(sectContainer.children).map(child => child.dataset.section);
+                    sections = newOrder;
+                    saveSectionsToDatabase(sections);
+                }
+            });
+
+            // --- Render Notes Grid ---
+            const grid = document.getElementById("notesGrid");
+            grid.innerHTML = "";
+
+            const filtered = itemsCache.filter(item =>
+                item.id !== "SYSTEM_SECTIONS_CONFIG" &&
+                item.id !== "SYSTEM_BOOKMARKS_CONFIG" &&
+                (activeSection === 'ALL' || item.type === activeSection)
+            );
+
+            filtered.forEach((item) => {
+                const card = document.createElement("div");
+                card.dataset.id = item.id;
+                card.className = "p-4 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/60 transition flex flex-col justify-between space-y-3 shadow-sm dark:shadow-none";
+
+                let inner = `
+                    <div class="w-full">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="card-handle cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 text-sm select-none p-1" title="Drag card">⋮⋮</span>
+                            <input id="title-${item.id}" value="${escapeHtml(item.title || '')}" placeholder="Untitled" class="w-full bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 text-base">
+                        </div>
+                        <div class="lines-list space-y-1">`;
+
+                (item.lines || []).forEach(line => {
+                    const foundUrl = extractFirstURL(line.text);
+                    const linkBtnClass = foundUrl ? "" : "hidden";
+
+                    if (line.checked === null) {
+                        inner += `
+                            <div data-line-id="${line.id}" class="line-item flex items-start gap-1 group">
+                                <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-50 sm:opacity-0 group-hover:opacity-100 transition p-0.5">⋮⋮</span>
+                                <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 py-0.5 resize-none overflow-hidden leading-snug break-words">${escapeHtml(line.text)}</textarea>
+                                <a id="url-btn-${item.id}-${line.id}" href="${foundUrl || '#'}" target="_blank" rel="noopener noreferrer" class="${linkBtnClass} shrink-0 text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded mt-0.5 transition">↗ open</a>
+                            </div>`;
+                    } else {
+                        inner += `
+                            <div data-line-id="${line.id}" class="line-item flex items-start gap-1 group">
+                                <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-50 sm:opacity-0 group-hover:opacity-100 transition p-0.5">⋮⋮</span>
+                                <div class="flex items-start gap-2 w-full">
+                                    <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
+                                    <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}">${escapeHtml(line.text)}</textarea>
+                                    <a id="url-btn-${item.id}-${line.id}" href="${foundUrl || '#'}" target="_blank" rel="noopener noreferrer" class="${linkBtnClass} shrink-0 text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded mt-0.5 transition">↗ open</a>
+                                </div>
+                            </div>`;
+                    }
+                });
+
+                inner += `
+                        </div>
+                    </div>`;
+
+                const customSections = sections.filter(s => s !== 'ALL');
+                let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
+                    customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
+
+                let footerArea = `
+                    <div class="flex justify-end items-center border-t border-slate-200 dark:border-slate-800/50 pt-2 text-xs text-slate-400 dark:text-slate-500">
+                        <div class="flex items-center gap-3">
+                            <button onclick="copyNote('${item.id}', this)" class="text-slate-500 dark:text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition">copy</button>
+                            <select onchange="changeNoteSection('${item.id}', this)" class="bg-transparent text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-400 border-none focus:ring-0 cursor-pointer text-xs p-0 w-24">
+                                ${options}
+                            </select>
+                            <button onclick="deleteItem('${item.id}')" class="text-slate-500 dark:text-slate-600 hover:text-red-500 transition">delete</button>
+                        </div>
+                    </div>`;
+
+                card.innerHTML = inner + footerArea;
+                grid.appendChild(card);
+
+                const titleInput = card.querySelector(`#title-${CSS.escape(item.id)}`);
+                if (titleInput) {
+                    titleInput.addEventListener('input', () => updateTitle(item.id, titleInput.value));
+                }
+
+                card.querySelectorAll('.line-input').forEach(inputEl => {
+                    const lineId = inputEl.dataset.line;
+                    autoGrow(inputEl);
+                    inputEl.addEventListener('input', () => { autoGrow(inputEl); handleLineInput(item.id, lineId, inputEl); });
+                    inputEl.addEventListener('keydown', (e) => handleLineKeydown(e, item.id, lineId));
+                    inputEl.addEventListener('beforeinput', (e) => {
+                        if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') {
+                            e.preventDefault();
+                            performEnterSplit(item.id, lineId, inputEl);
+                        }
+                    });
+                });
+
+                const linesContainer = card.querySelector('.lines-list');
+                new Sortable(linesContainer, {
+                    handle: '.line-handle',
+                    animation: 150,
+                    onEnd: function () {
+                        const lineElements = Array.from(linesContainer.querySelectorAll('.line-item'));
+                        const newLinesOrder = lineElements.map(el => {
+                            const lId = el.dataset.lineId;
+                            return item.lines.find(l => l.id === lId);
+                        }).filter(Boolean);
+
+                        item.lines = newLinesOrder;
+                        saveItem(item.id);
+                    }
+                });
+            });
+
+            new Sortable(grid, {
+                handle: '.card-handle',
+                animation: 150,
+                onEnd: function () {
+                    const cardElements = Array.from(grid.children);
+                    const newCache = [];
+                    
+                    cardElements.forEach(cardEl => {
+                        const found = itemsCache.find(i => i.id === cardEl.dataset.id);
+                        if (found) newCache.push(found);
+                    });
+
+                    itemsCache.forEach(i => {
+                        if (!newCache.includes(i)) newCache.push(i);
+                    });
+
+                    itemsCache = newCache;
+                }
+            });
+        }
+
+        fetchItems();
+    </script>
+</body>
+</html>
