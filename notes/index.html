@@ -1,32 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notes</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <!-- jsPDF library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
 
     <div class="max-w-4xl mx-auto p-4 sm:p-8">
-        <header class="flex justify-between items-baseline border-b border-slate-800 pb-3 mb-4">
-            <h1 class="text-xl font-semibold tracking-tight text-slate-200">Notes</h1>
-            <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-300 transition underline decoration-dotted">
-                logout
-            </button>
+        <header class="flex justify-between items-baseline border-b border-slate-300 dark:border-slate-800 pb-3 mb-4">
+            <h1 class="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-200">Notes</h1>
+            <div class="flex items-center gap-3">
+                <button onclick="exportToPDF()" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
+                    export pdf
+                </button>
+                <button onclick="toggleTheme()" id="themeToggleBtn" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
+                    light mode
+                </button>
+                <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
+                    logout
+                </button>
+            </div>
         </header>
 
-        <div class="relative mb-6 border-b border-slate-800 pb-1">
+        <div class="relative mb-6 border-b border-slate-300 dark:border-slate-800 pb-1">
             <div class="flex items-center justify-between">
                 <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
                 </div>
-                <button onclick="addSection()" class="absolute right-0 bg-slate-900 pl-4 pr-1 text-slate-400 hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
+                <button onclick="addSection()" class="absolute right-0 bg-slate-100 dark:bg-slate-900 pl-4 pr-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
             </div>
         </div>
 
         <main>
             <div class="flex justify-end mb-4">
-                <button onclick="createNewNote()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
+                <button onclick="createNewNote()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
                     +
                 </button>
             </div>
@@ -38,8 +53,28 @@
     <script>
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
         let itemsCache = [];
-        let sections = ["all"]; // "all" is the only fixed section; the rest are user-defined
-        let activeSection = localStorage.getItem("active_section") || "all";
+        let sections = ["ALL"]; // "ALL" is the default fixed section
+        let activeSection = localStorage.getItem("active_section") || "ALL";
+
+        // --- Theme Engine ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme === "light") {
+                document.documentElement.classList.remove("dark");
+                document.getElementById("themeToggleBtn").textContent = "dark mode";
+            } else {
+                document.documentElement.classList.add("dark");
+                document.getElementById("themeToggleBtn").textContent = "light mode";
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle("dark");
+            localStorage.setItem("theme", isDark ? "dark" : "light");
+            document.getElementById("themeToggleBtn").textContent = isDark ? "light mode" : "dark mode";
+        }
+
+        initTheme();
 
         function uid() {
             return crypto.randomUUID().slice(0, 8);
@@ -68,7 +103,7 @@
             el.style.height = el.scrollHeight + "px";
         }
 
-        // --- Line model -----------------------------------------------------
+        // --- Line model ---
 
         function normalizeItem(item) {
             if (item.lines) return item;
@@ -112,10 +147,12 @@
                 if (sectionsData) {
                     try {
                         const loaded = JSON.parse(sectionsData.content);
-                        sections = loaded.includes("all") ? loaded : ["all", ...loaded];
-                    } catch (e) { sections = ["all"]; }
+                        // Map legacy "all" to "ALL"
+                        const updatedLoaded = loaded.map(s => s === "all" ? "ALL" : s);
+                        sections = updatedLoaded.includes("ALL") ? updatedLoaded : ["ALL", ...updatedLoaded];
+                    } catch (e) { sections = ["ALL"]; }
                 } else {
-                    saveSectionsToDatabase(["all"]);
+                    saveSectionsToDatabase(["ALL"]);
                 }
 
                 renderUI();
@@ -136,7 +173,7 @@
         }
 
         async function deleteItem(id) {
-            if (!confirm("delete this item?")) return;
+            if (!confirm("Delete this item?")) return;
             const res = await fetch(`${API_BASE}/items/${id}`, { method: "DELETE", headers: getAuthHeader() });
             if (res.status === 401) { logout(); }
             fetchItems();
@@ -146,7 +183,7 @@
             const firstLineId = uid();
             const newItem = {
                 id: crypto.randomUUID(),
-                type: activeSection === 'all' ? null : activeSection,
+                type: activeSection === 'ALL' ? null : activeSection,
                 title: '',
                 lines: [{ id: firstLineId, text: '', checked: null }],
                 is_completed: 0
@@ -156,7 +193,7 @@
             focusLine(newItem.id, firstLineId, 0);
         }
 
-        // --- Line editing -----------------------------------------------------
+        // --- Line editing ---
 
         function focusLine(itemId, lineId, caretPos) {
             setTimeout(() => {
@@ -184,7 +221,6 @@
 
             let value = inputEl.value;
 
-            // Shorthand: typing *() at the start of a plain line converts to checkbox
             if (line.checked === null) {
                 const match = value.match(/^\*\(\)\s?(.*)$/);
                 if (match) {
@@ -315,7 +351,112 @@
             }
         }
 
-        // --- Sections -----------------------------------------------------
+        // --- Drag and Drop Reordering ---
+        let draggedNoteIndex = null;
+        let draggedLineInfo = null;
+
+        function handleNoteDragStart(e, index) {
+            draggedNoteIndex = index;
+            e.dataTransfer.effectAllowed = "move";
+        }
+
+        function handleNoteDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+        }
+
+        function handleNoteDrop(e, targetIndex) {
+            e.preventDefault();
+            if (draggedNoteIndex === null || draggedNoteIndex === targetIndex) return;
+            const movedItem = itemsCache.splice(draggedNoteIndex, 1)[0];
+            itemsCache.splice(targetIndex, 0, movedItem);
+            draggedNoteIndex = null;
+            renderUI();
+        }
+
+        function handleLineDragStart(e, itemId, lineId) {
+            e.stopPropagation();
+            draggedLineInfo = { itemId, lineId };
+            e.dataTransfer.effectAllowed = "move";
+        }
+
+        function handleLineDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = "move";
+        }
+
+        function handleLineDrop(e, targetItemId, targetLineId) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!draggedLineInfo || draggedLineInfo.itemId !== targetItemId) return;
+
+            const note = itemsCache.find(i => i.id === targetItemId);
+            if (!note) return;
+
+            const fromIdx = note.lines.findIndex(l => l.id === draggedLineInfo.lineId);
+            const toIdx = note.lines.findIndex(l => l.id === targetLineId);
+
+            if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                const [movedLine] = note.lines.splice(fromIdx, 1);
+                note.lines.splice(toIdx, 0, movedLine);
+                saveItem(targetItemId);
+                renderUI();
+            }
+            draggedLineInfo = null;
+        }
+
+        // --- PDF Export ---
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const filtered = itemsCache.filter(item =>
+                item.id !== "SYSTEM_SECTIONS_CONFIG" &&
+                (activeSection === 'ALL' || item.type === activeSection)
+            );
+
+            let y = 15;
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(18);
+            doc.text(`Notes - ${activeSection}`, 14, y);
+            y += 10;
+
+            doc.setFontSize(11);
+
+            filtered.forEach((item, index) => {
+                if (y > 270) {
+                    doc.addPage();
+                    y = 15;
+                }
+
+                doc.setFont("Helvetica", "bold");
+                const titleText = item.title || `Note #${index + 1}`;
+                doc.text(titleText, 14, y);
+                y += 6;
+
+                doc.setFont("Helvetica", "normal");
+                (item.lines || []).forEach(line => {
+                    if (y > 275) {
+                        doc.addPage();
+                        y = 15;
+                    }
+                    let lineStr = line.text || "";
+                    if (line.checked !== null) {
+                        lineStr = `[${line.checked ? "x" : " "}] ${lineStr}`;
+                    }
+                    const splitText = doc.splitTextToSize(lineStr, 180);
+                    doc.text(splitText, 18, y);
+                    y += (splitText.length * 5);
+                });
+
+                y += 6; // Spacing between notes
+            });
+
+            doc.save(`notes_${activeSection.toLowerCase()}_${Date.now()}.pdf`);
+        }
+
+        // --- Sections ---
 
         async function saveSectionsToDatabase(updatedSectionsList) {
             const sectionPayload = {
@@ -335,7 +476,7 @@
         async function addSection() {
             const raw = prompt("Enter new section name:");
             if (!raw) return;
-            const name = raw.toLowerCase().trim();
+            const name = raw.trim(); // Preserves exact capitalization
             if (name && !sections.includes(name)) {
                 sections.push(name);
                 await saveSectionsToDatabase(sections);
@@ -345,17 +486,17 @@
 
         async function deleteSection(name, event) {
             event.stopPropagation();
-            if (name === "all") {
-                alert("Cannot delete the 'all' section.");
+            if (name === "ALL") {
+                alert("Cannot delete the 'ALL' section.");
                 return;
             }
-            if (confirm(`Delete the section "${name}"? Its notes will become uncategorized (still visible in "all").`)) {
+            if (confirm(`Delete the section "${name}"? Its notes will become uncategorized (still visible in "ALL").`)) {
                 sections = sections.filter(s => s !== name);
                 await saveSectionsToDatabase(sections);
 
                 if (activeSection === name) {
-                    activeSection = "all";
-                    localStorage.setItem("active_section", "all");
+                    activeSection = "ALL";
+                    localStorage.setItem("active_section", "ALL");
                 }
                 fetchItems();
             }
@@ -379,7 +520,7 @@
             renderUI();
         }
 
-        // --- Rendering -----------------------------------------------------
+        // --- Rendering ---
 
         function renderUI() {
             const sectContainer = document.getElementById("sectionsContainer");
@@ -387,16 +528,20 @@
 
             sections.forEach(s => {
                 const tab = document.createElement("div");
-                tab.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${activeSection === s ? 'bg-slate-800 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`;
+                tab.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
+                    activeSection === s 
+                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100' 
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`;
                 tab.onclick = () => selectSection(s);
 
                 const textSpan = document.createElement("span");
                 textSpan.textContent = s;
                 tab.appendChild(textSpan);
 
-                if (s !== "all") {
+                if (s !== "ALL") {
                     const deleteBtn = document.createElement("button");
-                    deleteBtn.className = "text-[10px] text-slate-500 hover:text-red-400 font-bold px-1 rounded";
+                    deleteBtn.className = "text-[10px] text-slate-400 dark:text-slate-500 hover:text-red-500 font-bold px-1 rounded";
                     deleteBtn.textContent = "×";
                     deleteBtn.onclick = (e) => deleteSection(s, e);
                     tab.appendChild(deleteBtn);
@@ -409,27 +554,36 @@
 
             const filtered = itemsCache.filter(item =>
                 item.id !== "SYSTEM_SECTIONS_CONFIG" &&
-                (activeSection === 'all' || item.type === activeSection)
+                (activeSection === 'ALL' || item.type === activeSection)
             );
 
-            filtered.forEach(item => {
+            filtered.forEach((item, index) => {
                 const card = document.createElement("div");
-                card.className = "p-4 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700/60 transition flex flex-col justify-between space-y-3";
+                card.draggable = true;
+                card.ondragstart = (e) => handleNoteDragStart(e, index);
+                card.ondragover = handleNoteDragOver;
+                card.ondrop = (e) => handleNoteDrop(e, index);
+
+                card.className = "p-4 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/60 transition flex flex-col justify-between space-y-3 shadow-sm dark:shadow-none cursor-grab active:cursor-grabbing";
 
                 let inner = `
                     <div class="w-full">
-                        <input id="title-${item.id}" value="${item.title || ''}" placeholder="untitled" class="w-full bg-transparent font-medium text-slate-200 focus:outline-none placeholder-slate-600 text-base mb-2">
+                        <input id="title-${item.id}" value="${item.title || ''}" placeholder="Untitled" class="w-full bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 text-base mb-2">
                         <div class="space-y-0.5">`;
 
                 (item.lines || []).forEach(line => {
+                    const lineDragEvents = `draggable="true" ondragstart="handleLineDragStart(event, '${item.id}', '${line.id}')" ondragover="handleLineDragOver(event)" ondrop="handleLineDrop(event, '${item.id}', '${line.id}')"`;
+                    
                     if (line.checked === null) {
                         inner += `
-                            <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-300 focus:outline-none placeholder-slate-600 py-0.5 resize-none overflow-hidden leading-snug break-words">${escapeHtml(line.text)}</textarea>`;
+                            <div ${lineDragEvents} class="cursor-move">
+                                <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 py-0.5 resize-none overflow-hidden leading-snug break-words">${escapeHtml(line.text)}</textarea>
+                            </div>`;
                     } else {
                         inner += `
-                            <div class="flex items-start gap-2">
-                                <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-700 bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
-                                <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-500' : 'text-slate-300'}">${escapeHtml(line.text)}</textarea>
+                            <div ${lineDragEvents} class="flex items-start gap-2 cursor-move">
+                                <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
+                                <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}">${escapeHtml(line.text)}</textarea>
                             </div>`;
                     }
                 });
@@ -438,18 +592,18 @@
                         </div>
                     </div>`;
 
-                const customSections = sections.filter(s => s !== 'all');
+                const customSections = sections.filter(s => s !== 'ALL');
                 let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
                     customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
 
                 let footerArea = `
-                    <div class="flex justify-end items-center border-t border-slate-800/50 pt-2 text-xs text-slate-500">
+                    <div class="flex justify-end items-center border-t border-slate-200 dark:border-slate-800/50 pt-2 text-xs text-slate-400 dark:text-slate-500">
                         <div class="flex items-center gap-3">
-                            <button onclick="copyNote('${item.id}', this)" class="text-slate-600 hover:text-slate-300 transition">copy</button>
-                            <select onchange="changeNoteSection('${item.id}', this)" class="bg-transparent text-slate-500 hover:text-slate-400 border-none focus:ring-0 cursor-pointer text-xs p-0 w-24">
+                            <button onclick="copyNote('${item.id}', this)" class="text-slate-500 dark:text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition">copy</button>
+                            <select onchange="changeNoteSection('${item.id}', this)" class="bg-transparent text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-400 border-none focus:ring-0 cursor-pointer text-xs p-0 w-24">
                                 ${options}
                             </select>
-                            <button onclick="deleteItem('${item.id}')" class="text-slate-600 hover:text-red-400 transition">delete</button>
+                            <button onclick="deleteItem('${item.id}')" class="text-slate-500 dark:text-slate-600 hover:text-red-500 transition">delete</button>
                         </div>
                     </div>`;
 
