@@ -6,11 +6,15 @@
     <title>Notes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
+        tailwind.config = { darkMode: 'class' };
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Robust drag-and-drop library that works on desktop and mobile without swallowing inputs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        .sortable-ghost { opacity: 0.3; }
+        .sortable-drag { cursor: grabbing !important; }
+    </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
 
@@ -30,6 +34,7 @@
             </div>
         </header>
 
+        <!-- Section / Type Navigation Header -->
         <div class="relative mb-6 border-b border-slate-300 dark:border-slate-800 pb-1">
             <div class="flex items-center justify-between">
                 <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
@@ -45,6 +50,7 @@
                 </button>
             </div>
 
+            <!-- Notes Grid -->
             <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
         </main>
     </div>
@@ -344,50 +350,6 @@
             }
         }
 
-        // --- Drag and Drop Logic ---
-        let draggedCardIdx = null;
-        let draggedLineData = null;
-
-        function onCardDragStart(e, idx) {
-            draggedCardIdx = idx;
-            e.dataTransfer.effectAllowed = "move";
-        }
-
-        function onCardDrop(e, targetIdx) {
-            e.preventDefault();
-            if (draggedCardIdx === null || draggedCardIdx === targetIdx) return;
-            const moved = itemsCache.splice(draggedCardIdx, 1)[0];
-            itemsCache.splice(targetIdx, 0, moved);
-            draggedCardIdx = null;
-            renderUI();
-        }
-
-        function onLineDragStart(e, itemId, lineId) {
-            e.stopPropagation();
-            draggedLineData = { itemId, lineId };
-            e.dataTransfer.effectAllowed = "move";
-        }
-
-        function onLineDrop(e, targetItemId, targetLineId) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!draggedLineData || draggedLineData.itemId !== targetItemId) return;
-
-            const note = itemsCache.find(i => i.id === targetItemId);
-            if (!note) return;
-
-            const fromIdx = note.lines.findIndex(l => l.id === draggedLineData.lineId);
-            const toIdx = note.lines.findIndex(l => l.id === targetLineId);
-
-            if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-                const [moved] = note.lines.splice(fromIdx, 1);
-                note.lines.splice(toIdx, 0, moved);
-                saveItem(targetItemId);
-                renderUI();
-            }
-            draggedLineData = null;
-        }
-
         function exportToPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -453,7 +415,7 @@
         }
 
         async function addSection() {
-            const raw = prompt("Enter new section name:");
+            const raw = prompt("Enter new section/type name:");
             if (!raw) return;
             const name = raw.trim();
             if (name && !sections.includes(name)) {
@@ -469,7 +431,7 @@
                 alert("Cannot delete the 'ALL' section.");
                 return;
             }
-            if (confirm(`Delete the section "${name}"? Its notes will become uncategorized (still visible in "ALL").`)) {
+            if (confirm(`Delete section "${name}"? Notes in it will remain under ALL.`)) {
                 sections = sections.filter(s => s !== name);
                 await saveSectionsToDatabase(sections);
 
@@ -500,11 +462,13 @@
         }
 
         function renderUI() {
+            // --- Render Section Tabs ---
             const sectContainer = document.getElementById("sectionsContainer");
             sectContainer.innerHTML = "";
 
             sections.forEach(s => {
                 const tab = document.createElement("div");
+                tab.dataset.section = s;
                 tab.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
                     activeSection === s 
                         ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100' 
@@ -526,6 +490,17 @@
                 sectContainer.appendChild(tab);
             });
 
+            // Make Section Tabs Draggable & Reorderable
+            new Sortable(sectContainer, {
+                animation: 150,
+                onEnd: function () {
+                    const newOrder = Array.from(sectContainer.children).map(child => child.dataset.section);
+                    sections = newOrder;
+                    saveSectionsToDatabase(sections);
+                }
+            });
+
+            // --- Render Notes Grid ---
             const grid = document.getElementById("notesGrid");
             grid.innerHTML = "";
 
@@ -534,32 +509,30 @@
                 (activeSection === 'ALL' || item.type === activeSection)
             );
 
-            filtered.forEach((item, index) => {
+            filtered.forEach((item) => {
                 const card = document.createElement("div");
-                card.ondragover = (e) => e.preventDefault();
-                card.ondrop = (e) => onCardDrop(e, index);
-
+                card.dataset.id = item.id;
                 card.className = "p-4 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/60 transition flex flex-col justify-between space-y-3 shadow-sm dark:shadow-none";
 
                 let inner = `
                     <div class="w-full">
-                        <div class="flex items-center gap-1.5 mb-2">
-                            <span draggable="true" ondragstart="onCardDragStart(event, ${index})" class="cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400 text-xs px-0.5 select-none" title="Drag to move card">⋮⋮</span>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="card-handle cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 text-sm select-none" title="Drag card">⋮⋮</span>
                             <input id="title-${item.id}" value="${escapeHtml(item.title || '')}" placeholder="Untitled" class="w-full bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 text-base">
                         </div>
-                        <div class="space-y-1">`;
+                        <div class="lines-list space-y-1">`;
 
                 (item.lines || []).forEach(line => {
                     if (line.checked === null) {
                         inner += `
-                            <div ondragover="e => e.preventDefault()" ondrop="onLineDrop(event, '${item.id}', '${line.id}')" class="flex items-start gap-1 group">
-                                <span draggable="true" ondragstart="onLineDragStart(event, '${item.id}', '${line.id}')" class="cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-0 group-hover:opacity-100 transition">⋮⋮</span>
+                            <div data-line-id="${line.id}" class="line-item flex items-start gap-1 group">
+                                <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-0 group-hover:opacity-100 transition">⋮⋮</span>
                                 <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 py-0.5 resize-none overflow-hidden leading-snug break-words">${escapeHtml(line.text)}</textarea>
                             </div>`;
                     } else {
                         inner += `
-                            <div ondragover="e => e.preventDefault()" ondrop="onLineDrop(event, '${item.id}', '${line.id}')" class="flex items-start gap-1 group">
-                                <span draggable="true" ondragstart="onLineDragStart(event, '${item.id}', '${line.id}')" class="cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-0 group-hover:opacity-100 transition">⋮⋮</span>
+                            <div data-line-id="${line.id}" class="line-item flex items-start gap-1 group">
+                                <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-0 group-hover:opacity-100 transition">⋮⋮</span>
                                 <div class="flex items-start gap-2 w-full">
                                     <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
                                     <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}">${escapeHtml(line.text)}</textarea>
@@ -590,11 +563,13 @@
                 card.innerHTML = inner + footerArea;
                 grid.appendChild(card);
 
+                // Setup Editable Title Event
                 const titleInput = card.querySelector(`#title-${CSS.escape(item.id)}`);
                 if (titleInput) {
                     titleInput.addEventListener('input', () => updateTitle(item.id, titleInput.value));
                 }
 
+                // Setup Editable Lines
                 card.querySelectorAll('.line-input').forEach(inputEl => {
                     const lineId = inputEl.dataset.line;
                     autoGrow(inputEl);
@@ -607,6 +582,46 @@
                         }
                     });
                 });
+
+                // Make Lines inside this card draggable
+                const linesContainer = card.querySelector('.lines-list');
+                new Sortable(linesContainer, {
+                    handle: '.line-handle',
+                    animation: 150,
+                    onEnd: function () {
+                        const lineElements = Array.from(linesContainer.querySelectorAll('.line-item'));
+                        const newLinesOrder = lineElements.map(el => {
+                            const lId = el.dataset.lineId;
+                            return item.lines.find(l => l.id === lId);
+                        }).filter(Boolean);
+
+                        item.lines = newLinesOrder;
+                        saveItem(item.id);
+                    }
+                });
+            });
+
+            // Make Entire Cards Draggable in Grid
+            new Sortable(grid, {
+                handle: '.card-handle',
+                animation: 150,
+                onEnd: function () {
+                    const cardElements = Array.from(grid.children);
+                    const newCache = [];
+                    
+                    // Re-sort itemsCache according to DOM order
+                    cardElements.forEach(cardEl => {
+                        const found = itemsCache.find(i => i.id === cardEl.dataset.id);
+                        if (found) newCache.push(found);
+                    });
+
+                    // Include items not currently visible (due to section filtering)
+                    itemsCache.forEach(i => {
+                        if (!newCache.includes(i)) newCache.push(i);
+                    });
+
+                    itemsCache = newCache;
+                }
             });
         }
 
