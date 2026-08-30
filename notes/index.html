@@ -650,54 +650,70 @@
             });
         }
 
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            const filtered = itemsCache.filter(item =>
-                item.id !== "SYSTEM_SECTIONS_CONFIG" &&
-                item.id !== "SYSTEM_BOOKMARKS_CONFIG" &&
-                (activeSection === 'ALL' || item.type === activeSection)
-            );
-
-            let y = 15;
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(18);
-            doc.text(`Notes - ${activeSection}`, 14, y);
-            y += 10;
-
-            doc.setFontSize(11);
-
-            filtered.forEach((item, index) => {
-                if (y > 270) {
-                    doc.addPage();
-                    y = 15;
-                }
-
-                doc.setFont("Helvetica", "bold");
-                const titleText = item.title || `Note #${index + 1}`;
-                doc.text(titleText, 14, y);
-                y += 6;
-
-                doc.setFont("Helvetica", "normal");
-                (item.lines || []).forEach(line => {
-                    if (y > 275) {
-                        doc.addPage();
-                        y = 15;
-                    }
-                    let lineStr = line.text || "";
-                    if (line.checked !== null) {
-                        lineStr = `[${line.checked ? "x" : " "}] ${lineStr}`;
-                    }
-                    const splitText = doc.splitTextToSize(lineStr, 180);
-                    doc.text(splitText, 18, y);
-                    y += (splitText.length * 5);
-                });
-
-                y += 6;
-            });
-
-            doc.save(`notes_${activeSection.toLowerCase()}_${Date.now()}.pdf`);
+        async function exportAllNotesToPDF(allNotes) {
+          // 1. Target ALL notes regardless of current selection
+          const notesToExport = allNotes; // array of all note objects
+        
+          // 2. Build combined HTML containing all notes with clickable links
+          const container = document.createElement('div');
+          container.className = 'pdf-export-container';
+        
+          notesToExport.forEach((note) => {
+            const noteEl = document.createElement('article');
+            noteEl.className = 'pdf-note-page';
+        
+            // Format content and ensure links are properly converted to <a href="...">
+            const formattedBody = formatLinksToHTML(note.body);
+        
+            noteEl.innerHTML = `
+              <h1 class="note-title">${escapeHTML(note.title)}</h1>
+              <div class="note-content">${formattedBody}</div>
+              <hr class="note-divider" />
+            `;
+        
+            container.appendChild(noteEl);
+          });
+        
+          // 3. Optional styling for print/page breaks
+          const style = document.createElement('style');
+          style.textContent = `
+            .pdf-note-page { page-break-after: always; padding: 20px; }
+            a { color: #0066cc; text-decoration: underline; }
+          `;
+          container.appendChild(style);
+        
+          // 4. Generate PDF (example using html2pdf.js)
+          const options = {
+            margin:       10,
+            filename:     'all_notes.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+        
+          await html2pdf().set(options).from(container).save();
+        }
+        
+        /**
+         * Helper: Converts markdown/wiki-style links or plain text URLs into HTML <a> tags.
+         */
+        function formatLinksToHTML(text) {
+          if (!text) return '';
+          
+          // Converts Markdown links [text](url) -> <a href="url">text</a>
+          let formatted = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+          
+          // Converts plain URLs http(s)://... -> <a href="url">url</a> (if not already inside an <a> tag)
+          const urlPattern = /(?<!href="|href=')\b(https?:\/\/[^\s<]+)/gi;
+          formatted = formatted.replace(urlPattern, '<a href="$1" target="_blank">$1</a>');
+        
+          return formatted;
+        }
+        
+        function escapeHTML(str) {
+          return (str || '').replace(/[&<>"']/g, (m) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+          })[m]);
         }
 
         async function saveSectionsToDatabase(updatedSectionsList) {
