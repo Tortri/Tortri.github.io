@@ -3,43 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notes</title>
+    <title>Notes & Vault</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
 
     <div class="max-w-4xl mx-auto p-4 sm:p-8">
         <header class="flex justify-between items-baseline border-b border-slate-800 pb-3 mb-4">
-            <h1 class="text-xl font-semibold tracking-tight text-slate-200">Notes</h1>
-            <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-300 transition underline decoration-dotted">
-                logout
-            </button>
+            <h1 class="text-xl font-semibold tracking-tight text-slate-200">Portal</h1>
+            <div class="flex items-center gap-4">
+                <button onclick="downloadDatabaseBackup()" class="text-xs text-slate-400 hover:text-slate-200 transition underline decoration-dotted">
+                    backup database
+                </button>
+                <button onclick="logout()" class="text-xs text-slate-500 hover:text-slate-300 transition underline decoration-dotted">
+                    logout
+                </button>
+            </div>
         </header>
 
         <div class="relative mb-6 border-b border-slate-800 pb-1">
             <div class="flex items-center justify-between">
                 <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
-                    </div>
+                </div>
                 <button onclick="addSection()" class="absolute right-0 bg-slate-900 pl-4 pr-1 text-slate-400 hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
             </div>
         </div>
 
         <main>
-            <div class="flex justify-end mb-4">
-                <button onclick="createNewNote()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
-                    +
-                </button>
+            <!-- NOTES VIEW -->
+            <div id="notesView">
+                <div class="flex justify-end mb-4">
+                    <button onclick="createNewNote()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
+                        +
+                    </button>
+                </div>
+                <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
             </div>
 
-            <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            <!-- PASSWORDS VAULT VIEW -->
+            <div id="vaultView" class="hidden space-y-4">
+                <div class="bg-slate-800/60 p-4 rounded-lg border border-slate-800 space-y-3">
+                    <h2 class="text-sm font-medium text-slate-300">Add New Password Entry</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input id="vaultService" type="text" placeholder="Service (e.g. GitHub)" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500">
+                        <input id="vaultUsername" type="text" placeholder="Username / Email" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500">
+                        <div class="flex gap-1">
+                            <input id="vaultPassword" type="password" placeholder="Password" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500 flex-1">
+                            <button onclick="generateRandomPassword()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2 py-1.5 rounded transition" title="Generate Random Password">⚡</button>
+                        </div>
+                    </div>
+                    <button onclick="saveVaultItem()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium py-2 rounded transition">
+                        Encrypt & Save Entry
+                    </button>
+                </div>
+
+                <div id="vaultGrid" class="grid grid-cols-1 gap-3"></div>
+            </div>
         </main>
     </div>
 
     <script>
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
         let itemsCache = [];
-        let sections = ["all"]; // "all" is the only fixed section; the rest are user-defined
+        let vaultCache = [];
+        let sections = ["all", "passwords"]; // Fixed system tabs
         let activeSection = localStorage.getItem("active_section") || "all";
+        let masterCryptoKey = null;
 
         function uid() {
             return crypto.randomUUID().slice(0, 8);
@@ -59,11 +88,6 @@
             window.location.reload();
         }
 
-        function linkify(text) {
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return (text || "").replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300 break-all">${url}</a>`);
-        }
-
         function escapeHtml(text) {
             return (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
@@ -73,31 +97,73 @@
             el.style.height = el.scrollHeight + "px";
         }
 
-        // --- Line model -----------------------------------------------------
-        // A note's content is stored as JSON: an ordered array of lines.
-        //   { id, text, checked: null }        -> plain text line
-        //   { id, text, checked: true/false }   -> checkbox line
-        // Typing "*()" at the start of a line turns it into a checkbox line.
+        // --- ZERO KNOWLEDGE CRYPTO ENGINE ---
+        async function getMasterCryptoKey() {
+            if (masterCryptoKey) return masterCryptoKey;
+            const key = localStorage.getItem("notes_api_key");
+            if (!key) return null;
 
+            const enc = new TextEncoder();
+            const salt = enc.encode("d1_zero_knowledge_vault_salt");
+            const baseKey = await window.crypto.subtle.importKey("raw", enc.encode(key), { name: "PBKDF2" }, false, ["deriveKey"]);
+
+            masterCryptoKey = await window.crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                baseKey,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["encrypt", "decrypt"]
+            );
+            return masterCryptoKey;
+        }
+
+        async function encryptData(plainText) {
+            const cryptoKey = await getMasterCryptoKey();
+            const enc = new TextEncoder();
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const ciphertextBuffer = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, cryptoKey, enc.encode(plainText));
+
+            return {
+                ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertextBuffer))),
+                iv: btoa(String.fromCharCode(...iv))
+            };
+        }
+
+        async function decryptData(ciphertextB64, ivB64) {
+            try {
+                const cryptoKey = await getMasterCryptoKey();
+                const ciphertext = Uint8Array.from(atob(ciphertextB64), c => c.charCodeAt(0));
+                const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+                const decryptedBuffer = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, cryptoKey, ciphertext);
+                return new TextDecoder().decode(decryptedBuffer);
+            } catch (e) {
+                return "[Decryption Failed]";
+            }
+        }
+
+        function generateRandomPassword() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+            let pass = "";
+            const values = new Uint32Array(16);
+            window.crypto.getRandomValues(values);
+            for (let i = 0; i < 16; i++) {
+                pass += chars[values[i] % chars.length];
+            }
+            document.getElementById("vaultPassword").value = pass;
+        }
+
+        // --- Line model & Notes logic ----------------------------------------
         function normalizeItem(item) {
             if (item.lines) return item;
-
             let lines = [];
             try {
                 const parsed = JSON.parse(item.content);
                 if (Array.isArray(parsed)) {
-                    lines = parsed.map(p => {
-                        if (p && typeof p === 'object' && 'checked' in p) {
-                            // current format: preserve as-is (checked may be null or a boolean)
-                            return { id: p.id || uid(), text: p.text || '', checked: p.checked };
-                        }
-                        if (p && typeof p === 'object' && 'type' in p) {
-                            // previous block-based format
-                            return { id: uid(), text: p.text || '', checked: p.type === 'check' ? !!p.completed : null };
-                        }
-                        // original checklist-only format
-                        return { id: uid(), text: p.text || '', checked: !!p.completed };
-                    });
+                    lines = parsed.map(p => ({
+                        id: p.id || uid(),
+                        text: p.text || '',
+                        checked: 'checked' in p ? p.checked : null
+                    }));
                 } else if (item.content) {
                     lines = item.content.split('\n').map(t => ({ id: uid(), text: t, checked: null }));
                 }
@@ -124,14 +190,79 @@
                 if (sectionsData) {
                     try {
                         const loaded = JSON.parse(sectionsData.content);
-                        sections = loaded.includes("all") ? loaded : ["all", ...loaded];
-                    } catch (e) { sections = ["all"]; }
+                        const cleanLoaded = loaded.filter(s => s !== "passwords");
+                        sections = ["all", "passwords", ...cleanLoaded];
+                    } catch (e) { sections = ["all", "passwords"]; }
                 } else {
                     saveSectionsToDatabase(["all"]);
                 }
 
+                if (activeSection === "passwords") fetchVaultItems();
                 renderUI();
             } catch (err) { console.error("Network error:", err); }
+        }
+
+        async function fetchVaultItems() {
+            try {
+                const res = await fetch(`${API_BASE}/vault`, { headers: getAuthHeader() });
+                if (res.status === 401) { logout(); return; }
+                vaultCache = await res.json();
+                renderVaultUI();
+            } catch (err) { console.error("Vault fetch error:", err); }
+        }
+
+        async function saveVaultItem() {
+            const service = document.getElementById("vaultService").value.trim();
+            const username = document.getElementById("vaultUsername").value.trim();
+            const password = document.getElementById("vaultPassword").value;
+
+            if (!service || !password) {
+                alert("Please provide at least a service name and password.");
+                return;
+            }
+
+            const payloadText = JSON.stringify({ service, username, password });
+            const encrypted = await encryptData(payloadText);
+            const newItem = { id: crypto.randomUUID(), ciphertext: encrypted.ciphertext, iv: encrypted.iv };
+
+            const res = await fetch(`${API_BASE}/vault`, {
+                method: "POST",
+                headers: getAuthHeader(),
+                body: JSON.stringify(newItem)
+            });
+
+            if (res.status === 401) logout();
+
+            document.getElementById("vaultService").value = "";
+            document.getElementById("vaultUsername").value = "";
+            document.getElementById("vaultPassword").value = "";
+            fetchVaultItems();
+        }
+
+        async function deleteVaultItem(id) {
+            if (!confirm("Delete this password entry?")) return;
+            const res = await fetch(`${API_BASE}/vault/${id}`, { method: "DELETE", headers: getAuthHeader() });
+            if (res.status === 401) logout();
+            fetchVaultItems();
+        }
+
+        async function downloadDatabaseBackup() {
+            try {
+                const res = await fetch(`${API_BASE}/export`, { headers: getAuthHeader() });
+                if (!res.ok) throw new Error("Failed to export database");
+
+                const data = await res.json();
+                const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+                
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", jsonString);
+                downloadAnchor.setAttribute("download", `database_backup_${new Date().toISOString().slice(0, 10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            } catch (err) {
+                alert("Error downloading backup: " + err.message);
+            }
         }
 
         async function saveItem(id) {
@@ -144,13 +275,13 @@
                 headers: getAuthHeader(),
                 body: JSON.stringify(el)
             });
-            if (res.status === 401) { logout(); }
+            if (res.status === 401) logout();
         }
 
         async function deleteItem(id) {
-            if (!confirm("delete this item?")) return;
+            if (!confirm("Delete this note?")) return;
             const res = await fetch(`${API_BASE}/items/${id}`, { method: "DELETE", headers: getAuthHeader() });
-            if (res.status === 401) { logout(); }
+            if (res.status === 401) logout();
             fetchItems();
         }
 
@@ -168,15 +299,11 @@
             focusLine(newItem.id, firstLineId, 0);
         }
 
-        // --- Line editing -----------------------------------------------------
-
         function focusLine(itemId, lineId, caretPos) {
             const node = document.getElementById(`line-${itemId}-${lineId}`);
             if (!node) return;
             node.focus();
-            if (typeof caretPos === 'number') {
-                node.setSelectionRange(caretPos, caretPos);
-            }
+            if (typeof caretPos === 'number') node.setSelectionRange(caretPos, caretPos);
         }
 
         function updateTitle(id, value) {
@@ -194,7 +321,6 @@
 
             let value = inputEl.value;
 
-            // Shorthand: typing *() at the very start of a plain line makes it a checkbox
             if (line.checked === null) {
                 const match = value.match(/^\*\(\)\s?(.*)$/);
                 if (match) {
@@ -221,11 +347,6 @@
             renderUI();
         }
 
-        // Splits the current line into two at the caret position, continuing
-        // the checklist if the current line was a checkbox line. Called from
-        // both the keydown handler (desktop/most keyboards) and the beforeinput
-        // fallback (mobile virtual keyboards that don't reliably fire a
-        // recognizable keydown for Enter on the first try).
         function performEnterSplit(id, lineId, textareaEl) {
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
@@ -261,10 +382,9 @@
 
             if (e.key === 'Backspace') {
                 const atStart = inputEl.selectionStart === 0 && inputEl.selectionEnd === 0;
-                if (!atStart) return; // let default behavior handle normal deletion
+                if (!atStart) return;
 
                 if (line.checked !== null) {
-                    // Stop the checklist: revert this line back to plain text
                     e.preventDefault();
                     line.checked = null;
                     saveItem(id);
@@ -274,7 +394,6 @@
                 }
 
                 if (idx > 0) {
-                    // Merge empty/plain line into the previous line
                     e.preventDefault();
                     const prev = el.lines[idx - 1];
                     const mergeCaret = prev.text.length;
@@ -297,25 +416,8 @@
             }
         }
 
-        async function copyNote(id, btn) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-
-            const parts = [];
-            if (el.title) parts.push(el.title);
-            (el.lines || []).forEach(line => {
-                if (line.checked === null) {
-                    parts.push(line.text || '');
-                } else {
-                    parts.push(`${line.checked ? '[x]' : '[ ]'} ${line.text || ''}`);
-                }
-            });
-            const text = parts.join('\n');
-
-            try {
-                await navigator.clipboard.writeText(text);
-            } catch (e) {
-                // Fallback for browsers/contexts without clipboard API access
+        async function copyText(text, btn) {
+            try { await navigator.clipboard.writeText(text); } catch (e) {
                 const ta = document.createElement('textarea');
                 ta.value = text;
                 ta.style.position = 'fixed';
@@ -325,7 +427,6 @@
                 document.execCommand('copy');
                 document.body.removeChild(ta);
             }
-
             if (btn) {
                 const original = btn.textContent;
                 btn.textContent = 'copied';
@@ -333,14 +434,25 @@
             }
         }
 
-        // --- Sections -----------------------------------------------------
+        async function copyNote(id, btn) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return;
+            const parts = [];
+            if (el.title) parts.push(el.title);
+            (el.lines || []).forEach(line => {
+                parts.push(line.checked === null ? (line.text || '') : `${line.checked ? '[x]' : '[ ]'} ${line.text || ''}`);
+            });
+            copyText(parts.join('\n'), btn);
+        }
 
+        // --- Sections Logic ---------------------------------------------------
         async function saveSectionsToDatabase(updatedSectionsList) {
+            const cleanList = updatedSectionsList.filter(s => s !== "passwords");
             const sectionPayload = {
                 id: "SYSTEM_SECTIONS_CONFIG",
                 type: "SYSTEM_INTERNAL",
                 title: "SYSTEM_SECTIONS",
-                content: JSON.stringify(updatedSectionsList),
+                content: JSON.stringify(cleanList),
                 is_completed: 0
             };
             await fetch(`${API_BASE}/items`, {
@@ -363,25 +475,19 @@
 
         async function deleteSection(name, event) {
             event.stopPropagation();
-            if (name === "all") {
-                alert("Cannot delete the 'all' section.");
-                return;
-            }
-            if (confirm(`Delete the section "${name}"? Its notes will become uncategorized (still visible in "all").`)) {
+            if (name === "all" || name === "passwords") return;
+            if (confirm(`Delete the section "${name}"?`)) {
                 sections = sections.filter(s => s !== name);
                 await saveSectionsToDatabase(sections);
-
-                if (activeSection === name) {
-                    activeSection = "all";
-                    localStorage.setItem("active_section", "all");
-                }
-                fetchItems();
+                if (activeSection === name) selectSection("all");
+                else renderUI();
             }
         }
 
         function selectSection(name) {
             activeSection = name;
             localStorage.setItem("active_section", name);
+            if (name === "passwords") fetchVaultItems();
             renderUI();
         }
 
@@ -397,8 +503,7 @@
             renderUI();
         }
 
-        // --- Rendering -----------------------------------------------------
-
+        // --- Render UI Views --------------------------------------------------
         function renderUI() {
             const sectContainer = document.getElementById("sectionsContainer");
             sectContainer.innerHTML = "";
@@ -412,7 +517,7 @@
                 textSpan.textContent = s;
                 tab.appendChild(textSpan);
 
-                if (s !== "all") {
+                if (s !== "all" && s !== "passwords") {
                     const deleteBtn = document.createElement("button");
                     deleteBtn.className = "text-[10px] text-slate-500 hover:text-red-400 font-bold px-1 rounded";
                     deleteBtn.textContent = "×";
@@ -422,6 +527,21 @@
                 sectContainer.appendChild(tab);
             });
 
+            const notesView = document.getElementById("notesView");
+            const vaultView = document.getElementById("vaultView");
+
+            if (activeSection === "passwords") {
+                notesView.classList.add("hidden");
+                vaultView.classList.remove("hidden");
+                renderVaultUI();
+            } else {
+                vaultView.classList.add("hidden");
+                notesView.classList.remove("hidden");
+                renderNotesGrid();
+            }
+        }
+
+        function renderNotesGrid() {
             const grid = document.getElementById("notesGrid");
             grid.innerHTML = "";
 
@@ -452,11 +572,9 @@
                     }
                 });
 
-                inner += `
-                        </div>
-                    </div>`;
+                inner += `</div></div>`;
 
-                const customSections = sections.filter(s => s !== 'all');
+                const customSections = sections.filter(s => s !== 'all' && s !== 'passwords');
                 let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
                     customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
 
@@ -482,9 +600,6 @@
                     autoGrow(inputEl);
                     inputEl.addEventListener('input', () => { autoGrow(inputEl); handleLineInput(item.id, lineId, inputEl); });
                     inputEl.addEventListener('keydown', (e) => handleLineKeydown(e, item.id, lineId));
-                    // Fallback for mobile virtual keyboards (notably Android/Gboard) that
-                    // don't fire a recognizable keydown for Enter on the first try. If
-                    // keydown already handled it, preventDefault there stops this from firing.
                     inputEl.addEventListener('beforeinput', (e) => {
                         if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') {
                             e.preventDefault();
@@ -493,6 +608,47 @@
                     });
                 });
             });
+        }
+
+        async function renderVaultUI() {
+            const grid = document.getElementById("vaultGrid");
+            grid.innerHTML = "";
+
+            for (const item of vaultCache) {
+                const decryptedStr = await decryptData(item.ciphertext, item.iv);
+                let data = { service: "Encrypted Entry", username: "", password: "" };
+                try { data = JSON.parse(decryptedStr); } catch (e) {}
+
+                const card = document.createElement("div");
+                card.className = "p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-center justify-between";
+
+                card.innerHTML = `
+                    <div class="space-y-0.5">
+                        <div class="text-sm font-medium text-slate-200">${escapeHtml(data.service)}</div>
+                        <div class="text-xs text-slate-400 font-mono">${escapeHtml(data.username || 'No username')}</div>
+                        <div class="text-xs text-slate-500 font-mono flex items-center gap-2">
+                            <span id="pass-${item.id}">••••••••••••</span>
+                            <button onclick="togglePasswordVisibility('${item.id}', \`${escapeHtml(data.password).replace(/`/g, '\\`')}\`)" class="hover:text-slate-300">👁️</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs">
+                        <button onclick="copyText(\`${escapeHtml(data.password).replace(/`/g, '\\`')}\`, this)" class="text-slate-500 hover:text-slate-300">copy pass</button>
+                        <button onclick="deleteVaultItem('${item.id}')" class="text-slate-600 hover:text-red-400">delete</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function togglePasswordVisibility(id, plainPassword) {
+            const el = document.getElementById(`pass-${id}`);
+            if (el.textContent === "••••••••••••") {
+                el.textContent = plainPassword;
+                el.classList.add("text-blue-400");
+            } else {
+                el.textContent = "••••••••••••";
+                el.classList.remove("text-blue-400");
+            }
         }
 
         fetchItems();
