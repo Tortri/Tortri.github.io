@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zero-Knowledge Vault</title>
-  <!-- jsPDF for Client-side PDF Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root {
@@ -108,11 +107,11 @@
   <div class="container">
     <div id="statusMsg" class="status-msg"></div>
 
-    <!-- 1. LOGIN SCREEN -->
+    <!-- 1. UNLOCK / LOGIN CARD -->
     <div id="loginCard" class="card">
       <h2>Unlock Vault</h2>
       <form id="loginForm" onsubmit="handleLogin(event)">
-        <div class="form-group">
+        <div class="form-group" style="margin-top: 1rem;">
           <label for="masterPassword">Master Key / API Password</label>
           <input type="password" id="masterPassword" required autocomplete="current-password" placeholder="Enter key...">
         </div>
@@ -155,6 +154,9 @@
   </div>
 
   <script>
+    // TARGET WORKER ENDPOINT
+    const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
+
     let activeKeyString = '';
     let derivedCryptoKey = null;
     let decryptedVaultItems = [];
@@ -225,7 +227,6 @@
         activeKeyString = inputPass;
         derivedCryptoKey = await deriveKey(inputPass);
 
-        // Fetch items from Cloudflare Worker using the provided key in Authorization
         await fetchAndDecryptVault();
 
         document.getElementById('loginCard').classList.add('hidden');
@@ -233,17 +234,17 @@
         document.getElementById('masterPassword').value = '';
         showStatus('Vault unlocked successfully.');
       } catch (err) {
-        showStatus('Failed to unlock vault: Incorrect password or Cloudflare rejected API key.', true);
+        showStatus('Failed to unlock vault: ' + err.message, true);
       }
     }
 
     async function fetchAndDecryptVault() {
-      const response = await fetch('/api/vault', {
+      const response = await fetch(`${API_BASE}/vault`, {
         headers: { 'Authorization': `Bearer ${activeKeyString}` }
       });
 
       if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`);
+        throw new Error(`Server returned status HTTP ${response.status}`);
       }
 
       const rawItems = await response.json();
@@ -303,7 +304,7 @@
         iv: encrypted.iv
       };
 
-      const response = await fetch('/api/vault', {
+      const response = await fetch(`${API_BASE}/vault`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -324,7 +325,7 @@
     async function deleteVaultItem(id) {
       if (!confirm('Are you sure you want to delete this credential?')) return;
 
-      const response = await fetch(`/api/vault/${id}`, {
+      const response = await fetch(`${API_BASE}/vault/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${activeKeyString}` }
       });
@@ -349,11 +350,11 @@
     // --- EXPORT FUNCTIONS ---
     async function exportVaultJSON() {
       try {
-        const response = await fetch('/api/export', {
+        const response = await fetch(`${API_BASE}/export`, {
           headers: { 'Authorization': `Bearer ${activeKeyString}` }
         });
 
-        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
