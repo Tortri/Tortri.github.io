@@ -2,43 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Client-Side PDF Merger</title>
-  <!-- Load pdf-lib directly from a CDN -->
-  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <title>Excel to PDF Converter (Pure Static)</title>
+  
+  <!-- SheetJS: For reading Excel files -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- html2pdf.js: For converting DOM elements to downloadable PDFs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <style>
-    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
-    button { margin-top: 10px; padding: 10px 15px; cursor: pointer; }
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+    #preview-container { margin-top: 20px; overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    button { padding: 10px 15px; margin-top: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <h2>Pure Client-Side PDF Merger</h2>
-  <input type="file" id="pdf-inputs" multiple accept="application/pdf" />
-  <br>
-  <button onclick="mergePDFs()">Merge & Download</button>
+  <h2>Excel (.xlsx / .csv) to PDF Converter</h2>
+  <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" />
+  <div id="controls" style="display: none;">
+    <button onclick="downloadPDF()">Download as PDF</button>
+  </div>
+
+  <div id="preview-container"></div>
 
   <script>
-    async function mergePDFs() {
-      const files = document.getElementById('pdf-inputs').files;
-      if (files.length < 2) return alert('Please select at least 2 PDF files.');
+    let activeElementToExport = null;
 
-      // Create a new merged document
-      const mergedPdf = await PDFLib.PDFDocument.create();
+    document.getElementById('excel-input').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
 
-      for (let file of files) {
-        const fileBuffer = await file.arrayBuffer();
-        const pdf = await PDFLib.PDFDocument.load(fileBuffer);
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
-      }
+      const buffer = await file.arrayBuffer();
+      // Read Excel Workbook
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      
+      // Grab the first sheet
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
 
-      // Save and trigger download
-      const mergedBytes = await mergedPdf.save();
-      const blob = new Blob([mergedBytes], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'merged.pdf';
-      link.click();
+      // Convert sheet data into HTML Table format
+      const htmlTable = XLSX.utils.sheet_to_html(worksheet);
+
+      const previewDiv = document.getElementById('preview-container');
+      previewDiv.innerHTML = htmlTable;
+      
+      activeElementToExport = previewDiv;
+      document.getElementById('controls').style.display = 'block';
+    });
+
+    function downloadPDF() {
+      if (!activeElementToExport) return;
+
+      const options = {
+        margin:       10,
+        filename:     'converted-excel.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      // Generate and trigger download entirely in browser
+      html2pdf().set(options).from(activeElementToExport).save();
     }
   </script>
 
