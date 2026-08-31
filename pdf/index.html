@@ -1,73 +1,1237 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-50">
 <head>
   <meta charset="UTF-8">
-  <title>Excel to PDF Converter (Pure Static)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Studio - Pure Client-Side PDF & Document Suite</title>
   
-  <!-- SheetJS: For reading Excel files -->
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- pdf-lib (PDF Creation and Manipulation) -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <!-- pdfjs-dist (PDF Rendering and Text Extraction) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- SheetJS (Excel Parsing) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- html2pdf.js: For converting DOM elements to downloadable PDFs -->
+  <!-- Mammoth.js (Word .docx Parsing) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <!-- html2pdf.js (DOM/HTML to PDF Conversion) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-  <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
-    #preview-container { margin-top: 20px; overflow-x: auto; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f4f4f4; }
-    button { padding: 10px 15px; margin-top: 10px; cursor: pointer; }
-  </style>
-</head>
-<body>
-
-  <h2>Excel (.xlsx / .csv) to PDF Converter</h2>
-  <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" />
-  <div id="controls" style="display: none;">
-    <button onclick="downloadPDF()">Download as PDF</button>
-  </div>
-
-  <div id="preview-container"></div>
+  <!-- JSZip (ZIP Packaging) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <script>
-    let activeElementToExport = null;
-
-    document.getElementById('excel-input').addEventListener('change', async function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const buffer = await file.arrayBuffer();
-      // Read Excel Workbook
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      
-      // Grab the first sheet
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-
-      // Convert sheet data into HTML Table format
-      const htmlTable = XLSX.utils.sheet_to_html(worksheet);
-
-      const previewDiv = document.getElementById('preview-container');
-      previewDiv.innerHTML = htmlTable;
-      
-      activeElementToExport = previewDiv;
-      document.getElementById('controls').style.display = 'block';
-    });
-
-    function downloadPDF() {
-      if (!activeElementToExport) return;
-
-      const options = {
-        margin:       10,
-        filename:     'converted-excel.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-      };
-
-      // Generate and trigger download entirely in browser
-      html2pdf().set(options).from(activeElementToExport).save();
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f5ff',
+              100: '#e5edff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+            }
+          }
+        }
+      }
     }
   </script>
 
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Drag over state */
+    .dropzone-active {
+      border-color: #3b82f6 !important;
+      background-color: #eff6ff !important;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Brand Logo -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateToDashboard()">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+            <i data-lucide="file-text" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <span class="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">PDF Studio</span>
+            <span class="hidden sm:inline-block ml-2 px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full">100% Client-Side</span>
+          </div>
+        </div>
+
+        <!-- Privacy Status & Navigation -->
+        <div class="flex items-center space-x-4">
+          <div class="hidden md:flex items-center space-x-2 text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+            <span>Zero Server Uploads • Processing in Browser</span>
+          </div>
+          <button onclick="navigateToDashboard()" id="nav-home-btn" class="hidden text-sm font-medium text-slate-600 hover:text-brand-600 transition flex items-center space-x-1">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+            <span>All Tools</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Dashboard View (Tool Suite Overview) -->
+    <div id="view-dashboard" class="space-y-8">
+      <!-- Hero Banner -->
+      <div class="text-center max-w-3xl mx-auto pt-4 pb-6">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          Every PDF & Document Tool You Need, <span class="text-brand-600">100% Private</span>
+        </h1>
+        <p class="mt-3 text-base sm:text-lg text-slate-600">
+          Merge, split, compress, convert, watermark, protect, and edit documents directly inside your browser. No files leave your device.
+        </p>
+      </div>
+
+      <!-- Tools Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="tools-grid">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </div>
+
+    <!-- Workspace View (Active Tool View) -->
+    <div id="view-workspace" class="hidden space-y-6">
+      <!-- Back Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <button onclick="navigateToDashboard()" class="inline-flex items-center text-sm font-medium text-slate-600 hover:text-brand-600 transition">
+          <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Back to Tools
+        </button>
+        <div id="active-tool-badge" class="px-3 py-1 text-xs font-semibold rounded-full bg-brand-50 text-brand-700 border border-brand-200 flex items-center space-x-1.5">
+          <i id="active-tool-icon" class="w-3.5 h-3.5"></i>
+          <span id="active-tool-name">Tool Name</span>
+        </div>
+      </div>
+
+      <!-- Workspace Grid Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left: Upload & Main Action Area (Span 8) -->
+        <div class="lg:col-span-8 space-y-6">
+          <!-- Drop Zone -->
+          <div id="dropzone" class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center bg-white hover:border-brand-500 hover:bg-slate-50/50 transition cursor-pointer shadow-sm relative group">
+            <input type="file" id="file-input" class="hidden" />
+            <div class="flex flex-col items-center justify-center space-y-3">
+              <div class="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+              </div>
+              <div>
+                <p class="text-base font-semibold text-slate-800">
+                  <span class="text-brand-600 underline underline-offset-2">Click to upload</span> or drag and drop files here
+                </p>
+                <p id="accepted-formats-text" class="text-xs text-slate-500 mt-1">Accepts PDF files</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- File List / Main Stage Preview Container -->
+          <div id="file-stage" class="hidden bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 class="font-semibold text-slate-800 text-sm flex items-center space-x-2">
+                <i data-lucide="files" class="w-4 h-4 text-brand-600"></i>
+                <span>Uploaded Documents (<span id="file-count">0</span>)</span>
+              </h3>
+              <button onclick="clearFiles()" class="text-xs text-red-600 hover:text-red-700 font-medium flex items-center space-x-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>Clear All</span>
+              </button>
+            </div>
+
+            <!-- List Container -->
+            <div id="file-list" class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+              <!-- Rendered items -->
+            </div>
+
+            <!-- Visual Page Grid Preview (For Organize / Rotate Tool) -->
+            <div id="page-grid-container" class="hidden">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Page Thumbnails & Ordering</span>
+                <span class="text-xs text-slate-400">Drag or click arrows to reorder pages</span>
+              </div>
+              <div id="page-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[460px] overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200">
+                <!-- Page Cards -->
+              </div>
+            </div>
+
+            <!-- Text Preview Container (For Text Extraction) -->
+            <div id="extracted-text-container" class="hidden space-y-3">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Extracted Text Content</label>
+                <div class="space-x-2">
+                  <button onclick="copyExtractedText()" class="px-3 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition inline-flex items-center space-x-1">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Copy Text</span>
+                  </button>
+                  <button onclick="downloadExtractedText()" class="px-3 py-1 text-xs font-medium bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg transition inline-flex items-center space-x-1">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Download .txt</span>
+                  </button>
+                </div>
+              </div>
+              <textarea id="extracted-text-area" rows="12" class="w-full p-4 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none bg-slate-50" placeholder="Extracted text will appear here..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Action Settings Panel (Span 4) -->
+        <div class="lg:col-span-4 space-y-6">
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900" id="tool-settings-title">Tool Options</h3>
+              <p class="text-xs text-slate-500 mt-0.5" id="tool-settings-desc">Configure your action parameters below.</p>
+            </div>
+
+            <!-- Dynamic Settings Container -->
+            <div id="tool-options-container" class="space-y-4">
+              <!-- Dynamically populated based on active tool -->
+            </div>
+
+            <!-- Process Action Button -->
+            <button id="process-btn" onclick="executeActiveTool()" disabled class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg shadow-brand-600/20 hover:shadow-brand-600/30 transition flex items-center justify-center space-x-2">
+              <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+              <span id="process-btn-text">Process Document</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 pointer-events-none"></div>
+
+  <!-- Loading Modal Overlay -->
+  <div id="loading-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4 border border-slate-100">
+      <div class="w-14 h-14 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto text-brand-600">
+        <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
+      </div>
+      <div>
+        <h4 class="text-lg font-bold text-slate-900" id="loading-title">Processing Document</h4>
+        <p class="text-xs text-slate-500 mt-1" id="loading-desc">Executing client-side WebAssembly tasks...</p>
+      </div>
+      <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+        <div id="loading-progress-bar" class="bg-brand-600 h-full w-0 transition-all duration-300"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize PDF.js Worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // Application State
+    const state = {
+      currentTool: null,
+      files: [], // Array of File Objects
+      parsedPages: [], // Pages state for organize/rotate tool [{ fileIndex, pageIndex, rotation, id }]
+      extractedText: ''
+    };
+
+    // Tool Suite Registry
+    const TOOLS = [
+      {
+        id: 'merge',
+        name: 'Merge PDF',
+        icon: 'combine',
+        category: 'Organize',
+        description: 'Combine multiple PDF documents into a single cohesive file with custom ordering.',
+        accept: '.pdf',
+        multiple: true
+      },
+      {
+        id: 'split',
+        name: 'Split PDF',
+        icon: 'scissors',
+        category: 'Organize',
+        description: 'Separate pages or extract custom page ranges into individual PDF files or ZIP archive.',
+        accept: '.pdf',
+        multiple: false
+      },
+      {
+        id: 'organize',
+        name: 'Organize & Rotate',
+        icon: 'grid',
+        category: 'Organize',
+        description: 'Visually drag, reorder, rotate individual pages, or delete unneeded pages.',
+        accept: '.pdf',
+        multiple: false
+      },
+      {
+        id: 'img2pdf',
+        name: 'Images to PDF',
+        icon: 'image',
+        category: 'Convert To PDF',
+        description: 'Convert JPG, PNG, WebP images into a styled multi-page PDF document.',
+        accept: '.jpg,.jpeg,.png,.webp',
+        multiple: true
+      },
+      {
+        id: 'pdf2img',
+        name: 'PDF to Images',
+        icon: 'file-image',
+        category: 'Convert From PDF',
+        description: 'Extract pages from your PDF and save them as high-resolution PNG or JPG images.',
+        accept: '.pdf',
+        multiple: false
+      },
+      {
+        id: 'excel2pdf',
+        name: 'Excel to PDF',
+        icon: 'file-spreadsheet',
+        category: 'Convert To PDF',
+        description: 'Convert .xlsx, .xls, or .csv spreadsheets into clean PDF documents.',
+        accept: '.xlsx,.xls,.csv',
+        multiple: false
+      },
+      {
+        id: 'word2pdf',
+        name: 'Word to PDF',
+        icon: 'file-type',
+        category: 'Convert To PDF',
+        description: 'Convert Microsoft Word (.docx) documents to PDF format pure client-side.',
+        accept: '.docx',
+        multiple: false
+      },
+      {
+        id: 'watermark',
+        name: 'Add Watermark',
+        icon: 'stamp',
+        category: 'Edit PDF',
+        description: 'Stamp text watermarks over PDF pages with adjustable opacity, angle, and fonts.',
+        accept: '.pdf',
+        multiple: false
+      },
+      {
+        id: 'pagenumbers',
+        name: 'Page Numbers',
+        icon: 'hash',
+        category: 'Edit PDF',
+        description: 'Add clear page numbering (Page X of Y) with flexible positioning to your PDF.',
+        accept: '.pdf',
+        multiple: false
+      },
+      {
+        id: 'compress',
+        name: 'Compress PDF',
+        icon: 'minimize-2',
+        category: 'Optimize',
+        description: 'Downsample image streams and optimize PDF structure to reduce file size.',
+        accept: '.pdf',
+        multiple: false
+      },
+      {
+        id: 'protect',
+        name: 'Protect PDF',
+        icon: 'lock',
+        category: 'Security',
+        description: 'Encrypt your PDF document with secure user password protection.',
+        accept: '.pdf',
+        multiple: false
+      },
+      {
+        id: 'extracttext',
+        name: 'Extract Text',
+        icon: 'file-search',
+        category: 'Utility',
+        description: 'Extract readable text content from PDF pages to copy or download as .txt.',
+        accept: '.pdf',
+        multiple: false
+      }
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderDashboard();
+      setupDropzone();
+      lucide.createIcons();
+    });
+
+    function renderDashboard() {
+      const grid = document.getElementById('tools-grid');
+      grid.innerHTML = TOOLS.map(tool => `
+        <div onclick="selectTool('${tool.id}')" class="bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-500 hover:shadow-xl hover:shadow-brand-500/10 transition-all cursor-pointer group flex flex-col justify-between h-full">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-700 group-hover:bg-brand-50 group-hover:text-brand-600 flex items-center justify-center transition-colors">
+                <i data-lucide="${tool.icon}" class="w-6 h-6"></i>
+              </div>
+              <span class="text-[11px] font-semibold tracking-wide uppercase px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">${tool.category}</span>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">${tool.name}</h3>
+              <p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">${tool.description}</p>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span>Open Tool</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function selectTool(toolId) {
+      const tool = TOOLS.find(t => t.id === toolId);
+      if (!tool) return;
+
+      state.currentTool = tool;
+      state.files = [];
+      state.parsedPages = [];
+      state.extractedText = '';
+
+      // Update UI Elements
+      document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-workspace').classList.remove('hidden');
+      document.getElementById('nav-home-btn').classList.remove('hidden');
+
+      document.getElementById('active-tool-name').textContent = tool.name;
+      document.getElementById('active-tool-icon').setAttribute('data-lucide', tool.icon);
+      document.getElementById('tool-settings-title').textContent = `${tool.name} Settings`;
+      document.getElementById('accepted-formats-text').textContent = `Accepts ${tool.accept.replaceAll(',', ', ')} files`;
+      document.getElementById('process-btn-text').textContent = `Run ${tool.name}`;
+      
+      const fileInput = document.getElementById('file-input');
+      fileInput.accept = tool.accept;
+      if (tool.multiple) {
+        fileInput.setAttribute('multiple', 'multiple');
+      } else {
+        fileInput.removeAttribute('multiple');
+      }
+
+      renderToolOptions(tool.id);
+      updateStageUI();
+      lucide.createIcons();
+    }
+
+    function navigateToDashboard() {
+      state.currentTool = null;
+      state.files = [];
+      state.parsedPages = [];
+      state.extractedText = '';
+
+      document.getElementById('view-workspace').classList.add('hidden');
+      document.getElementById('view-dashboard').classList.remove('hidden');
+      document.getElementById('nav-home-btn').classList.add('hidden');
+    }
+
+    function setupDropzone() {
+      const dropzone = document.getElementById('dropzone');
+      const fileInput = document.getElementById('file-input');
+
+      dropzone.addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFiles(Array.from(e.target.files));
+      });
+
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dropzone-active');
+      });
+
+      ['dragleave', 'dragend'].forEach(type => {
+        dropzone.addEventListener(type, () => dropzone.classList.remove('dropzone-active'));
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dropzone-active');
+        if (e.dataTransfer.files.length) {
+          handleFiles(Array.from(e.dataTransfer.files));
+        }
+      });
+    }
+
+    async function handleFiles(newFiles) {
+      if (!state.currentTool) return;
+
+      // Filter by accepted extensions
+      const validExts = state.currentTool.accept.split(',').map(ext => ext.trim().toLowerCase());
+      const filtered = newFiles.filter(file => {
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        return validExts.includes(ext);
+      });
+
+      if (!filtered.length) {
+        showToast('Invalid file format uploaded for this tool.', 'error');
+        return;
+      }
+
+      if (!state.currentTool.multiple) {
+        state.files = [filtered[0]];
+      } else {
+        state.files.push(...filtered);
+      }
+
+      showToast(`Loaded ${filtered.length} file(s).`, 'success');
+      await updateStageUI();
+    }
+
+    function clearFiles() {
+      state.files = [];
+      state.parsedPages = [];
+      state.extractedText = '';
+      updateStageUI();
+    }
+
+    function removeFile(index) {
+      state.files.splice(index, 1);
+      updateStageUI();
+    }
+
+    function moveFile(index, direction) {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= state.files.length) return;
+      const temp = state.files[index];
+      state.files[index] = state.files[targetIndex];
+      state.files[targetIndex] = temp;
+      updateStageUI();
+    }
+
+    async function updateStageUI() {
+      const fileStage = document.getElementById('file-stage');
+      const fileList = document.getElementById('file-list');
+      const pageGridContainer = document.getElementById('page-grid-container');
+      const extractedTextContainer = document.getElementById('extracted-text-container');
+      const processBtn = document.getElementById('process-btn');
+
+      document.getElementById('file-count').textContent = state.files.length;
+
+      if (state.files.length === 0) {
+        fileStage.classList.add('hidden');
+        processBtn.disabled = true;
+        return;
+      }
+
+      fileStage.classList.remove('hidden');
+      processBtn.disabled = false;
+
+      // Reset visibility sub-containers
+      pageGridContainer.classList.add('hidden');
+      extractedTextContainer.classList.add('hidden');
+      fileList.classList.remove('hidden');
+
+      // Standard file list rendering
+      fileList.innerHTML = state.files.map((file, idx) => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+          <div class="flex items-center space-x-3 overflow-hidden">
+            <div class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-brand-600 flex-shrink-0">
+              <i data-lucide="file" class="w-4 h-4"></i>
+            </div>
+            <div class="truncate">
+              <p class="font-medium text-slate-800 truncate">${file.name}</p>
+              <p class="text-xs text-slate-400">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-1 flex-shrink-0">
+            ${state.currentTool.id === 'merge' ? `
+              <button onclick="moveFile(${idx}, -1)" class="p-1 hover:bg-slate-200 rounded text-slate-600"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+              <button onclick="moveFile(${idx}, 1)" class="p-1 hover:bg-slate-200 rounded text-slate-600"><i data-lucide="arrow-down" class="w-4 h-4"></i></button>
+            ` : ''}
+            <button onclick="removeFile(${idx})" class="p-1 hover:bg-red-50 rounded text-red-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+      `).join('');
+
+      // Custom tool specific UI rendering
+      if (state.currentTool.id === 'organize' && state.files.length > 0) {
+        fileList.classList.add('hidden');
+        pageGridContainer.classList.remove('hidden');
+        await loadOrganizeGrid();
+      } else if (state.currentTool.id === 'extracttext' && state.files.length > 0) {
+        extractedTextContainer.classList.remove('hidden');
+      }
+
+      lucide.createIcons();
+    }
+
+    async function loadOrganizeGrid() {
+      const grid = document.getElementById('page-grid');
+      
+      // If parsed pages haven't been loaded for this file yet
+      if (state.parsedPages.length === 0 && state.files[0]) {
+        showLoading(true, "Generating Page Previews...");
+        try {
+          const buffer = await state.files[0].arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+          const pages = [];
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: 0.3 });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: context, viewport }).promise;
+
+            pages.push({
+              id: 'page-' + i + '-' + Date.now(),
+              originalIndex: i - 1,
+              rotation: 0,
+              dataUrl: canvas.toDataURL()
+            });
+          }
+          state.parsedPages = pages;
+        } catch (err) {
+          showToast('Failed to parse PDF pages.', 'error');
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      renderOrganizeGridUI();
+    }
+
+    function renderOrganizeGridUI() {
+      const grid = document.getElementById('page-grid');
+      grid.innerHTML = state.parsedPages.map((page, idx) => `
+        <div class="bg-white border border-slate-200 rounded-xl p-2 flex flex-col items-center space-y-2 relative shadow-sm group">
+          <div class="text-[10px] font-semibold text-slate-400 self-start px-1">Page ${idx + 1} (Orig: ${page.originalIndex + 1})</div>
+          <div class="w-full flex items-center justify-center overflow-hidden h-36 bg-slate-100 rounded border border-slate-100">
+            <img src="${page.dataUrl}" style="transform: rotate(${page.rotation}deg);" class="max-h-full max-w-full object-contain transition-transform duration-200" />
+          </div>
+          <div class="flex items-center space-x-1 w-full justify-between pt-1">
+            <button onclick="rotatePage(${idx})" class="p-1.5 hover:bg-brand-50 text-brand-600 rounded-lg border border-brand-200 flex-1 flex items-center justify-center text-xs space-x-1">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+              <span>Rotate</span>
+            </button>
+            <button onclick="movePage(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-30"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
+            <button onclick="movePage(${idx}, 1)" ${idx === state.parsedPages.length - 1 ? 'disabled' : ''} class="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-30"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deletePage(${idx})" class="p-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function rotatePage(idx) {
+      state.parsedPages[idx].rotation = (state.parsedPages[idx].rotation + 90) % 360;
+      renderOrganizeGridUI();
+    }
+
+    function movePage(idx, dir) {
+      const target = idx + dir;
+      if (target < 0 || target >= state.parsedPages.length) return;
+      const temp = state.parsedPages[idx];
+      state.parsedPages[idx] = state.parsedPages[target];
+      state.parsedPages[target] = temp;
+      renderOrganizeGridUI();
+    }
+
+    function deletePage(idx) {
+      state.parsedPages.splice(idx, 1);
+      renderOrganizeGridUI();
+    }
+
+    function renderToolOptions(toolId) {
+      const container = document.getElementById('tool-options-container');
+      container.innerHTML = '';
+
+      switch (toolId) {
+        case 'split':
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Split Strategy</label>
+              <select id="opt-split-mode" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <option value="range">Extract Range (e.g. 1-3, 5)</option>
+                <option value="all">Split Every Page into ZIP</option>
+              </select>
+            </div>
+            <div id="opt-split-range-box">
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Page Selection</label>
+              <input type="text" id="opt-split-range" placeholder="e.g. 1-3, 5, 8-10" value="1" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+          `;
+          break;
+
+        case 'img2pdf':
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Page Orientation</label>
+              <select id="opt-img-orientation" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium">
+                <option value="portrait">Portrait</option>
+                <option value="landscape">Landscape</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Page Size</label>
+              <select id="opt-img-size" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium">
+                <option value="a4">A4 (210 x 297 mm)</option>
+                <option value="letter">Letter (8.5 x 11 in)</option>
+                <option value="fit">Fit to Image Size</option>
+              </select>
+            </div>
+          `;
+          break;
+
+        case 'pdf2img':
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Image Format</label>
+              <select id="opt-img-format" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium">
+                <option value="image/png">PNG Format</option>
+                <option value="image/jpeg">JPEG Format</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Quality Multiplier</label>
+              <select id="opt-img-scale" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium">
+                <option value="1.5">Standard (1.5x HD)</option>
+                <option value="2.0" selected>High Res (2.0x Full HD)</option>
+                <option value="3.0">Ultra High (3.0x 4K)</option>
+              </select>
+            </div>
+          `;
+          break;
+
+        case 'watermark':
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Watermark Text</label>
+              <input type="text" id="opt-wm-text" value="CONFIDENTIAL" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Font Size</label>
+                <input type="number" id="opt-wm-size" value="48" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Opacity (0.1 - 1)</label>
+                <input type="number" step="0.1" min="0.1" max="1" id="opt-wm-opacity" value="0.3" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Angle (Degrees)</label>
+              <input type="number" id="opt-wm-angle" value="45" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+            </div>
+          `;
+          break;
+
+        case 'pagenumbers':
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Format</label>
+              <select id="opt-pg-format" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium">
+                <option value="standard">Page X of Y</option>
+                <option value="simple">X</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Position</label>
+              <select id="opt-pg-pos" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium">
+                <option value="bottom-center">Bottom Center</option>
+                <option value="bottom-right">Bottom Right</option>
+                <option value="bottom-left">Bottom Left</option>
+                <option value="top-center">Top Center</option>
+              </select>
+            </div>
+          `;
+          break;
+
+        case 'compress':
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Compression Preset</label>
+              <select id="opt-compress-level" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium">
+                <option value="medium">Recommended Compression (Balanced)</option>
+                <option value="high">Extreme Compression (Lower Quality)</option>
+                <option value="low">Low Compression (High Quality)</option>
+              </select>
+            </div>
+          `;
+          break;
+
+        case 'protect':
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">User Password</label>
+              <input type="password" id="opt-pwd-user" placeholder="Enter password" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Confirm Password</label>
+              <input type="password" id="opt-pwd-confirm" placeholder="Confirm password" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500" />
+            </div>
+          `;
+          break;
+
+        default:
+          container.innerHTML = `<p class="text-xs text-slate-400 italic">No additional settings required for this tool.</p>`;
+          break;
+      }
+    }
+
+    async function executeActiveTool() {
+      if (!state.files.length && state.currentTool.id !== 'organize') return;
+
+      const toolId = state.currentTool.id;
+      showLoading(true, `Running ${state.currentTool.name}...`);
+
+      try {
+        switch (toolId) {
+          case 'merge': await processMerge(); break;
+          case 'split': await processSplit(); break;
+          case 'organize': await processOrganize(); break;
+          case 'img2pdf': await processImg2Pdf(); break;
+          case 'pdf2img': await processPdf2Img(); break;
+          case 'excel2pdf': await processExcel2Pdf(); break;
+          case 'word2pdf': await processWord2Pdf(); break;
+          case 'watermark': await processWatermark(); break;
+          case 'pagenumbers': await processPageNumbers(); break;
+          case 'compress': await processCompress(); break;
+          case 'protect': await processProtect(); break;
+          case 'extracttext': await processExtractText(); break;
+        }
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Error processing document.', 'error');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+
+    // 1. MERGE PDF
+    async function processMerge() {
+      const mergedPdf = await PDFLib.PDFDocument.create();
+      for (const file of state.files) {
+        const buffer = await file.arrayBuffer();
+        const pdf = await PDFLib.PDFDocument.load(buffer);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(page => mergedPdf.addPage(page));
+      }
+      const bytes = await mergedPdf.save();
+      downloadFile(bytes, 'merged-document.pdf', 'application/pdf');
+      showToast('PDFs merged successfully!', 'success');
+    }
+
+    // 2. SPLIT PDF
+    async function processSplit() {
+      const buffer = await state.files[0].arrayBuffer();
+      const pdf = await PDFLib.PDFDocument.load(buffer);
+      const totalPages = pdf.getPageCount();
+      const mode = document.getElementById('opt-split-mode').value;
+
+      if (mode === 'all') {
+        const zip = new JSZip();
+        for (let i = 0; i < totalPages; i++) {
+          const singleDoc = await PDFLib.PDFDocument.create();
+          const [page] = await singleDoc.copyPages(pdf, [i]);
+          singleDoc.addPage(page);
+          const bytes = await singleDoc.save();
+          zip.file(`page-${i + 1}.pdf`, bytes);
+        }
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        downloadFile(zipBlob, 'split-pages.zip', 'application/zip');
+      } else {
+        const rangeStr = document.getElementById('opt-split-range').value;
+        const pageIndexes = parseRange(rangeStr, totalPages);
+        if (!pageIndexes.length) throw new Error('Invalid page range specified.');
+
+        const splitDoc = await PDFLib.PDFDocument.create();
+        const pages = await splitDoc.copyPages(pdf, pageIndexes);
+        pages.forEach(p => splitDoc.addPage(p));
+        const bytes = await splitDoc.save();
+        downloadFile(bytes, 'extracted-split.pdf', 'application/pdf');
+      }
+      showToast('PDF split completed!', 'success');
+    }
+
+    // 3. ORGANIZE & ROTATE
+    async function processOrganize() {
+      if (!state.parsedPages.length) throw new Error('No pages left to export.');
+      const buffer = await state.files[0].arrayBuffer();
+      const origPdf = await PDFLib.PDFDocument.load(buffer);
+      const newPdf = await PDFLib.PDFDocument.create();
+
+      for (const item of state.parsedPages) {
+        const [copiedPage] = await newPdf.copyPages(origPdf, [item.originalIndex]);
+        if (item.rotation > 0) {
+          const currentRot = copiedPage.getRotation().angle;
+          copiedPage.setRotation(PDFLib.degrees(currentRot + item.rotation));
+        }
+        newPdf.addPage(copiedPage);
+      }
+
+      const bytes = await newPdf.save();
+      downloadFile(bytes, 'organized-document.pdf', 'application/pdf');
+      showToast('Document organized and saved!', 'success');
+    }
+
+    // 4. IMAGES TO PDF
+    async function processImg2Pdf() {
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      const orientation = document.getElementById('opt-img-orientation').value;
+      const sizeMode = document.getElementById('opt-img-size').value;
+
+      for (const file of state.files) {
+        const buffer = await file.arrayBuffer();
+        let img;
+        if (file.type.includes('png')) img = await pdfDoc.embedPng(buffer);
+        else img = await pdfDoc.embedJpg(buffer);
+
+        let pWidth = img.width;
+        let pHeight = img.height;
+
+        if (sizeMode === 'a4') {
+          pWidth = 595.28;
+          pHeight = 841.89;
+        } else if (sizeMode === 'letter') {
+          pWidth = 612.0;
+          pHeight = 792.0;
+        }
+
+        if (orientation === 'landscape' && pWidth < pHeight) {
+          const tmp = pWidth; pWidth = pHeight; pHeight = tmp;
+        }
+
+        const page = pdfDoc.addPage([pWidth, pHeight]);
+        
+        // Scale image to fit inside page boundaries
+        const scale = Math.min(pWidth / img.width, pHeight / img.height);
+        const drawW = img.width * scale;
+        const drawH = img.height * scale;
+        const x = (pWidth - drawW) / 2;
+        const y = (pHeight - drawH) / 2;
+
+        page.drawImage(img, { x, y, width: drawW, height: drawH });
+      }
+
+      const bytes = await pdfDoc.save();
+      downloadFile(bytes, 'images-converted.pdf', 'application/pdf');
+      showToast('Images converted to PDF!', 'success');
+    }
+
+    // 5. PDF TO IMAGES
+    async function processPdf2Img() {
+      const buffer = await state.files[0].arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+      const format = document.getElementById('opt-img-format').value;
+      const scale = parseFloat(document.getElementById('opt-img-scale').value);
+      const ext = format === 'image/png' ? 'png' : 'jpg';
+
+      const zip = new JSZip();
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const dataUrl = canvas.toDataURL(format, 0.92);
+        const base64Data = dataUrl.split(',')[1];
+        zip.file(`page-${i}.${ext}`, base64Data, { base64: true });
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      downloadFile(zipBlob, 'pdf-images.zip', 'application/zip');
+      showToast('PDF pages converted to images!', 'success');
+    }
+
+    // 6. EXCEL TO PDF
+    async function processExcel2Pdf() {
+      const buffer = await state.files[0].arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const firstSheet = workbook.SheetNames[0];
+      const htmlString = XLSX.utils.sheet_to_html(workbook.Sheets[firstSheet]);
+
+      const container = document.createElement('div');
+      container.style.padding = '20px';
+      container.innerHTML = `
+        <style>
+          table { border-collapse: collapse; width: 100%; font-family: sans-serif; font-size: 12px; }
+          td, th { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; }
+          th { background-color: #f1f5f9; }
+        </style>
+        ${htmlString}
+      `;
+
+      const opt = {
+        margin: 10,
+        filename: 'excel-converted.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      await html2pdf().set(opt).from(container).save();
+      showToast('Excel document converted!', 'success');
+    }
+
+    // 7. WORD TO PDF
+    async function processWord2Pdf() {
+      const buffer = await state.files[0].arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
+      
+      const container = document.createElement('div');
+      container.style.padding = '30px';
+      container.style.fontFamily = 'sans-serif';
+      container.style.lineHeight = '1.6';
+      container.innerHTML = result.value;
+
+      const opt = {
+        margin: 15,
+        filename: 'word-converted.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(container).save();
+      showToast('Word document converted!', 'success');
+    }
+
+    // 8. ADD WATERMARK
+    async function processWatermark() {
+      const buffer = await state.files[0].arrayBuffer();
+      const pdfDoc = await PDFLib.PDFDocument.load(buffer);
+      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+      const wmText = document.getElementById('opt-wm-text').value || 'WATERMARK';
+      const size = parseInt(document.getElementById('opt-wm-size').value) || 48;
+      const opacity = parseFloat(document.getElementById('opt-wm-opacity').value) || 0.3;
+      const angle = parseInt(document.getElementById('opt-wm-angle').value) || 45;
+
+      const pages = pdfDoc.getPages();
+      for (const page of pages) {
+        const { width, height } = page.getSize();
+        const textWidth = font.widthOfTextAtSize(wmText, size);
+        const textHeight = font.heightAtSize(size);
+
+        page.drawText(wmText, {
+          x: width / 2 - textWidth / 2,
+          y: height / 2 - textHeight / 2,
+          size,
+          font,
+          color: PDFLib.rgb(0.5, 0.5, 0.5),
+          opacity,
+          rotate: PDFLib.degrees(angle)
+        });
+      }
+
+      const bytes = await pdfDoc.save();
+      downloadFile(bytes, 'watermarked-document.pdf', 'application/pdf');
+      showToast('Watermark applied successfully!', 'success');
+    }
+
+    // 9. PAGE NUMBERS
+    async function processPageNumbers() {
+      const buffer = await state.files[0].arrayBuffer();
+      const pdfDoc = await PDFLib.PDFDocument.load(buffer);
+      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const total = pdfDoc.getPageCount();
+
+      const format = document.getElementById('opt-pg-format').value;
+      const pos = document.getElementById('opt-pg-pos').value;
+
+      for (let i = 0; i < total; i++) {
+        const page = pdfDoc.getPage(i);
+        const { width, height } = page.getSize();
+        const numText = format === 'standard' ? `Page ${i + 1} of ${total}` : `${i + 1}`;
+        const size = 10;
+        const textWidth = font.widthOfTextAtSize(numText, size);
+
+        let x = width / 2 - textWidth / 2;
+        let y = 20;
+
+        if (pos === 'bottom-left') x = 30;
+        if (pos === 'bottom-right') x = width - textWidth - 30;
+        if (pos === 'top-center') y = height - 30;
+
+        page.drawText(numText, { x, y, size, font, color: PDFLib.rgb(0.2, 0.2, 0.2) });
+      }
+
+      const bytes = await pdfDoc.save();
+      downloadFile(bytes, 'numbered-document.pdf', 'application/pdf');
+      showToast('Page numbers added!', 'success');
+    }
+
+    // 10. COMPRESS PDF
+    async function processCompress() {
+      const buffer = await state.files[0].arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+      const level = document.getElementById('opt-compress-level').value;
+
+      let scale = 1.0;
+      let quality = 0.6;
+      if (level === 'high') { scale = 0.75; quality = 0.35; }
+      if (level === 'low') { scale = 1.2; quality = 0.8; }
+
+      const compressedDoc = await PDFLib.PDFDocument.create();
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const imgUrl = canvas.toDataURL('image/jpeg', quality);
+        const imgBytes = await fetch(imgUrl).then(res => res.arrayBuffer());
+        const img = await compressedDoc.embedJpg(imgBytes);
+
+        const newPage = compressedDoc.addPage([viewport.width / scale, viewport.height / scale]);
+        newPage.drawImage(img, { x: 0, y: 0, width: newPage.getWidth(), height: newPage.getHeight() });
+      }
+
+      const bytes = await compressedDoc.save();
+      downloadFile(bytes, 'compressed-document.pdf', 'application/pdf');
+      showToast('PDF compressed successfully!', 'success');
+    }
+
+    // 11. PROTECT PDF
+    async function processProtect() {
+      const pwd = document.getElementById('opt-pwd-user').value;
+      const confirm = document.getElementById('opt-pwd-confirm').value;
+
+      if (!pwd) throw new Error('Password cannot be empty.');
+      if (pwd !== confirm) throw new Error('Passwords do not match.');
+
+      const buffer = await state.files[0].arrayBuffer();
+      const pdfDoc = await PDFLib.PDFDocument.load(buffer);
+
+      // pdf-lib supports user and owner password encryption on save
+      const bytes = await pdfDoc.save({
+        userPassword: pwd,
+        ownerPassword: pwd
+      });
+
+      downloadFile(bytes, 'protected-document.pdf', 'application/pdf');
+      showToast('PDF encrypted with password!', 'success');
+    }
+
+    // 12. EXTRACT TEXT
+    async function processExtractText() {
+      const buffer = await state.files[0].arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += `--- Page ${i} ---\n` + pageText + '\n\n';
+      }
+
+      state.extractedText = fullText;
+      document.getElementById('extracted-text-area').value = fullText;
+      showToast('Text extracted from document!', 'success');
+    }
+
+    function parseRange(str, totalPages) {
+      const pages = new Set();
+      const parts = str.split(',');
+      for (let part of parts) {
+        part = part.trim();
+        if (part.includes('-')) {
+          const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+          if (!isNaN(start) && !isNaN(end)) {
+            for (let i = Math.max(1, start); i <= Math.min(totalPages, end); i++) {
+              pages.add(i - 1);
+            }
+          }
+        } else {
+          const num = parseInt(part);
+          if (!isNaN(num) && num >= 1 && num <= totalPages) {
+            pages.add(num - 1);
+          }
+        }
+      }
+      return Array.from(pages).sort((a, b) => a - b);
+    }
+
+    function downloadFile(data, filename, type) {
+      const blob = data instanceof Blob ? data : new Blob([data], { type });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    function copyExtractedText() {
+      const area = document.getElementById('extracted-text-area');
+      area.select();
+      document.execCommand('copy');
+      showToast('Copied text to clipboard!', 'info');
+    }
+
+    function downloadExtractedText() {
+      if (!state.extractedText) return;
+      downloadFile(state.extractedText, 'extracted-text.txt', 'text/plain');
+    }
+
+    function showLoading(show, title = "Processing", desc = "Executing client-side tasks...") {
+      const modal = document.getElementById('loading-modal');
+      const bar = document.getElementById('loading-progress-bar');
+      document.getElementById('loading-title').textContent = title;
+      document.getElementById('loading-desc').textContent = desc;
+
+      if (show) {
+        modal.classList.remove('hidden');
+        bar.style.width = '30%';
+        setTimeout(() => bar.style.width = '70%', 400);
+      } else {
+        bar.style.width = '100%';
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          bar.style.width = '0%';
+        }, 200);
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-red-600 text-white',
+        info: 'bg-slate-800 text-white'
+      };
+
+      toast.className = `px-4 py-3 rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 pointer-events-auto transform translate-y-2 opacity-0 ${colors[type]}`;
+      toast.innerHTML = `<span>${message}</span>`;
+
+      container.appendChild(toast);
+      
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
 </body>
 </html>
