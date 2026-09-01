@@ -8,6 +8,8 @@
     <script>
         tailwind.config = { darkMode: 'class' };
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         textarea, button, a { touch-action: manipulation; }
         .cell-input {
@@ -20,6 +22,7 @@
             from { opacity: 0.4; transform: translateY(2px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .tab-scroll::-webkit-scrollbar { height: 4px; }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
@@ -45,7 +48,18 @@
             </div>
         </header>
 
-        <!-- Main layout: table + compact notes -->
+        <!-- Person toggle + PDF export -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-700 text-xs font-medium">
+                <button onclick="setPerson('jacob')" id="personBtnJacob" class="px-4 py-1.5 transition"></button>
+                <button onclick="setPerson('zara')" id="personBtnZara" class="px-4 py-1.5 transition border-l border-slate-300 dark:border-slate-700"></button>
+            </div>
+            <button onclick="exportWeekPDF()" class="text-xs px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition flex items-center gap-1.5">
+                <span>⬇</span> Export week PDF
+            </button>
+        </div>
+
+        <!-- Main layout: table + notes pages -->
         <div class="flex flex-col lg:flex-row gap-6 items-start">
 
             <!-- Week table (main) -->
@@ -58,13 +72,21 @@
                 </table>
             </div>
 
-            <!-- Compact general notes panel -->
+            <!-- Notes panel: multiple nameable pages -->
             <div class="w-full lg:w-72 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
-                <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Notes</h2>
-                    <button onclick="addGeneralLine()" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition">+ add</button>
+                <div class="flex items-center justify-between mb-2 gap-2">
+                    <div id="pageTabs" class="flex items-center gap-1 overflow-x-auto tab-scroll flex-1"></div>
+                    <button onclick="addPage()" title="New page" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition shrink-0">+ page</button>
                 </div>
-                <div id="generalNotesList" class="space-y-0.5"></div>
+                <div class="flex items-center justify-between mb-2">
+                    <h2 id="activePageTitle" class="text-xs font-semibold uppercase tracking-wide text-slate-400 truncate"></h2>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="renamePage()" title="Rename page" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition">rename</button>
+                        <button onclick="deletePage()" title="Delete page" class="text-xs text-slate-400 hover:text-red-500 transition">del</button>
+                        <button onclick="addLineToActivePage()" title="Add line" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition">+ line</button>
+                    </div>
+                </div>
+                <div id="pageLinesList" class="space-y-0.5"></div>
             </div>
 
         </div>
@@ -78,13 +100,19 @@
             { key: "pm", label: "PM" },
             { key: "other", label: "Other / Notes" }
         ];
+        const PEOPLE = [
+            { key: "jacob", label: "Jacob" },
+            { key: "zara", label: "Zara" }
+        ];
 
         let trainingCache = {};   // id -> { id, content, updated_at }
         let weekOffset = 0;       // weeks away from the real current week
-        let generalLines = [];    // [{ id, text, checked }]
-        const saveTimers = {};    // debounce handles per cell id
+        let activePerson = localStorage.getItem("training_active_person") || "jacob";
+        let notePages = [];       // [{ id, title, lines: [{id,text,checked}] }]
+        let activePageId = null;
+        const saveTimers = {};    // debounce handles per cell/key
 
-        // ---------- theme (same pattern as /notes) ----------
+        // ---------- theme ----------
         function initTheme() {
             const saved = localStorage.getItem("theme");
             const isDark = saved ? saved === "dark" : true;
@@ -124,7 +152,7 @@
         // ---------- ISO week math ----------
         function getMondayOfCurrentWeek(date = new Date()) {
             const d = new Date(date);
-            const day = (d.getDay() + 6) % 7; // Mon=0..Sun=6
+            const day = (d.getDay() + 6) % 7;
             d.setHours(0, 0, 0, 0);
             d.setDate(d.getDate() - day);
             return d;
@@ -147,11 +175,9 @@
         function formatShort(date) {
             return date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
         }
-
         function currentMonday() {
             return addDays(getMondayOfCurrentWeek(), weekOffset * 7);
         }
-
         function shiftWeek(n) {
             weekOffset += n;
             renderWeek();
@@ -161,7 +187,27 @@
             renderWeek();
         }
 
-        // ---------- data fetch/save (single generic store) ----------
+        // ---------- person toggle ----------
+        function setPerson(p) {
+            activePerson = p;
+            localStorage.setItem("training_active_person", p);
+            renderPersonButtons();
+            renderWeek();
+        }
+        function renderPersonButtons() {
+            PEOPLE.forEach(p => {
+                const btn = document.getElementById(`personBtn${p.label}`);
+                btn.textContent = p.label;
+                const active = activePerson === p.key;
+                btn.className = `px-4 py-1.5 transition ${p.key === 'zara' ? 'border-l border-slate-300 dark:border-slate-700' : ''} ${
+                    active
+                        ? 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900'
+                        : 'bg-transparent text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800'
+                }`;
+            });
+        }
+
+        // ---------- generic cell store (id -> content) ----------
         async function fetchTraining() {
             try {
                 const res = await fetch(`${API_BASE}/training`, { headers: getAuthHeader() });
@@ -170,22 +216,17 @@
                 trainingCache = {};
                 rows.forEach(r => trainingCache[r.id] = r);
 
-                const gn = trainingCache["training_general_notes"];
-                if (gn && gn.content) {
-                    try { generalLines = JSON.parse(gn.content); } catch (e) { generalLines = []; }
-                }
-                if (!generalLines || generalLines.length === 0) {
-                    generalLines = [{ id: uid(), text: "", checked: null }];
-                }
-
+                loadNotePages();
+                renderPersonButtons();
                 renderWeek();
-                renderGeneralNotes();
+                renderPageTabs();
+                renderPageLines();
             } catch (err) {
                 console.error("Network error:", err);
             }
         }
 
-        function saveCell(id, content) {
+        function saveKey(id, content) {
             trainingCache[id] = { id, content, updated_at: Date.now() };
             clearTimeout(saveTimers[id]);
             saveTimers[id] = setTimeout(async () => {
@@ -198,15 +239,22 @@
             }, 600);
         }
 
-        function saveGeneralNotes() {
-            const id = "training_general_notes";
-            const content = JSON.stringify(generalLines);
-            saveCell(id, content);
+        // ---------- week table ----------
+        function cellId(person, year, week, dayIdx, slotKey) {
+            return `slot_${person}_${year}_${week}_${dayIdx}_${slotKey}`;
         }
-
-        // ---------- week table rendering ----------
-        function cellId(year, week, dayIdx, slotKey) {
+        function legacyCellId(year, week, dayIdx, slotKey) {
+            // pre-multi-person format, treated as Jacob's legacy data
             return `slot_${year}_${week}_${dayIdx}_${slotKey}`;
+        }
+        function getCellValue(person, year, week, dayIdx, slotKey) {
+            const id = cellId(person, year, week, dayIdx, slotKey);
+            if (trainingCache[id]) return trainingCache[id].content || "";
+            if (person === "jacob") {
+                const legacy = legacyCellId(year, week, dayIdx, slotKey);
+                if (trainingCache[legacy]) return trainingCache[legacy].content || "";
+            }
+            return "";
         }
 
         function renderWeek() {
@@ -218,7 +266,6 @@
             document.getElementById("weekRange").textContent = `${formatShort(monday)} – ${formatShort(sunday)}`;
             document.getElementById("todayBtn").classList.toggle("hidden", weekOffset === 0);
 
-            // header row: day name + date
             const headerRow = document.getElementById("dayHeaderRow");
             let headerHtml = `<th class="text-left text-xs font-medium text-slate-400 p-2 w-28"></th>`;
             for (let i = 0; i < 7; i++) {
@@ -232,15 +279,14 @@
             }
             headerRow.innerHTML = headerHtml;
 
-            // body rows: AM / PM / Other
             const body = document.getElementById("weekTableBody");
             let bodyHtml = "";
             SLOTS.forEach(slot => {
                 bodyHtml += `<tr class="border-t border-slate-200 dark:border-slate-800 week-slide-enter">
                     <td class="p-2 text-xs font-medium text-slate-400 align-top w-28">${slot.label}</td>`;
                 for (let i = 0; i < 7; i++) {
-                    const id = cellId(year, week, i, slot.key);
-                    const val = trainingCache[id] ? trainingCache[id].content : "";
+                    const id = cellId(activePerson, year, week, i, slot.key);
+                    const val = getCellValue(activePerson, year, week, i, slot.key);
                     bodyHtml += `
                         <td class="p-1 border-l border-slate-200 dark:border-slate-800 align-top">
                             <textarea
@@ -253,54 +299,120 @@
                 bodyHtml += `</tr>`;
             });
             body.innerHTML = bodyHtml;
-
-            // autosize all textareas now that they're in the DOM
             body.querySelectorAll("textarea").forEach(el => autoGrow(el));
         }
 
         function onCellInput(el) {
             autoGrow(el);
-            saveCell(el.dataset.cellId, el.value);
+            saveKey(el.dataset.cellId, el.value);
         }
 
-        // ---------- compact general notes (mini checklist, *() shorthand) ----------
-        function renderGeneralNotes() {
-            const wrap = document.getElementById("generalNotesList");
-            wrap.innerHTML = generalLines.map(line => {
-                if (line.checked === null) {
-                    return `
-                        <div class="flex items-start gap-1.5">
-                            <textarea rows="1"
-                                class="gn-line w-full bg-transparent text-xs focus:outline-none py-1 resize-none overflow-hidden leading-snug text-slate-700 dark:text-slate-300"
-                                data-line="${line.id}"
-                                oninput="handleGNInput('${line.id}', this)"
-                                onkeydown="handleGNKeydown(event, '${line.id}')"
-                                placeholder="note...">${escapeHtml(line.text)}</textarea>
-                        </div>`;
+        // ---------- notes: multiple nameable pages ----------
+        function loadNotePages() {
+            const row = trainingCache["training_notes_pages"];
+            if (row && row.content) {
+                try {
+                    notePages = JSON.parse(row.content);
+                } catch (e) {
+                    notePages = [];
                 }
-                return `
-                    <div class="flex items-start gap-1.5">
-                        <input type="checkbox" ${line.checked ? "checked" : ""} onchange="toggleGNCheck('${line.id}', this)"
-                            class="h-3 w-3 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
-                        <textarea rows="1"
-                            class="gn-line w-full bg-transparent text-xs focus:outline-none py-1 resize-none overflow-hidden leading-snug ${line.checked ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300"}"
-                            data-line="${line.id}"
-                            oninput="handleGNInput('${line.id}', this)"
-                            onkeydown="handleGNKeydown(event, '${line.id}')"
-                            placeholder="task...">${escapeHtml(line.text)}</textarea>
-                    </div>`;
-            }).join("");
-            wrap.querySelectorAll("textarea").forEach(el => autoGrow(el));
+            }
+
+            // migrate old single-list format if present and nothing new yet
+            if ((!notePages || notePages.length === 0)) {
+                const legacy = trainingCache["training_general_notes"];
+                if (legacy && legacy.content) {
+                    try {
+                        const legacyLines = JSON.parse(legacy.content);
+                        if (Array.isArray(legacyLines) && legacyLines.length > 0) {
+                            notePages = [{ id: uid(), title: "General", lines: legacyLines }];
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+            }
+
+            if (!notePages || notePages.length === 0) {
+                notePages = [{ id: uid(), title: "General", lines: [{ id: uid(), text: "", checked: null }] }];
+            }
+
+            activePageId = notePages[0].id;
+            saveNotePages();
         }
 
-        function addGeneralLine() {
-            generalLines.push({ id: uid(), text: "", checked: null });
-            renderGeneralNotes();
-            saveGeneralNotes();
-            focusGNLine(generalLines[generalLines.length - 1].id);
+        function saveNotePages() {
+            saveKey("training_notes_pages", JSON.stringify(notePages));
         }
 
-        function focusGNLine(lineId, caret) {
+        function activePage() {
+            return notePages.find(p => p.id === activePageId) || notePages[0];
+        }
+
+        function renderPageTabs() {
+            const wrap = document.getElementById("pageTabs");
+            wrap.innerHTML = notePages.map(p => `
+                <button onclick="switchPage('${p.id}')"
+                    class="px-2 py-1 text-[11px] rounded whitespace-nowrap transition ${
+                        p.id === activePageId
+                            ? 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900'
+                            : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700/50'
+                    }">${escapeHtml(p.title || "Untitled")}</button>
+            `).join("");
+            document.getElementById("activePageTitle").textContent = activePage() ? (activePage().title || "Untitled") : "";
+        }
+
+        function switchPage(id) {
+            activePageId = id;
+            renderPageTabs();
+            renderPageLines();
+        }
+
+        function addPage() {
+            const title = prompt("Page title:", "New page");
+            if (title === null) return;
+            const page = { id: uid(), title: title.trim() || "Untitled", lines: [{ id: uid(), text: "", checked: null }] };
+            notePages.push(page);
+            activePageId = page.id;
+            saveNotePages();
+            renderPageTabs();
+            renderPageLines();
+        }
+
+        function renamePage() {
+            const page = activePage();
+            if (!page) return;
+            const title = prompt("Rename page:", page.title || "");
+            if (title === null) return;
+            page.title = title.trim() || "Untitled";
+            saveNotePages();
+            renderPageTabs();
+        }
+
+        function deletePage() {
+            if (notePages.length <= 1) {
+                alert("You need at least one page.");
+                return;
+            }
+            const page = activePage();
+            if (!page) return;
+            if (!confirm(`Delete page "${page.title || 'Untitled'}"? This can't be undone.`)) return;
+            notePages = notePages.filter(p => p.id !== page.id);
+            activePageId = notePages[0].id;
+            saveNotePages();
+            renderPageTabs();
+            renderPageLines();
+        }
+
+        function addLineToActivePage() {
+            const page = activePage();
+            if (!page) return;
+            const line = { id: uid(), text: "", checked: null };
+            page.lines.push(line);
+            renderPageLines();
+            saveNotePages();
+            focusPageLine(line.id);
+        }
+
+        function focusPageLine(lineId, caret) {
             requestAnimationFrame(() => {
                 const el = document.querySelector(`textarea[data-line="${lineId}"]`);
                 if (el) {
@@ -311,8 +423,42 @@
             });
         }
 
-        function handleGNInput(lineId, el) {
-            const line = generalLines.find(l => l.id === lineId);
+        function renderPageLines() {
+            const page = activePage();
+            const wrap = document.getElementById("pageLinesList");
+            if (!page) { wrap.innerHTML = ""; return; }
+
+            wrap.innerHTML = page.lines.map(line => {
+                if (line.checked === null) {
+                    return `
+                        <div class="flex items-start gap-1.5">
+                            <textarea rows="1"
+                                class="pg-line w-full bg-transparent text-xs focus:outline-none py-1 resize-none overflow-hidden leading-snug text-slate-700 dark:text-slate-300"
+                                data-line="${line.id}"
+                                oninput="handlePageLineInput('${line.id}', this)"
+                                onkeydown="handlePageLineKeydown(event, '${line.id}')"
+                                placeholder="note...">${escapeHtml(line.text)}</textarea>
+                        </div>`;
+                }
+                return `
+                    <div class="flex items-start gap-1.5">
+                        <input type="checkbox" ${line.checked ? "checked" : ""} onchange="togglePageLineCheck('${line.id}', this)"
+                            class="h-3 w-3 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
+                        <textarea rows="1"
+                            class="pg-line w-full bg-transparent text-xs focus:outline-none py-1 resize-none overflow-hidden leading-snug ${line.checked ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300"}"
+                            data-line="${line.id}"
+                            oninput="handlePageLineInput('${line.id}', this)"
+                            onkeydown="handlePageLineKeydown(event, '${line.id}')"
+                            placeholder="task...">${escapeHtml(line.text)}</textarea>
+                    </div>`;
+            }).join("");
+            wrap.querySelectorAll("textarea").forEach(el => autoGrow(el));
+        }
+
+        function handlePageLineInput(lineId, el) {
+            const page = activePage();
+            if (!page) return;
+            const line = page.lines.find(l => l.id === lineId);
             if (!line) return;
             const value = el.value;
 
@@ -321,29 +467,33 @@
                 if (match) {
                     line.checked = false;
                     line.text = match[1];
-                    renderGeneralNotes();
-                    saveGeneralNotes();
-                    focusGNLine(lineId, line.text.length);
+                    renderPageLines();
+                    saveNotePages();
+                    focusPageLine(lineId, line.text.length);
                     return;
                 }
             }
             autoGrow(el);
             line.text = value;
-            saveGeneralNotes();
+            saveNotePages();
         }
 
-        function toggleGNCheck(lineId, checkbox) {
-            const line = generalLines.find(l => l.id === lineId);
+        function togglePageLineCheck(lineId, checkbox) {
+            const page = activePage();
+            if (!page) return;
+            const line = page.lines.find(l => l.id === lineId);
             if (!line) return;
             line.checked = checkbox.checked;
-            renderGeneralNotes();
-            saveGeneralNotes();
+            renderPageLines();
+            saveNotePages();
         }
 
-        function handleGNKeydown(e, lineId) {
-            const idx = generalLines.findIndex(l => l.id === lineId);
+        function handlePageLineKeydown(e, lineId) {
+            const page = activePage();
+            if (!page) return;
+            const idx = page.lines.findIndex(l => l.id === lineId);
             if (idx === -1) return;
-            const line = generalLines[idx];
+            const line = page.lines[idx];
             const inputEl = e.target;
 
             if (e.key === "Enter") {
@@ -353,10 +503,10 @@
                 const after = line.text.slice(caret);
                 line.text = before;
                 const newLine = { id: uid(), text: after, checked: line.checked !== null ? false : null };
-                generalLines.splice(idx + 1, 0, newLine);
-                renderGeneralNotes();
-                saveGeneralNotes();
-                focusGNLine(newLine.id, 0);
+                page.lines.splice(idx + 1, 0, newLine);
+                renderPageLines();
+                saveNotePages();
+                focusPageLine(newLine.id, 0);
                 return;
             }
 
@@ -367,23 +517,68 @@
                 if (line.checked !== null) {
                     e.preventDefault();
                     line.checked = null;
-                    renderGeneralNotes();
-                    saveGeneralNotes();
-                    focusGNLine(lineId, 0);
+                    renderPageLines();
+                    saveNotePages();
+                    focusPageLine(lineId, 0);
                     return;
                 }
 
                 if (idx > 0) {
                     e.preventDefault();
-                    const prev = generalLines[idx - 1];
+                    const prev = page.lines[idx - 1];
                     const mergeCaret = prev.text.length;
                     prev.text = prev.text + line.text;
-                    generalLines.splice(idx, 1);
-                    renderGeneralNotes();
-                    saveGeneralNotes();
-                    focusGNLine(prev.id, mergeCaret);
+                    page.lines.splice(idx, 1);
+                    renderPageLines();
+                    saveNotePages();
+                    focusPageLine(prev.id, mergeCaret);
                 }
             }
+        }
+
+        // ---------- PDF export: both Jacob's and Zara's table for the current week ----------
+        function exportWeekPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const monday = currentMonday();
+            const { year, week } = getISOWeek(monday);
+            const sunday = addDays(monday, 6);
+            const dayDates = Array.from({ length: 7 }, (_, i) => formatShort(addDays(monday, i)));
+
+            doc.setFontSize(14);
+            doc.text(`Training — Week ${week}, ${year}`, 14, 16);
+            doc.setFontSize(9);
+            doc.setTextColor(120);
+            doc.text(`${formatShort(monday)} - ${formatShort(sunday)}`, 14, 22);
+            doc.setTextColor(0);
+
+            let startY = 28;
+
+            PEOPLE.forEach(person => {
+                doc.setFontSize(11);
+                doc.text(person.label, 14, startY);
+
+                const head = [["", ...DAY_LABELS.map((d, i) => `${d} ${dayDates[i]}`)]];
+                const body = SLOTS.map(slot => [
+                    slot.label,
+                    ...Array.from({ length: 7 }, (_, i) => getCellValue(person.key, year, week, i, slot.key) || "")
+                ]);
+
+                doc.autoTable({
+                    startY: startY + 3,
+                    head,
+                    body,
+                    styles: { fontSize: 7, cellPadding: 2, valign: "top", overflow: "linebreak" },
+                    headStyles: { fillColor: [71, 85, 105], textColor: 255, fontSize: 7 },
+                    columnStyles: { 0: { fontStyle: "bold", cellWidth: 18 } },
+                    margin: { left: 14, right: 14 },
+                    theme: "grid"
+                });
+
+                startY = doc.lastAutoTable.finalY + 10;
+            });
+
+            doc.save(`training_week_${year}_W${week}.pdf`);
         }
 
         // ---------- init ----------
