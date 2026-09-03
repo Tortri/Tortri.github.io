@@ -11,18 +11,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        textarea, button, a { touch-action: manipulation; }
-        .cell-input {
-            resize: none;
-            overflow: hidden;
-            min-height: 44px;
-        }
+        textarea, button, a, select { touch-action: manipulation; }
+        .cell-input { resize: none; overflow: hidden; min-height: 36px; }
         .week-slide-enter { animation: weekSlide 0.15s ease-out; }
         @keyframes weekSlide {
             from { opacity: 0.4; transform: translateY(2px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .tab-scroll::-webkit-scrollbar { height: 4px; }
+        .linked-cell { background-color: rgba(16, 185, 129, 0.07); }
+        select.cell-program-select { appearance: none; -webkit-appearance: none; }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
@@ -64,7 +62,7 @@
 
             <!-- Week table (main) -->
             <div class="w-full lg:flex-1 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
-                <table class="w-full min-w-[640px] border-collapse text-sm">
+                <table class="w-full min-w-[720px] border-collapse text-sm">
                     <thead>
                         <tr id="dayHeaderRow" class="bg-slate-50 dark:bg-slate-800/60"></tr>
                     </thead>
@@ -83,10 +81,36 @@
                     <div class="flex items-center gap-2 shrink-0">
                         <button onclick="renamePage()" title="Rename page" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition">rename</button>
                         <button onclick="deletePage()" title="Delete page" class="text-xs text-slate-400 hover:text-red-500 transition">del</button>
-                        <button onclick="addLineToActivePage()" title="Add line" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition">+ line</button>
                     </div>
                 </div>
                 <div id="pageLinesList" class="space-y-0.5"></div>
+            </div>
+
+        </div>
+
+        <!-- Below-table: weekly totals, zone settings, program library -->
+        <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Weekly totals -->
+            <div class="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
+                <h2 id="totalsHeading" class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3"></h2>
+                <div id="weeklyTotals" class="space-y-1.5 text-sm"></div>
+            </div>
+
+            <!-- Zone settings -->
+            <div class="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
+                <h2 id="zoneHeading" class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3"></h2>
+                <div id="zoneSettingsTable"></div>
+            </div>
+
+            <!-- Program library -->
+            <div class="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Programs</h2>
+                    <button onclick="openProgramBuilder()" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition">+ add program</button>
+                </div>
+                <div id="programsList" class="space-y-1 text-sm mb-3"></div>
+                <div id="programBuilderWrap"></div>
             </div>
 
         </div>
@@ -104,13 +128,17 @@
             { key: "jacob", label: "Jacob" },
             { key: "zara", label: "Zara" }
         ];
+        const ZONES = [1, 2, 3, 4, 5];
 
-        let trainingCache = {};   // id -> { id, content, updated_at }
-        let weekOffset = 0;       // weeks away from the real current week
+        let trainingCache = {};
+        let weekOffset = 0;
         let activePerson = localStorage.getItem("training_active_person") || "jacob";
-        let notePages = [];       // [{ id, title, lines: [{id,text,checked}] }]
+        let notePages = [];
         let activePageId = null;
-        const saveTimers = {};    // debounce handles per cell/key
+        let programs = [];
+        let zoneSettings = {};
+        let builderProgram = null; // { id, name, segments: [{id,minutes,seconds,zone,repeat}] }
+        const saveTimers = {};
 
         // ---------- theme ----------
         function initTheme() {
@@ -126,7 +154,7 @@
         }
         initTheme();
 
-        // ---------- auth (shared key with /notes, same domain) ----------
+        // ---------- auth ----------
         function getAuthHeader() {
             let key = localStorage.getItem("notes_api_key");
             if (!key) {
@@ -147,6 +175,9 @@
         function autoGrow(el) {
             el.style.height = "auto";
             el.style.height = el.scrollHeight + "px";
+        }
+        function safelyParse(str, fallback) {
+            try { return JSON.parse(str); } catch (e) { return fallback; }
         }
 
         // ---------- ISO week math ----------
@@ -181,10 +212,12 @@
         function shiftWeek(n) {
             weekOffset += n;
             renderWeek();
+            renderWeeklyTotals();
         }
         function goToday() {
             weekOffset = 0;
             renderWeek();
+            renderWeeklyTotals();
         }
 
         // ---------- person toggle ----------
@@ -193,6 +226,8 @@
             localStorage.setItem("training_active_person", p);
             renderPersonButtons();
             renderWeek();
+            renderZoneSettings();
+            renderWeeklyTotals();
         }
         function renderPersonButtons() {
             PEOPLE.forEach(p => {
@@ -207,7 +242,7 @@
             });
         }
 
-        // ---------- generic cell store (id -> content) ----------
+        // ---------- generic cell store ----------
         async function fetchTraining() {
             try {
                 const res = await fetch(`${API_BASE}/training`, { headers: getAuthHeader() });
@@ -217,10 +252,14 @@
                 rows.forEach(r => trainingCache[r.id] = r);
 
                 loadNotePages();
+                loadProgramsAndZones();
                 renderPersonButtons();
                 renderWeek();
                 renderPageTabs();
                 renderPageLines();
+                renderZoneSettings();
+                renderProgramsList();
+                renderWeeklyTotals();
             } catch (err) {
                 console.error("Network error:", err);
             }
@@ -239,15 +278,27 @@
             }, 600);
         }
 
-        // ---------- week table ----------
+        // ---------- cell content model: manual string OR {text, programId} ----------
+        function parseCell(raw) {
+            if (!raw) return { text: "", programId: null };
+            const obj = safelyParse(raw, null);
+            if (obj && typeof obj === "object" && !Array.isArray(obj) && "programId" in obj) {
+                return { text: obj.text || "", programId: obj.programId || null };
+            }
+            return { text: raw, programId: null };
+        }
+        function serializeCell(text, programId) {
+            if (!programId) return text || "";
+            return JSON.stringify({ text: text || "", programId });
+        }
+
         function cellId(person, year, week, dayIdx, slotKey) {
             return `slot_${person}_${year}_${week}_${dayIdx}_${slotKey}`;
         }
         function legacyCellId(year, week, dayIdx, slotKey) {
-            // pre-multi-person format, treated as Jacob's legacy data
             return `slot_${year}_${week}_${dayIdx}_${slotKey}`;
         }
-        function getCellValue(person, year, week, dayIdx, slotKey) {
+        function getCellRaw(person, year, week, dayIdx, slotKey) {
             const id = cellId(person, year, week, dayIdx, slotKey);
             if (trainingCache[id]) return trainingCache[id].content || "";
             if (person === "jacob") {
@@ -257,6 +308,7 @@
             return "";
         }
 
+        // ---------- week table ----------
         function renderWeek() {
             const monday = currentMonday();
             const { year, week } = getISOWeek(monday);
@@ -267,7 +319,7 @@
             document.getElementById("todayBtn").classList.toggle("hidden", weekOffset === 0);
 
             const headerRow = document.getElementById("dayHeaderRow");
-            let headerHtml = `<th class="text-left text-xs font-medium text-slate-400 p-2 w-28"></th>`;
+            let headerHtml = `<th class="text-left text-xs font-medium text-slate-400 p-2 w-24"></th>`;
             for (let i = 0; i < 7; i++) {
                 const d = addDays(monday, i);
                 const isToday = new Date().toDateString() === d.toDateString();
@@ -283,17 +335,25 @@
             let bodyHtml = "";
             SLOTS.forEach(slot => {
                 bodyHtml += `<tr class="border-t border-slate-200 dark:border-slate-800 week-slide-enter">
-                    <td class="p-2 text-xs font-medium text-slate-400 align-top w-28">${slot.label}</td>`;
+                    <td class="p-2 text-xs font-medium text-slate-400 align-top w-24">${slot.label}</td>`;
                 for (let i = 0; i < 7; i++) {
                     const id = cellId(activePerson, year, week, i, slot.key);
-                    const val = getCellValue(activePerson, year, week, i, slot.key);
+                    const parsed = parseCell(getCellRaw(activePerson, year, week, i, slot.key));
+                    const programOptions = programs.map(p =>
+                        `<option value="${p.id}" ${p.id === parsed.programId ? "selected" : ""}>${escapeHtml(p.name)}</option>`
+                    ).join("");
                     bodyHtml += `
-                        <td class="p-1 border-l border-slate-200 dark:border-slate-800 align-top">
+                        <td class="p-1 border-l border-slate-200 dark:border-slate-800 align-top ${parsed.programId ? 'linked-cell' : ''}">
+                            <select class="cell-program-select w-full text-[10px] bg-transparent border border-slate-200 dark:border-slate-700 rounded mb-1 px-1 py-0.5 text-slate-500 focus:outline-none"
+                                data-cell-id="${id}" onchange="onProgramSelect(this)">
+                                <option value="">— Manual —</option>
+                                ${programOptions}
+                            </select>
                             <textarea
-                                class="cell-input w-full bg-transparent text-xs sm:text-sm p-1.5 rounded focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-800/60 text-slate-700 dark:text-slate-300"
+                                class="cell-input w-full bg-transparent text-xs sm:text-sm p-1 rounded focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-800/60 text-slate-700 dark:text-slate-300"
                                 data-cell-id="${id}"
                                 oninput="onCellInput(this)"
-                                placeholder="">${escapeHtml(val)}</textarea>
+                                placeholder="">${escapeHtml(parsed.text)}</textarea>
                         </td>`;
                 }
                 bodyHtml += `</tr>`;
@@ -304,49 +364,56 @@
 
         function onCellInput(el) {
             autoGrow(el);
-            saveKey(el.dataset.cellId, el.value);
+            const id = el.dataset.cellId;
+            const select = document.querySelector(`select[data-cell-id="${id}"]`);
+            const programId = select && select.value ? select.value : null;
+            saveKey(id, serializeCell(el.value, programId));
+        }
+
+        function onProgramSelect(selectEl) {
+            const id = selectEl.dataset.cellId;
+            const programId = selectEl.value || null;
+            const ta = document.querySelector(`textarea[data-cell-id="${id}"]`);
+            let text;
+            if (programId) {
+                const program = programs.find(p => p.id === programId);
+                text = program ? `${program.name}: ${formatProgramLabel(program)}` : (ta ? ta.value : "");
+            } else {
+                text = ta ? ta.value : "";
+            }
+            if (ta) { ta.value = text; autoGrow(ta); }
+            const td = selectEl.closest("td");
+            td.classList.toggle("linked-cell", !!programId);
+            saveKey(id, serializeCell(text, programId));
+            renderWeeklyTotals();
         }
 
         // ---------- notes: multiple nameable pages ----------
         function loadNotePages() {
             const row = trainingCache["training_notes_pages"];
-            if (row && row.content) {
-                try {
-                    notePages = JSON.parse(row.content);
-                } catch (e) {
-                    notePages = [];
-                }
-            }
+            if (row && row.content) notePages = safelyParse(row.content, []);
 
-            // migrate old single-list format if present and nothing new yet
-            if ((!notePages || notePages.length === 0)) {
+            if (!notePages || notePages.length === 0) {
                 const legacy = trainingCache["training_general_notes"];
                 if (legacy && legacy.content) {
-                    try {
-                        const legacyLines = JSON.parse(legacy.content);
-                        if (Array.isArray(legacyLines) && legacyLines.length > 0) {
-                            notePages = [{ id: uid(), title: "General", lines: legacyLines }];
-                        }
-                    } catch (e) { /* ignore */ }
+                    const legacyLines = safelyParse(legacy.content, null);
+                    if (Array.isArray(legacyLines) && legacyLines.length > 0) {
+                        notePages = [{ id: uid(), title: "General", lines: legacyLines }];
+                    }
                 }
             }
-
             if (!notePages || notePages.length === 0) {
                 notePages = [{ id: uid(), title: "General", lines: [{ id: uid(), text: "", checked: null }] }];
             }
-
             activePageId = notePages[0].id;
             saveNotePages();
         }
-
         function saveNotePages() {
             saveKey("training_notes_pages", JSON.stringify(notePages));
         }
-
         function activePage() {
             return notePages.find(p => p.id === activePageId) || notePages[0];
         }
-
         function renderPageTabs() {
             const wrap = document.getElementById("pageTabs");
             wrap.innerHTML = notePages.map(p => `
@@ -359,13 +426,11 @@
             `).join("");
             document.getElementById("activePageTitle").textContent = activePage() ? (activePage().title || "Untitled") : "";
         }
-
         function switchPage(id) {
             activePageId = id;
             renderPageTabs();
             renderPageLines();
         }
-
         function addPage() {
             const title = prompt("Page title:", "New page");
             if (title === null) return;
@@ -376,7 +441,6 @@
             renderPageTabs();
             renderPageLines();
         }
-
         function renamePage() {
             const page = activePage();
             if (!page) return;
@@ -386,12 +450,8 @@
             saveNotePages();
             renderPageTabs();
         }
-
         function deletePage() {
-            if (notePages.length <= 1) {
-                alert("You need at least one page.");
-                return;
-            }
+            if (notePages.length <= 1) { alert("You need at least one page."); return; }
             const page = activePage();
             if (!page) return;
             if (!confirm(`Delete page "${page.title || 'Untitled'}"? This can't be undone.`)) return;
@@ -400,16 +460,6 @@
             saveNotePages();
             renderPageTabs();
             renderPageLines();
-        }
-
-        function addLineToActivePage() {
-            const page = activePage();
-            if (!page) return;
-            const line = { id: uid(), text: "", checked: null };
-            page.lines.push(line);
-            renderPageLines();
-            saveNotePages();
-            focusPageLine(line.id);
         }
 
         function focusPageLine(lineId, caret) {
@@ -436,8 +486,7 @@
                                 class="pg-line w-full bg-transparent text-xs focus:outline-none py-1 resize-none overflow-hidden leading-snug text-slate-700 dark:text-slate-300"
                                 data-line="${line.id}"
                                 oninput="handlePageLineInput('${line.id}', this)"
-                                onkeydown="handlePageLineKeydown(event, '${line.id}')"
-                                placeholder="note...">${escapeHtml(line.text)}</textarea>
+                                onkeydown="handlePageLineKeydown(event, '${line.id}')">${escapeHtml(line.text)}</textarea>
                         </div>`;
                 }
                 return `
@@ -448,8 +497,7 @@
                             class="pg-line w-full bg-transparent text-xs focus:outline-none py-1 resize-none overflow-hidden leading-snug ${line.checked ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300"}"
                             data-line="${line.id}"
                             oninput="handlePageLineInput('${line.id}', this)"
-                            onkeydown="handlePageLineKeydown(event, '${line.id}')"
-                            placeholder="task...">${escapeHtml(line.text)}</textarea>
+                            onkeydown="handlePageLineKeydown(event, '${line.id}')">${escapeHtml(line.text)}</textarea>
                     </div>`;
             }).join("");
             wrap.querySelectorAll("textarea").forEach(el => autoGrow(el));
@@ -536,7 +584,248 @@
             }
         }
 
-        // ---------- PDF export: both Jacob's and Zara's table for the current week ----------
+        // ---------- running programs & zone math ----------
+        function defaultZones() {
+            const z = {};
+            ZONES.forEach(n => z[n] = { pace: "", hrMin: "", hrMax: "" });
+            return z;
+        }
+
+        function loadProgramsAndZones() {
+            const pRow = trainingCache["training_programs"];
+            programs = pRow && pRow.content ? safelyParse(pRow.content, []) : [];
+            const zRow = trainingCache["training_zone_settings"];
+            zoneSettings = zRow && zRow.content ? safelyParse(zRow.content, {}) : {};
+            PEOPLE.forEach(p => { if (!zoneSettings[p.key]) zoneSettings[p.key] = defaultZones(); });
+        }
+        function savePrograms() { saveKey("training_programs", JSON.stringify(programs)); }
+        function saveZoneSettings() { saveKey("training_zone_settings", JSON.stringify(zoneSettings)); }
+
+        function formatDuration(minutes, seconds) {
+            const m = Number(minutes) || 0;
+            const s = Number(seconds) || 0;
+            return `${m}:${String(s).padStart(2, "0")}`;
+        }
+        function formatProgramLabel(program) {
+            return program.segments.map(seg => {
+                const rep = (Number(seg.repeat) || 1) > 1 ? `${seg.repeat}x ` : "";
+                return `${rep}${formatDuration(seg.minutes, seg.seconds)} Z${seg.zone}`;
+            }).join(" + ");
+        }
+        function segmentMinutes(seg) {
+            const secs = (Number(seg.minutes) || 0) * 60 + (Number(seg.seconds) || 0);
+            const repeat = Number(seg.repeat) || 1;
+            return (secs * repeat) / 60;
+        }
+
+        function computeZoneTotals(person, year, week) {
+            const totals = {}; ZONES.forEach(z => totals[z] = 0);
+            for (let day = 0; day < 7; day++) {
+                for (const slot of SLOTS) {
+                    const raw = getCellRaw(person, year, week, day, slot.key);
+                    const parsed = parseCell(raw);
+                    if (!parsed.programId) continue;
+                    const program = programs.find(p => p.id === parsed.programId);
+                    if (!program) continue;
+                    program.segments.forEach(seg => {
+                        totals[seg.zone] = (totals[seg.zone] || 0) + segmentMinutes(seg);
+                    });
+                }
+            }
+            return totals;
+        }
+
+        function renderWeeklyTotals() {
+            const monday = currentMonday();
+            const { year, week } = getISOWeek(monday);
+            const prevMonday = addDays(monday, -7);
+            const { year: pYear, week: pWeek } = getISOWeek(prevMonday);
+
+            const totals = computeZoneTotals(activePerson, year, week);
+            const prevTotals = computeZoneTotals(activePerson, pYear, pWeek);
+            const personLabel = PEOPLE.find(p => p.key === activePerson).label;
+
+            document.getElementById("totalsHeading").textContent = `Weekly totals — ${personLabel} (Wk ${week})`;
+
+            const zones = zoneSettings[activePerson] || defaultZones();
+            let totalMin = 0, prevTotalMin = 0;
+            let rows = ZONES.map(z => {
+                const min = totals[z] || 0;
+                const prevMin = prevTotals[z] || 0;
+                totalMin += min;
+                prevTotalMin += prevMin;
+                const diff = min - prevMin;
+                const diffStr = diff === 0 ? "±0" : (diff > 0 ? `+${Math.round(diff)}` : `${Math.round(diff)}`);
+                const diffClass = diff > 0 ? "text-emerald-500" : diff < 0 ? "text-red-500" : "text-slate-400";
+                const ref = zones[z] && (zones[z].pace || zones[z].hrMin || zones[z].hrMax)
+                    ? `<span class="text-slate-400"> · ${escapeHtml(zones[z].pace || "")}${zones[z].hrMin || zones[z].hrMax ? ` ${zones[z].hrMin || "?"}-${zones[z].hrMax || "?"}bpm` : ""}</span>`
+                    : "";
+                return `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-600 dark:text-slate-300">Zone ${z}${ref}</span>
+                        <span class="font-medium">${Math.round(min)} min <span class="${diffClass}">(${diffStr})</span></span>
+                    </div>`;
+            }).join("");
+
+            const totalDiff = totalMin - prevTotalMin;
+            const totalDiffStr = totalDiff === 0 ? "±0" : (totalDiff > 0 ? `+${Math.round(totalDiff)}` : `${Math.round(totalDiff)}`);
+            const totalDiffClass = totalDiff > 0 ? "text-emerald-500" : totalDiff < 0 ? "text-red-500" : "text-slate-400";
+
+            rows += `
+                <div class="flex items-center justify-between text-xs font-semibold border-t border-slate-200 dark:border-slate-800 pt-1.5 mt-1.5">
+                    <span>Total</span>
+                    <span>${Math.round(totalMin)} min <span class="${totalDiffClass}">(${totalDiffStr})</span></span>
+                </div>`;
+
+            document.getElementById("weeklyTotals").innerHTML = rows;
+        }
+
+        // ---------- zone settings UI ----------
+        function renderZoneSettings() {
+            const personLabel = PEOPLE.find(p => p.key === activePerson).label;
+            document.getElementById("zoneHeading").textContent = `Pace & HR zones — ${personLabel}`;
+            const zones = zoneSettings[activePerson] || defaultZones();
+
+            const rows = ZONES.map(z => `
+                <div class="grid grid-cols-3 gap-2 items-center mb-1.5">
+                    <span class="text-xs text-slate-500 w-10">Z${z}</span>
+                    <input type="text" placeholder="pace e.g. 5:30/km" value="${escapeHtml(zones[z].pace)}"
+                        oninput="updateZoneField(${z}, 'pace', this.value)"
+                        class="col-span-1 text-xs bg-transparent border border-slate-200 dark:border-slate-700 rounded px-1.5 py-1 focus:outline-none">
+                    <div class="flex items-center gap-1">
+                        <input type="number" placeholder="min bpm" value="${escapeHtml(String(zones[z].hrMin))}"
+                            oninput="updateZoneField(${z}, 'hrMin', this.value)"
+                            class="w-full text-xs bg-transparent border border-slate-200 dark:border-slate-700 rounded px-1.5 py-1 focus:outline-none">
+                        <input type="number" placeholder="max bpm" value="${escapeHtml(String(zones[z].hrMax))}"
+                            oninput="updateZoneField(${z}, 'hrMax', this.value)"
+                            class="w-full text-xs bg-transparent border border-slate-200 dark:border-slate-700 rounded px-1.5 py-1 focus:outline-none">
+                    </div>
+                </div>`).join("");
+
+            document.getElementById("zoneSettingsTable").innerHTML = rows;
+        }
+        function updateZoneField(zone, field, value) {
+            if (!zoneSettings[activePerson]) zoneSettings[activePerson] = defaultZones();
+            zoneSettings[activePerson][zone][field] = value;
+            saveZoneSettings();
+            renderWeeklyTotals();
+        }
+
+        // ---------- programs library ----------
+        function renderProgramsList() {
+            const wrap = document.getElementById("programsList");
+            if (programs.length === 0) {
+                wrap.innerHTML = `<p class="text-xs text-slate-400">No programs yet.</p>`;
+                return;
+            }
+            wrap.innerHTML = programs.map(p => `
+                <div class="flex items-center justify-between gap-2 text-xs border-b border-slate-100 dark:border-slate-800 pb-1.5 mb-1.5 last:border-0">
+                    <div class="min-w-0">
+                        <div class="font-medium truncate">${escapeHtml(p.name)}</div>
+                        <div class="text-slate-400 truncate">${escapeHtml(formatProgramLabel(p))}</div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="openProgramBuilder('${p.id}')" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition">edit</button>
+                        <button onclick="deleteProgram('${p.id}')" class="text-slate-400 hover:text-red-500 transition">del</button>
+                    </div>
+                </div>`).join("");
+        }
+
+        function openProgramBuilder(programId) {
+            if (programId) {
+                const p = programs.find(x => x.id === programId);
+                builderProgram = { id: p.id, name: p.name, segments: p.segments.map(s => ({ ...s })) };
+            } else {
+                builderProgram = { id: null, name: "", segments: [{ id: uid(), minutes: 30, seconds: 0, zone: 2, repeat: 1 }] };
+            }
+            renderProgramBuilder();
+        }
+        function closeProgramBuilder() {
+            builderProgram = null;
+            renderProgramBuilder();
+        }
+        function addBuilderSegment() {
+            builderProgram.segments.push({ id: uid(), minutes: 4, seconds: 0, zone: 4, repeat: 1 });
+            renderProgramBuilder();
+        }
+        function removeBuilderSegment(segId) {
+            builderProgram.segments = builderProgram.segments.filter(s => s.id !== segId);
+            renderProgramBuilder();
+        }
+        function updateBuilderName(value) {
+            builderProgram.name = value;
+        }
+        function updateBuilderSegmentField(segId, field, value) {
+            const seg = builderProgram.segments.find(s => s.id === segId);
+            if (!seg) return;
+            seg[field] = Number(value) || 0;
+        }
+        function saveBuilderProgram() {
+            if (!builderProgram.name.trim()) { alert("Give the program a name."); return; }
+            if (builderProgram.segments.length === 0) { alert("Add at least one segment."); return; }
+            if (builderProgram.id) {
+                const idx = programs.findIndex(p => p.id === builderProgram.id);
+                programs[idx] = { id: builderProgram.id, name: builderProgram.name.trim(), segments: builderProgram.segments };
+            } else {
+                programs.push({ id: uid(), name: builderProgram.name.trim(), segments: builderProgram.segments });
+            }
+            savePrograms();
+            builderProgram = null;
+            renderProgramBuilder();
+            renderProgramsList();
+            renderWeek();
+            renderWeeklyTotals();
+        }
+        function deleteProgram(id) {
+            if (!confirm("Delete this program? Cells that used it will keep their text but stop counting toward weekly totals.")) return;
+            programs = programs.filter(p => p.id !== id);
+            savePrograms();
+            renderProgramsList();
+            renderWeek();
+            renderWeeklyTotals();
+        }
+
+        function renderProgramBuilder() {
+            const wrap = document.getElementById("programBuilderWrap");
+            if (!builderProgram) { wrap.innerHTML = ""; return; }
+
+            const segRows = builderProgram.segments.map(seg => `
+                <div class="flex items-center gap-1 mb-1">
+                    <input type="number" min="0" value="${seg.minutes}" placeholder="min"
+                        oninput="updateBuilderSegmentField('${seg.id}','minutes',this.value)"
+                        class="w-12 text-xs bg-transparent border border-slate-200 dark:border-slate-700 rounded px-1 py-0.5 focus:outline-none">
+                    <span class="text-xs text-slate-400">m</span>
+                    <input type="number" min="0" max="59" value="${seg.seconds}" placeholder="sec"
+                        oninput="updateBuilderSegmentField('${seg.id}','seconds',this.value)"
+                        class="w-12 text-xs bg-transparent border border-slate-200 dark:border-slate-700 rounded px-1 py-0.5 focus:outline-none">
+                    <span class="text-xs text-slate-400">s</span>
+                    <select onchange="updateBuilderSegmentField('${seg.id}','zone',this.value)"
+                        class="text-xs bg-transparent border border-slate-200 dark:border-slate-700 rounded px-1 py-0.5 focus:outline-none">
+                        ${ZONES.map(z => `<option value="${z}" ${z === seg.zone ? "selected" : ""}>Z${z}</option>`).join("")}
+                    </select>
+                    <input type="number" min="1" value="${seg.repeat}" placeholder="x"
+                        oninput="updateBuilderSegmentField('${seg.id}','repeat',this.value)"
+                        class="w-10 text-xs bg-transparent border border-slate-200 dark:border-slate-700 rounded px-1 py-0.5 focus:outline-none" title="repeat count">
+                    <span class="text-xs text-slate-400">x</span>
+                    <button onclick="removeBuilderSegment('${seg.id}')" class="text-slate-400 hover:text-red-500 text-xs ml-1">✕</button>
+                </div>`).join("");
+
+            wrap.innerHTML = `
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-3 mt-2">
+                    <input type="text" value="${escapeHtml(builderProgram.name)}" placeholder="Program name (e.g. Norwegian 4x4)"
+                        oninput="updateBuilderName(this.value)"
+                        class="w-full text-xs bg-transparent border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 mb-2 focus:outline-none">
+                    <div class="text-[10px] text-slate-400 mb-1">Segments (basic run = one row; intervals = several rows, use "x" to repeat a row)</div>
+                    ${segRows}
+                    <button onclick="addBuilderSegment()" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition mt-1">+ segment</button>
+                    <div class="flex items-center gap-2 mt-3">
+                        <button onclick="saveBuilderProgram()" class="text-xs px-3 py-1 rounded bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900">Save</button>
+                        <button onclick="closeProgramBuilder()" class="text-xs px-3 py-1 rounded border border-slate-300 dark:border-slate-700">Cancel</button>
+                    </div>
+                </div>`;
+        }
+
+        // ---------- PDF export: both Jacob's and Zara's table + totals for the current week ----------
         function exportWeekPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -561,20 +850,29 @@
                 const head = [["", ...DAY_LABELS.map((d, i) => `${d} ${dayDates[i]}`)]];
                 const body = SLOTS.map(slot => [
                     slot.label,
-                    ...Array.from({ length: 7 }, (_, i) => getCellValue(person.key, year, week, i, slot.key) || "")
+                    ...Array.from({ length: 7 }, (_, i) => parseCell(getCellRaw(person.key, year, week, i, slot.key)).text || "")
                 ]);
 
                 doc.autoTable({
                     startY: startY + 3,
-                    head,
-                    body,
+                    head, body,
                     styles: { fontSize: 7, cellPadding: 2, valign: "top", overflow: "linebreak" },
                     headStyles: { fillColor: [71, 85, 105], textColor: 255, fontSize: 7 },
                     columnStyles: { 0: { fontStyle: "bold", cellWidth: 18 } },
                     margin: { left: 14, right: 14 },
                     theme: "grid"
                 });
+                startY = doc.lastAutoTable.finalY + 4;
 
+                const totals = computeZoneTotals(person.key, year, week);
+                const totalsBody = [ZONES.map(z => `Z${z}: ${Math.round(totals[z] || 0)}m`)];
+                doc.autoTable({
+                    startY,
+                    body: totalsBody,
+                    styles: { fontSize: 7, cellPadding: 2 },
+                    theme: "plain",
+                    margin: { left: 14, right: 14 }
+                });
                 startY = doc.lastAutoTable.finalY + 10;
             });
 
