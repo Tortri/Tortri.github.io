@@ -66,9 +66,14 @@
             <div id="bookmarksContainer" class="flex flex-wrap items-center gap-2 select-none flex-1">
                 <!-- Dynamically rendered shortcuts/folders -->
             </div>
-            <button onclick="addBookmarkPrompt()" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded transition shrink-0">
-                + Link / Folder
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="toggleBookmarksVisibility()" id="bookmarksToggleBtn" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
+                    hide
+                </button>
+                <button id="addBookmarkBtn" onclick="addBookmarkPrompt()" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded transition shrink-0">
+                    + Link / Folder
+                </button>
+            </div>
         </div>
 
         <!-- Section Navigation Header -->
@@ -94,11 +99,13 @@
 
     <script>
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
+        const PINNED_TODO_ID = "PINNED_TODO_NOTE";
         let itemsCache = [];
         let sections = ["ALL"];
         let bookmarks = [];
         let activeSection = localStorage.getItem("active_section") || "ALL";
         let activeOpenFolderId = null;
+        let bookmarksHidden = localStorage.getItem("bookmarks_hidden") === "true";
 
         // --- DATE & CALENDAR SYSTEM ---
         let calendarDate = new Date();
@@ -208,8 +215,33 @@
             document.getElementById("themeToggleBtn").textContent = isDark ? "light mode" : "dark mode";
         }
 
+        // --- BOOKMARKS VISIBILITY TOGGLE ---
+        function applyBookmarksVisibility() {
+            const container = document.getElementById("bookmarksContainer");
+            const addBtn = document.getElementById("addBookmarkBtn");
+            const toggleBtn = document.getElementById("bookmarksToggleBtn");
+            if (!container || !toggleBtn) return;
+
+            if (bookmarksHidden) {
+                container.classList.add("hidden");
+                if (addBtn) addBtn.classList.add("hidden");
+                toggleBtn.textContent = "show bookmarks";
+            } else {
+                container.classList.remove("hidden");
+                if (addBtn) addBtn.classList.remove("hidden");
+                toggleBtn.textContent = "hide";
+            }
+        }
+
+        function toggleBookmarksVisibility() {
+            bookmarksHidden = !bookmarksHidden;
+            localStorage.setItem("bookmarks_hidden", bookmarksHidden ? "true" : "false");
+            applyBookmarksVisibility();
+        }
+
         initTheme();
         renderDateTitle();
+        applyBookmarksVisibility();
 
         function uid() {
             return crypto.randomUUID().slice(0, 8);
@@ -279,6 +311,21 @@
             return item.content;
         }
 
+        async function ensurePinnedTodoNote() {
+            let todo = itemsCache.find(i => i.id === PINNED_TODO_ID);
+            if (!todo) {
+                todo = {
+                    id: PINNED_TODO_ID,
+                    type: null,
+                    title: "To Do",
+                    lines: [{ id: uid(), text: '', checked: false }],
+                    is_completed: 0
+                };
+                itemsCache.push(todo);
+                await saveItem(PINNED_TODO_ID);
+            }
+        }
+
         async function fetchItems() {
             try {
                 const res = await fetch(`${API_BASE}/items`, { headers: getAuthHeader() });
@@ -301,6 +348,8 @@
                     try { bookmarks = JSON.parse(bookmarksData.content); } catch (e) { bookmarks = []; }
                 }
 
+                await ensurePinnedTodoNote();
+
                 renderUI();
             } catch (err) { console.error("Network error:", err); }
         }
@@ -319,6 +368,7 @@
         }
 
         async function deleteItem(id) {
+            if (id === PINNED_TODO_ID) return;
             if (!confirm("Delete this item?")) return;
             const res = await fetch(`${API_BASE}/items/${id}`, { method: "DELETE", headers: getAuthHeader() });
             if (res.status === 401) { logout(); }
@@ -351,6 +401,7 @@
         }
 
         function updateTitle(id, value) {
+            if (id === PINNED_TODO_ID) return;
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
             el.title = value;
@@ -927,19 +978,20 @@
         }
 
         async function changeNoteSection(id, selectElement) {
+            if (id === PINNED_TODO_ID) return;
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
             el.type = selectElement.value || null;
-            await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(el)
-            });
+            // Reuse saveItem so the line content is serialized correctly and
+            // a 401 is handled - previously this posted a stale/incomplete
+            // payload directly, which is why the category change wouldn't stick.
+            await saveItem(id);
             renderUI();
         }
 
         function renderUI() {
             renderBookmarks();
+            applyBookmarksVisibility();
 
             // --- Render Section Tabs ---
             const sectContainer = document.getElementById("sectionsContainer");
@@ -984,22 +1036,40 @@
             const grid = document.getElementById("notesGrid");
             grid.innerHTML = "";
 
-            const filtered = itemsCache.filter(item =>
+            let filtered = itemsCache.filter(item =>
                 item.id !== "SYSTEM_SECTIONS_CONFIG" &&
                 item.id !== "SYSTEM_BOOKMARKS_CONFIG" &&
                 (activeSection === 'ALL' || item.type === activeSection)
             );
 
+            // The pinned To Do note always leads the ALL view.
+            if (activeSection === 'ALL') {
+                filtered.sort((a, b) => {
+                    if (a.id === PINNED_TODO_ID) return -1;
+                    if (b.id === PINNED_TODO_ID) return 1;
+                    return 0;
+                });
+            }
+
             filtered.forEach((item) => {
+                const isPinnedTodo = item.id === PINNED_TODO_ID;
                 const card = document.createElement("div");
                 card.dataset.id = item.id;
                 card.className = "p-4 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/60 transition flex flex-col justify-between space-y-3 shadow-sm dark:shadow-none";
 
+                const handleHtml = isPinnedTodo
+                    ? `<span class="text-slate-400 dark:text-slate-600 text-sm select-none p-1">📌</span>`
+                    : `<span class="card-handle cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 text-sm select-none p-1" title="Drag card">⋮⋮</span>`;
+
+                const titleHtml = isPinnedTodo
+                    ? `<span class="w-full font-semibold text-slate-800 dark:text-slate-200 text-base">To Do</span>`
+                    : `<input id="title-${item.id}" value="${escapeHtml(item.title || '')}" placeholder="Untitled" class="w-full bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 text-base">`;
+
                 let inner = `
                     <div class="w-full">
                         <div class="flex items-center gap-2 mb-2">
-                            <span class="card-handle cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 text-sm select-none p-1" title="Drag card">⋮⋮</span>
-                            <input id="title-${item.id}" value="${escapeHtml(item.title || '')}" placeholder="Untitled" class="w-full bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 text-base">
+                            ${handleHtml}
+                            ${titleHtml}
                         </div>
                         <div class="lines-list space-y-1">`;
 
@@ -1031,11 +1101,19 @@
                         </div>
                     </div>`;
 
-                const customSections = sections.filter(s => s !== 'ALL');
-                let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
-                    customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
+                let footerArea;
+                if (isPinnedTodo) {
+                    footerArea = `
+                    <div class="flex justify-between items-center border-t border-slate-200 dark:border-slate-800/50 pt-2 text-xs text-slate-400 dark:text-slate-500">
+                        <span class="italic text-slate-400 dark:text-slate-600">pinned</span>
+                        <button onclick="copyNote('${item.id}', this)" class="text-slate-500 dark:text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition">copy</button>
+                    </div>`;
+                } else {
+                    const customSections = sections.filter(s => s !== 'ALL');
+                    let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
+                        customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
 
-                let footerArea = `
+                    footerArea = `
                     <div class="flex justify-end items-center border-t border-slate-200 dark:border-slate-800/50 pt-2 text-xs text-slate-400 dark:text-slate-500">
                         <div class="flex items-center gap-3">
                             <button onclick="copyNote('${item.id}', this)" class="text-slate-500 dark:text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition">copy</button>
@@ -1045,13 +1123,16 @@
                             <button onclick="deleteItem('${item.id}')" class="text-slate-500 dark:text-slate-600 hover:text-red-500 transition">delete</button>
                         </div>
                     </div>`;
+                }
 
                 card.innerHTML = inner + footerArea;
                 grid.appendChild(card);
 
-                const titleInput = card.querySelector(`#title-${CSS.escape(item.id)}`);
-                if (titleInput) {
-                    titleInput.addEventListener('input', () => updateTitle(item.id, titleInput.value));
+                if (!isPinnedTodo) {
+                    const titleInput = card.querySelector(`#title-${CSS.escape(item.id)}`);
+                    if (titleInput) {
+                        titleInput.addEventListener('input', () => updateTitle(item.id, titleInput.value));
+                    }
                 }
 
                 card.querySelectorAll('.line-input').forEach(inputEl => {
