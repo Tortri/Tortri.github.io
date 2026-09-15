@@ -359,12 +359,23 @@
             if (!el) return;
             serializeLines(el);
 
-            const res = await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: JSON.stringify(el)
-            });
-            if (res.status === 401) { logout(); }
+            try {
+                const res = await fetch(`${API_BASE}/items`, {
+                    method: "POST",
+                    headers: getAuthHeader(),
+                    body: JSON.stringify(el)
+                });
+                if (res.status === 401) { logout(); return; }
+                if (!res.ok) {
+                    // Previously any non-401 failure was ignored entirely, so a
+                    // rejected save (e.g. a bad type value) would look like it
+                    // worked until the next refresh. Surface it so it's visible
+                    // in devtools instead of silently reverting.
+                    console.error(`Failed to save item ${id}: server returned ${res.status}`);
+                }
+            } catch (err) {
+                console.error(`Network error saving item ${id}:`, err);
+            }
         }
 
         async function deleteItem(id) {
@@ -959,9 +970,21 @@
                 alert("Cannot delete the 'ALL' section.");
                 return;
             }
-            if (confirm(`Delete section "${name}"? Notes in it will remain under ALL.`)) {
+            if (confirm(`Delete section "${name}"? Notes in it will be moved to uncategorized.`)) {
                 sections = sections.filter(s => s !== name);
                 await saveSectionsToDatabase(sections);
+
+                // Previously notes stayed tagged with the deleted section's
+                // name forever - a dangling reference to a category that no
+                // longer exists. That's what made later attempts to move
+                // those specific notes to a new category look like they
+                // reverted: the note was never cleanly detached from the old
+                // name, so re-explicitly clear it here.
+                const orphaned = itemsCache.filter(i => i.type === name);
+                for (const item of orphaned) {
+                    item.type = null;
+                    await saveItem(item.id);
+                }
 
                 if (activeSection === name) {
                     activeSection = "ALL";
@@ -1110,8 +1133,16 @@
                     </div>`;
                 } else {
                     const customSections = sections.filter(s => s !== 'ALL');
-                    let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>` +
-                        customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
+                    let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>`;
+                    if (item.type && !customSections.includes(item.type)) {
+                        // The note's stored type doesn't match any current
+                        // section (e.g. that section was deleted before this
+                        // fix). Show it explicitly rather than letting the
+                        // browser silently default the dropdown to
+                        // "uncategorized" while the real stored value differs.
+                        options += `<option value="${escapeHtml(item.type)}" selected>${escapeHtml(item.type)} (deleted)</option>`;
+                    }
+                    options += customSections.map(s => `<option value="${s}" ${item.type === s ? 'selected' : ''}>${s}</option>`).join('');
 
                     footerArea = `
                     <div class="flex justify-end items-center border-t border-slate-200 dark:border-slate-800/50 pt-2 text-xs text-slate-400 dark:text-slate-500">
