@@ -10,9 +10,12 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- Autoplan engine (periodisation + adaptive weekly planning). Bump ?v= after changing engine.js so browsers fetch the new copy. -->
+    <script src="engine.js?v=1"></script>
     <style>
         textarea, button, a, select { touch-action: manipulation; }
         .cell-input { resize: none; overflow: hidden; min-height: 36px; }
+        .has-ghost .cell-input { min-height: 18px; }
         .week-slide-enter { animation: weekSlide 0.15s ease-out; }
         @keyframes weekSlide {
             from { opacity: 0.4; transform: translateY(2px); }
@@ -21,6 +24,32 @@
         .tab-scroll::-webkit-scrollbar { height: 4px; }
         .linked-cell { background-color: rgba(16, 185, 129, 0.07); }
         select.cell-program-select { appearance: none; -webkit-appearance: none; }
+
+        /* Autoplan suggestions ("ghosts") */
+        .ghost { border: 1px dashed; border-radius: 6px; padding: 3px 5px 4px; font-size: 10.5px; line-height: 1.25; cursor: pointer; opacity: .82; transition: opacity .15s; margin-bottom: 2px; }
+        .ghost:hover { opacity: 1; }
+        .ghost-body { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; opacity: .85; margin-top: 1px; }
+        .ghost-btn { font-size: 11px; line-height: 1; padding: 3px 6px; border-radius: 4px; border: 1px solid currentColor; opacity: .7; }
+        .ghost-btn:hover { opacity: 1; }
+        .ghost-quality  { border-color: rgba(245,158,11,.6);  background: rgba(245,158,11,.07);  color: #b45309; }
+        .ghost-long     { border-color: rgba(14,165,233,.6);  background: rgba(14,165,233,.07);  color: #0369a1; }
+        .ghost-easy     { border-color: rgba(100,116,139,.5); background: rgba(100,116,139,.05); color: #475569; }
+        .ghost-strength { border-color: rgba(139,92,246,.6);  background: rgba(139,92,246,.07);  color: #6d28d9; }
+        .ghost-tendon   { border-color: rgba(139,92,246,.4);  background: rgba(139,92,246,.04);  color: #7c3aed; }
+        .ghost-race     { border-color: rgba(244,63,94,.7);   background: rgba(244,63,94,.08);   color: #be123c; }
+        .dark .ghost-quality  { color: #fcd34d; }
+        .dark .ghost-long     { color: #7dd3fc; }
+        .dark .ghost-easy     { color: #cbd5e1; }
+        .dark .ghost-strength { color: #c4b5fd; }
+        .dark .ghost-tendon   { color: #ddd6fe; }
+        .dark .ghost-race     { color: #fda4af; }
+        .projected .ghost { opacity: .5; border-style: dotted; }
+        .rest-tag { font-size: 10px; color: #94a3b8; font-style: italic; padding: 2px 4px; }
+        .cell-hint { font-size: 10px; line-height: 1.25; color: #94a3b8; padding: 0 4px; }
+        .cell-hint button { text-decoration: underline; }
+        .season-bar { flex: 1 1 0; min-width: 5px; border-radius: 2px 2px 0 0; transition: opacity .15s; }
+        .season-bar:hover { opacity: 1 !important; }
+        .day-pill { width: 34px; padding: 4px 0; font-size: 11px; border-radius: 6px; border: 1px solid; }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
@@ -57,12 +86,15 @@
             </button>
         </div>
 
+        <!-- Autoplan: race, phase, this week's focus, season strip -->
+        <section id="planBar" class="mb-4"></section>
+
         <!-- Main layout: table + notes pages -->
         <div class="flex flex-col lg:flex-row gap-6 items-start">
 
             <!-- Week table (main) -->
-            <div class="w-full lg:flex-1 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
-                <table class="w-full min-w-[720px] border-collapse text-sm">
+            <div id="weekTableWrap" class="w-full lg:flex-1 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                <table class="w-full min-w-[720px] border-collapse text-sm table-fixed">
                     <thead>
                         <tr id="dayHeaderRow" class="bg-slate-50 dark:bg-slate-800/60"></tr>
                     </thead>
@@ -101,6 +133,10 @@
             <div class="rounded-lg border border-slate-200 dark:border-slate-800 p-4">
                 <h2 id="zoneHeading" class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3"></h2>
                 <div id="zoneSettingsTable"></div>
+                <details class="mt-2 text-xs text-slate-500">
+                    <summary class="cursor-pointer text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">What the zones mean</summary>
+                    <div id="zoneLegend" class="mt-2 space-y-1"></div>
+                </details>
             </div>
 
             <!-- Program library -->
@@ -114,11 +150,60 @@
             </div>
 
         </div>
+
+        <!-- Method & sources -->
+        <details class="mt-8 rounded-lg border border-slate-200 dark:border-slate-800 p-4 text-xs text-slate-600 dark:text-slate-300">
+            <summary class="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-400">How the autoplan works · sources</summary>
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 leading-relaxed">
+                <div>
+                    <p class="font-semibold mb-1">Principles</p>
+                    <ul class="list-disc pl-4 space-y-1">
+                        <li><b>Minutes and zones, never distance</b>, so the same plan fits any level. Load is counted as minutes × zone (Edwards' zone-weighted heart-rate method).</li>
+                        <li><b>Periodisation</b>: base → build → race-specific → taper → race, sized to the time until your race (up to a year).</li>
+                        <li><b>~80% easy</b>: most minutes in Z1–2, 1–2 hard sessions a week (Seiler &amp; Kjerland 2006; Stöggl &amp; Sperlich 2014; Casado et al. 2022).</li>
+                        <li><b>Hard day, 2–3 easy days, hard day</b>: intervals and leg strength share a day so easy days stay easy; the long run sits at the end of the week.</li>
+                        <li><b>3:1 cycles</b> (or 2:1): three building weeks then a ~30% lighter week, so load turns into fitness (supercompensation).</li>
+                        <li><b>Adapts to what you did</b>: weekly increases ≤10%; a much bigger week than your 4-week average (acute:chronic &gt; 1.3) triggers a lighter week; after 1–4+ weeks with little training it restarts at ~85/70/60/50% of your earlier level.</li>
+                        <li><b>Taper</b>: volume cut ~40–60% over 1–2 weeks while intensity and frequency are kept (Bosquet et al. 2007).</li>
+                        <li><b>Strength 2×/week in base/build, 1×/week near the race</b>; plyometrics in hard-day warm-ups; tendon loading 2–3×/week. No static stretching: it doesn't reduce injuries, strength work does (Lauersen et al. 2014).</li>
+                        <li><b>Far future is projected</b> from your season curve and firms up within ~3 weeks; past days are frozen so changes only move the future.</li>
+                    </ul>
+                    <p class="mt-2 text-slate-400">Honest caveats: the 10% rule, the 1.3 acute:chronic threshold and the return-after-break percentages are practical rules of thumb built on the research, not exact laws (see Impellizzeri et al. 2020). Listen to your body; pain that changes how you run is a reason to stop.</p>
+                </div>
+                <div>
+                    <p class="font-semibold mb-1">Sources</p>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-500 dark:text-slate-400">
+                        <li>Seiler &amp; Kjerland (2006) Scand J Med Sci Sports — intensity distribution in elite endurance athletes.</li>
+                        <li>Stöggl &amp; Sperlich (2014) Front Physiol — polarized vs other intensity distributions.</li>
+                        <li>Casado et al. (2022) Int J Sports Physiol Perform — periodization, methods and intensity distribution in distance runners (systematic review).</li>
+                        <li>Helgerud et al. (2007) Med Sci Sports Exerc — 4×4 intervals improve VO₂max more than moderate training.</li>
+                        <li>Rønnestad et al. (2015) Scand J Med Sci Sports — short (30/15) vs long intervals.</li>
+                        <li>Bosquet et al. (2007) Med Sci Sports Exerc — tapering meta-analysis.</li>
+                        <li>Mujika &amp; Padilla (2000) Sports Med — detraining.</li>
+                        <li>Gabbett (2016) Br J Sports Med — training–injury prevention paradox; Impellizzeri et al. (2020) Int J Sports Physiol Perform — limits of the acute:chronic ratio.</li>
+                        <li>Nielsen et al. (2014) J Orthop Sports Phys Ther — weekly progression and running injuries.</li>
+                        <li>Edwards (1993) — zone-weighted heart-rate training load; Foster et al. (2001) — session load.</li>
+                        <li>Blagrove et al. (2018) Sports Med — strength training and distance-running performance (systematic review).</li>
+                        <li>Rønnestad &amp; Mujika (2014) Scand J Med Sci Sports — strength training for endurance athletes, incl. 1×/week maintenance.</li>
+                        <li>Saunders et al. (2006) J Strength Cond Res — plyometrics improve running economy.</li>
+                        <li>Lauersen et al. (2014) Br J Sports Med — strength training cuts sports injuries; stretching doesn't.</li>
+                        <li>Bohm et al. (2015) Sports Med Open — tendon adaptation needs high, sustained loads.</li>
+                        <li>van der Horst et al. (2015) Am J Sports Med — Nordic hamstring exercise and hamstring injuries.</li>
+                    </ul>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- Modal (setup wizard / session details) -->
+    <div id="modalRoot" class="fixed inset-0 z-50 hidden items-start sm:items-center justify-center bg-black/50 p-3 overflow-y-auto" onclick="if (event.target === this) closeModal()">
+        <div id="modalBox" class="w-full max-w-lg rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-4 sm:p-5 my-6 text-slate-800 dark:text-slate-100"></div>
     </div>
 
     <script>
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
         const DAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+        const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
         const SLOTS = [
             { key: "am", label: "AM" },
             { key: "pm", label: "PM" },
@@ -129,6 +214,10 @@
             { key: "zara", label: "Zara" }
         ];
         const ZONES = [1, 2, 3, 4, 5];
+        const E = window.TrainingEngine;
+        const PHASE_COLORS = { base: "#38bdf8", build: "#f59e0b", specific: "#f97316", taper: "#10b981", race: "#f43f5e", post: "#94a3b8" };
+        const TYPE_LABELS = { load: "Building week", recovery: "Recovery week", rebuild: "Rebuild week", return: "Return week", taper: "Taper week", race: "Race week", post: "Post-race recovery", gap: "Little / no training", low: "Lighter week" };
+        const PLYO_NOTE = "Warm-up: easy jog, then drills (A-skips, high knees) and plyometrics — pogo jumps 3×15s, bounding 3×10s — before the main set.";
 
         let trainingCache = {};
         let weekOffset = 0;
@@ -139,6 +228,13 @@
         let zoneSettings = {};
         let builderProgram = null; // { id, name, segments: [{id,minutes,seconds,zone,repeat}] }
         const saveTimers = {};
+
+        let planSettings = {};   // person -> autoplan settings (or null)
+        let planCache = {};      // person -> computed plan
+        let ghostIndex = {};     // cellId -> { sess, iso, slot, i } for visible suggestions
+        let planTimer = null;
+        let lastPlanDay = null;
+        let wiz = null;          // setup wizard state
 
         // ---------- theme ----------
         function initTheme() {
@@ -172,6 +268,7 @@
         function escapeHtml(text) {
             return (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
+        function escapeAttr(text) { return escapeHtml(String(text || "")).replace(/"/g, "&quot;"); }
         function autoGrow(el) {
             el.style.height = "auto";
             el.style.height = el.scrollHeight + "px";
@@ -213,11 +310,24 @@
             weekOffset += n;
             renderWeek();
             renderWeeklyTotals();
+            renderPlanBar();
         }
         function goToday() {
             weekOffset = 0;
             renderWeek();
             renderWeeklyTotals();
+            renderPlanBar();
+        }
+        function todayISO() { return E.localToday(); }
+        function isoOf(date) { return E.localToday(date); }
+        function dateOfISO(iso) { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); }
+        function fmtISO(iso, opts) { return dateOfISO(iso).toLocaleDateString(undefined, opts || { weekday: "short", day: "numeric", month: "short" }); }
+        function jumpToWeek(monISO) {
+            const diff = E.daysBetween(isoOf(getMondayOfCurrentWeek()), monISO);
+            weekOffset = Math.round(diff / 7);
+            renderWeek();
+            renderWeeklyTotals();
+            renderPlanBar();
         }
 
         // ---------- person toggle ----------
@@ -228,6 +338,7 @@
             renderWeek();
             renderZoneSettings();
             renderWeeklyTotals();
+            renderPlanBar();
         }
         function renderPersonButtons() {
             PEOPLE.forEach(p => {
@@ -253,6 +364,8 @@
 
                 loadNotePages();
                 loadProgramsAndZones();
+                loadPlanSettings();
+                refreshAllPlans();
                 renderPersonButtons();
                 renderWeek();
                 renderPageTabs();
@@ -260,6 +373,7 @@
                 renderZoneSettings();
                 renderProgramsList();
                 renderWeeklyTotals();
+                renderPlanBar();
             } catch (err) {
                 console.error("Network error:", err);
             }
@@ -278,14 +392,32 @@
             }, 600);
         }
 
-        // ---------- cell content model: manual string OR {text, programId} ----------
-        function parseCell(raw) {
-            if (!raw) return { text: "", programId: null };
-            const obj = safelyParse(raw, null);
-            if (obj && typeof obj === "object" && !Array.isArray(obj) && "programId" in obj) {
-                return { text: obj.text || "", programId: obj.programId || null };
+        // Plan lock-ins can produce many writes at once — send them one by one.
+        const writeQueue = [];
+        let writing = false;
+        function queueWrite(id, content) {
+            trainingCache[id] = { id, content, updated_at: Date.now() };
+            writeQueue.push({ id, content });
+            pumpWrites();
+        }
+        async function pumpWrites() {
+            if (writing) return;
+            writing = true;
+            while (writeQueue.length) {
+                const { id, content } = writeQueue.shift();
+                try {
+                    const res = await fetch(`${API_BASE}/training`, { method: "POST", headers: getAuthHeader(), body: JSON.stringify({ id, content }) });
+                    if (res.status === 401) { writing = false; logout(); return; }
+                } catch (e) { console.error("Save failed:", e); }
             }
-            return { text: raw, programId: null };
+            writing = false;
+        }
+
+        // ---------- cell content model ----------
+        // Stored as: manual string | {text, programId} | {text, auto:1} (plan session counted as done) | {text:"", status:"missed"}
+        function parseCell(raw) {
+            const c = E.parseRaw(raw);
+            return { text: c.text, programId: c.programId, auto: c.auto, status: c.status, empty: c.empty };
         }
         function serializeCell(text, programId) {
             if (!programId) return text || "";
@@ -338,28 +470,33 @@
                     <td class="p-2 text-xs font-medium text-slate-400 align-top w-24">${slot.label}</td>`;
                 for (let i = 0; i < 7; i++) {
                     const id = cellId(activePerson, year, week, i, slot.key);
+                    const iso = isoOf(addDays(monday, i));
                     const parsed = parseCell(getCellRaw(activePerson, year, week, i, slot.key));
                     const programOptions = programs.map(p =>
                         `<option value="${p.id}" ${p.id === parsed.programId ? "selected" : ""}>${escapeHtml(p.name)}</option>`
                     ).join("");
                     bodyHtml += `
-                        <td class="p-1 border-l border-slate-200 dark:border-slate-800 align-top ${parsed.programId ? 'linked-cell' : ''}">
+                        <td class="p-1 border-l border-slate-200 dark:border-slate-800 align-top ${parsed.programId ? 'linked-cell' : ''}"
+                            data-cell-id="${id}" data-day="${i}" data-slot="${slot.key}" data-iso="${iso}" data-year="${year}" data-week="${week}">
                             <select class="cell-program-select w-full text-[10px] bg-transparent border border-slate-200 dark:border-slate-700 rounded mb-1 px-1 py-0.5 text-slate-500 focus:outline-none"
                                 data-cell-id="${id}" onchange="onProgramSelect(this)">
                                 <option value="">— Manual —</option>
                                 ${programOptions}
                             </select>
+                            <div class="cell-overlay"></div>
                             <textarea
                                 class="cell-input w-full bg-transparent text-xs sm:text-sm p-1 rounded focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-800/60 text-slate-700 dark:text-slate-300"
-                                data-cell-id="${id}"
+                                data-cell-id="${id}" data-iso="${iso}"
                                 oninput="onCellInput(this)"
                                 placeholder="">${escapeHtml(parsed.text)}</textarea>
+                            <div class="cell-hint"></div>
                         </td>`;
                 }
                 bodyHtml += `</tr>`;
             });
             body.innerHTML = bodyHtml;
             body.querySelectorAll("textarea").forEach(el => autoGrow(el));
+            refreshPlanOverlay();
         }
 
         function onCellInput(el) {
@@ -367,7 +504,17 @@
             const id = el.dataset.cellId;
             const select = document.querySelector(`select[data-cell-id="${id}"]`);
             const programId = select && select.value ? select.value : null;
-            saveKey(id, serializeCell(el.value, programId));
+            const iso = el.dataset.iso;
+            const s = planSettings[activePerson];
+            let content;
+            if (programId) content = serializeCell(el.value, programId);
+            else if (!el.value.trim()) {
+                // Clearing a past plan day means it didn't happen; clearing a future day brings the suggestion back.
+                content = s && iso < todayISO() && iso >= s.startDate ? E.serializeRaw({ text: "", status: "missed" }) : "";
+            } else content = el.value; // typing over a plan session makes it a manual entry
+            saveKey(id, content);
+            refreshPlanOverlay();
+            schedulePlanRefresh();
         }
 
         function onProgramSelect(selectEl) {
@@ -385,7 +532,547 @@
             const td = selectEl.closest("td");
             td.classList.toggle("linked-cell", !!programId);
             saveKey(id, serializeCell(text, programId));
+            refreshPlanOverlay();
+            schedulePlanRefresh();
             renderWeeklyTotals();
+        }
+
+        // ---------- autoplan: data ----------
+        function planKey(person) { return `training_plan_${person}`; }
+        function loadPlanSettings() {
+            PEOPLE.forEach(p => {
+                const row = trainingCache[planKey(p.key)];
+                const obj = row && row.content ? safelyParse(row.content, null) : null;
+                planSettings[p.key] = obj && obj.raceDate ? obj : null;
+            });
+        }
+        function savePlanSettings(person) {
+            const s = planSettings[person];
+            saveKey(planKey(person), s ? JSON.stringify(s) : "");
+        }
+        function readDayFn(person) {
+            return iso => {
+                const d = dateOfISO(iso);
+                const { year, week } = getISOWeek(d);
+                const i = E.weekday(iso);
+                return {
+                    am: getCellRaw(person, year, week, i, "am"),
+                    pm: getCellRaw(person, year, week, i, "pm"),
+                    other: getCellRaw(person, year, week, i, "other")
+                };
+            };
+        }
+        function computePlan(person) {
+            const s = planSettings[person];
+            if (!s) { planCache[person] = null; return; }
+            try {
+                planCache[person] = E.buildPlan({ settings: s, today: todayISO(), readDay: readDayFn(person), programs });
+            } catch (e) {
+                console.error("Autoplan error:", e);
+                planCache[person] = null;
+            }
+        }
+        // Freeze passed days: untouched plan sessions are written into the cells as "counted as done".
+        function runLocks(person) {
+            const s = planSettings[person];
+            if (!s) return;
+            try {
+                const res = E.computeLocks({ settings: s, today: todayISO(), readDay: readDayFn(person), programs });
+                res.writes.forEach(w => {
+                    const { year, week } = getISOWeek(dateOfISO(w.date));
+                    queueWrite(cellId(person, year, week, E.weekday(w.date), w.slot), w.content);
+                });
+                if (res.lockedThrough && res.lockedThrough !== s.lockedThrough) {
+                    s.lockedThrough = res.lockedThrough;
+                    savePlanSettings(person);
+                }
+            } catch (e) { console.error("Lock-in error:", e); }
+        }
+        function refreshAllPlans() {
+            lastPlanDay = todayISO();
+            PEOPLE.forEach(p => { runLocks(p.key); computePlan(p.key); });
+        }
+        function schedulePlanRefresh() {
+            clearTimeout(planTimer);
+            planTimer = setTimeout(() => {
+                computePlan(activePerson);
+                refreshPlanOverlay();
+                renderPlanBar();
+                renderWeeklyTotals();
+            }, 400);
+        }
+        // New day while the page is open → lock in yesterday and replan.
+        function checkDayRollover() {
+            if (lastPlanDay && todayISO() !== lastPlanDay) {
+                refreshAllPlans();
+                renderWeek();
+                renderWeeklyTotals();
+                renderPlanBar();
+            }
+        }
+        document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDayRollover(); });
+        setInterval(checkDayRollover, 5 * 60 * 1000);
+
+        function viewedPlanWeek(person) {
+            const plan = planCache[person || activePerson];
+            return plan ? plan.weekByMonday(isoOf(currentMonday())) : null;
+        }
+
+        // ---------- autoplan: suggestions in the table ----------
+        function sessionBody(sess) {
+            const t = sess.text || "";
+            const i = t.indexOf(":");
+            return i > -1 ? t.slice(i + 1).trim() : t;
+        }
+        function ghostHtml(id, sess) {
+            const showMin = sess.min > 0 ? `<span class="shrink-0 tabular-nums">${sess.min}'</span>` : "";
+            const body = sess.kind === "easy" ? sess.text.replace(/^Easy\s*/, "") : sessionBody(sess);
+            return `
+                <div class="ghost ghost-${sess.kind}" onclick="openSession('${id}')" title="Tap for details">
+                    <div class="flex items-start justify-between gap-1"><span class="font-semibold min-w-0 break-words">${escapeHtml(sess.title)}</span>${showMin}</div>
+                    ${sess.kind === "race" ? "" : `<div class="ghost-body">${escapeHtml(body)}</div>`}
+                    <div class="flex gap-1 mt-1">
+                        <button class="ghost-btn" title="Done / keep as planned" onclick="event.stopPropagation(); acceptSession('${id}')">✓</button>
+                        <button class="ghost-btn" title="Skip" onclick="event.stopPropagation(); skipSession('${id}')">✕</button>
+                    </div>
+                </div>`;
+        }
+
+        function refreshPlanOverlay() {
+            ghostIndex = {};
+            const pw = viewedPlanWeek();
+            const today = todayISO();
+            document.getElementById("weekTableWrap").classList.toggle("projected", !!(pw && pw.projected));
+            document.querySelectorAll("#weekTableBody td[data-cell-id]").forEach(td => {
+                const id = td.dataset.cellId, i = Number(td.dataset.day), slot = td.dataset.slot, iso = td.dataset.iso;
+                const cell = parseCell(getCellRaw(activePerson, Number(td.dataset.year), Number(td.dataset.week), i, slot));
+                const overlay = td.querySelector(".cell-overlay");
+                const hint = td.querySelector(".cell-hint");
+                const day = pw && pw.days ? pw.days[i] : null;
+                const sess = day && !day.past ? day.slots[slot] : null;
+                let oh = "", hh = "";
+                if (cell.status === "missed") {
+                    oh = `<div class="cell-hint italic">${iso < today ? "missed" : "skipped"}${iso >= today ? ` · <button onclick="undoCell('${id}')">undo</button>` : ""}</div>`;
+                } else if (cell.empty && sess) {
+                    ghostIndex[id] = { sess, iso, slot, i };
+                    oh = ghostHtml(id, sess);
+                } else if (cell.empty && day && !day.past && slot === "am" && day.role === "rest") {
+                    oh = `<div class="rest-tag">rest</div>`;
+                }
+                if (!cell.empty && !cell.status) {
+                    const l = E.cellLoad(E.parseRaw(getCellRaw(activePerson, Number(td.dataset.year), Number(td.dataset.week), i, slot)), programs);
+                    const desc = E.describeLoad(l);
+                    if (cell.auto) {
+                        hh = iso < today
+                            ? `✓ from plan, counted as done · <button onclick="markMissed('${id}')">didn't do it</button>`
+                            : `✓ kept from plan · <button onclick="undoCell('${id}')">undo</button>`;
+                    } else if (l.guess) {
+                        hh = `<span class="text-amber-500">≈30' guessed — add minutes, e.g. 40' Z2</span>`;
+                    } else if (desc && planSettings[activePerson]) {
+                        hh = `→ ${escapeHtml(desc)}`;
+                    }
+                }
+                overlay.innerHTML = oh;
+                hint.innerHTML = hh;
+                td.classList.toggle("has-ghost", !!ghostIndex[id]);
+            });
+        }
+
+        function setCellContent(id, content, text) {
+            saveKey(id, content);
+            const ta = document.querySelector(`textarea[data-cell-id="${id}"]`);
+            if (ta) { ta.value = text; autoGrow(ta); }
+            const sel = document.querySelector(`select[data-cell-id="${id}"]`);
+            if (sel) { sel.value = ""; const td = sel.closest("td"); if (td) td.classList.remove("linked-cell"); }
+            refreshPlanOverlay();
+            schedulePlanRefresh();
+        }
+        function acceptSession(id) {
+            const g = ghostIndex[id];
+            if (!g) return;
+            setCellContent(id, E.serializeRaw({ text: g.sess.text, auto: true }), g.sess.text);
+            closeModal();
+        }
+        function skipSession(id) {
+            if (!ghostIndex[id]) return;
+            setCellContent(id, E.serializeRaw({ text: "", status: "missed" }), "");
+            closeModal();
+        }
+        function editSession(id) {
+            const g = ghostIndex[id];
+            if (!g) return;
+            setCellContent(id, g.sess.text, g.sess.text);
+            closeModal();
+            const ta = document.querySelector(`textarea[data-cell-id="${id}"]`);
+            if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+        }
+        function markMissed(id) { setCellContent(id, E.serializeRaw({ text: "", status: "missed" }), ""); }
+        function undoCell(id) { setCellContent(id, "", ""); }
+
+        function markWeekNotTrained() {
+            const monday = currentMonday();
+            const { year, week } = getISOWeek(monday);
+            const today = todayISO();
+            if (!confirm("Mark every plan session on the past days of this week as not done? The coming weeks will rebuild from that.")) return;
+            for (let i = 0; i < 7; i++) {
+                if (isoOf(addDays(monday, i)) >= today) continue;
+                SLOTS.forEach(slot => {
+                    const c = parseCell(getCellRaw(activePerson, year, week, i, slot.key));
+                    if (c.auto) saveKey(cellId(activePerson, year, week, i, slot.key), E.serializeRaw({ text: "", status: "missed" }));
+                });
+            }
+            renderWeek();
+            schedulePlanRefresh();
+        }
+
+        // ---------- autoplan: session details ----------
+        function zoneGuideHtml(z) {
+            const info = E.ZONE_INFO[z];
+            const mine = zoneSettings[activePerson] && zoneSettings[activePerson][z];
+            let ref = "";
+            if (mine && (mine.pace || mine.hrMin || mine.hrMax)) {
+                ref = ` <span class="text-slate-700 dark:text-slate-200">· yours: ${escapeHtml(mine.pace || "")}${mine.hrMin || mine.hrMax ? ` ${escapeHtml(String(mine.hrMin || "?"))}–${escapeHtml(String(mine.hrMax || "?"))} bpm` : ""}</span>`;
+            }
+            return `<div><b>Z${z} ${info.name}</b> — ${info.feel} <span class="text-slate-400">(${info.hr})</span>${ref}</div>`;
+        }
+        function openSession(id) {
+            const g = ghostIndex[id];
+            if (!g) return;
+            const sess = g.sess;
+            const slotLabel = SLOTS.find(x => x.key === g.slot).label;
+            const zonesUsed = ZONES.filter(z => sess.z && sess.z[z] >= 0.25);
+            const zoneChips = zonesUsed.map(z => `<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">Z${z} ${sess.z[z] < 1 ? Math.round(sess.z[z] * 60) + "s" : Math.round(sess.z[z]) + "'"}</span>`).join(" ");
+            const list = Array.isArray(sess.detail) ? `<ul class="list-disc pl-5 space-y-0.5 text-sm">${sess.detail.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>` : "";
+            const notes = [sess.note, sess.plyos ? PLYO_NOTE : null].filter(Boolean).map(n => `<p class="text-sm">${escapeHtml(n)}</p>`).join("");
+            showModal(`
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                        <div class="text-xs text-slate-400">${fmtISO(g.iso, { weekday: "long", day: "numeric", month: "short" })} · ${slotLabel}</div>
+                        <h3 class="text-lg font-semibold leading-tight">${escapeHtml(sess.title)}${sess.min ? ` <span class="text-slate-400 font-normal">· ${sess.min}'</span>` : ""}</h3>
+                    </div>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg leading-none">✕</button>
+                </div>
+                ${sess.kind === "strength" || sess.kind === "tendon" ? "" : `<div class="text-sm font-mono bg-slate-50 dark:bg-slate-800/60 rounded-md p-2 mb-3 whitespace-pre-wrap">${escapeHtml(sess.text)}</div>`}
+                ${list ? `<div class="mb-3">${list}</div>` : ""}
+                ${notes ? `<div class="mb-3 space-y-1">${notes}</div>` : ""}
+                ${zoneChips ? `<div class="text-xs mb-2 flex flex-wrap gap-1">${zoneChips}</div>` : ""}
+                ${zonesUsed.length ? `<div class="text-xs text-slate-500 dark:text-slate-400 space-y-0.5 mb-3">${zonesUsed.map(zoneGuideHtml).join("")}</div>` : ""}
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4"><b>Why:</b> ${escapeHtml(sess.why || "")}</p>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="acceptSession('${id}')" class="text-xs px-3 py-1.5 rounded-md bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900">✓ Keep / done as planned</button>
+                    <button onclick="editSession('${id}')" class="text-xs px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700">✎ Edit</button>
+                    <button onclick="skipSession('${id}')" class="text-xs px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 text-red-500">✕ Skip</button>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-3">Untouched sessions count as done once the day has passed. Edit or skip and the rest of the plan adapts.</p>`);
+        }
+
+        // ---------- autoplan: plan bar & season strip ----------
+        function renderPlanBar() {
+            const el = document.getElementById("planBar");
+            const person = PEOPLE.find(p => p.key === activePerson).label;
+            const s = planSettings[activePerson];
+            if (!s) {
+                el.innerHTML = `
+                    <div class="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-3 flex flex-wrap items-center justify-between gap-3">
+                        <div class="text-xs text-slate-500 max-w-2xl"><span class="font-semibold text-slate-700 dark:text-slate-200">Autoplan is off for ${person}.</span>
+                            Pick a race and the planner fills empty cells with research-based sessions in minutes, then adapts to what you actually do.</div>
+                        <button onclick="openPlanWizard()" class="text-xs px-3 py-1.5 rounded-md bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900">Set up autoplan</button>
+                    </div>`;
+                return;
+            }
+            const plan = planCache[activePerson];
+            if (!plan) {
+                el.innerHTML = `<div class="rounded-lg border border-red-300 p-3 text-xs text-red-500">The autoplan couldn't be calculated. <button class="underline" onclick="openPlanWizard()">Check the plan settings</button>.</div>`;
+                return;
+            }
+            const today = todayISO();
+            const toRace = E.daysBetween(today, s.raceDate);
+            const countdown = toRace > 13 ? `${Math.round(toRace / 7)} weeks to go` : toRace > 1 ? `${toRace} days to go` : toRace === 1 ? "tomorrow" : toRace === 0 ? "race day" : "done";
+            const mon = isoOf(currentMonday());
+            const curMon = E.mondayOf(today);
+            const w = plan.weekByMonday(mon);
+
+            let weekHtml;
+            if (!w) {
+                weekHtml = mon < plan.planStart
+                    ? `<span class="text-slate-400">Before the plan — it starts ${fmtISO(plan.planStart, { day: "numeric", month: "short" })}.</span>`
+                    : `<span class="text-slate-400">Plan finished.</span> <button class="underline" onclick="openPlanWizard()">Set up the next goal</button>`;
+            } else {
+                const chip = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold text-white" style="background:${PHASE_COLORS[w.phase]}">${E.PHASE_INFO[w.phase].label} ${w.phaseLen > 1 ? `${w.phaseWeek}/${w.phaseLen}` : ""}</span>`;
+                const type = TYPE_LABELS[w.type] || "";
+                let nums;
+                if (w.status === "past") nums = `${w.actualMin}' done${w.strengthMin ? ` · strength/tendon ${w.strengthMin}'` : ""}`;
+                else nums = `target ${w.target}' · planned ${w.plannedMin}'${w.doneMin ? ` · done ${w.doneMin}'` : ""}${w.strengthMin ? ` · strength/tendon ${w.strengthMin}'` : ""}`;
+                const reasons = (w.reasons || []).map(r => `<div>${escapeHtml(r)}</div>`).join("");
+                const projected = w.projected ? `<div class="text-slate-400 italic">Projected from your season curve — it firms up when the week is ~3 weeks away.</div>` : "";
+                const hasPastAuto = w.status !== "future" && hasPastPlanCells();
+                weekHtml = `
+                    <div class="flex flex-wrap items-center gap-2">${chip}<span class="font-medium">${type}</span><span class="text-slate-400">${nums}</span></div>
+                    <div class="mt-1 space-y-0.5 text-slate-500 dark:text-slate-400">${reasons}${projected}</div>
+                    ${hasPastAuto ? `<button onclick="markWeekNotTrained()" class="mt-1 underline text-slate-400 hover:text-red-500">I didn't train on the past days of this week</button>` : ""}`;
+            }
+
+            // season strip
+            const vals = plan.weeks.map(x => x.status === "past" ? x.actualMin : x.plannedMin);
+            const maxV = Math.max(1, ...vals);
+            const bars = plan.weeks.map((x, k) => {
+                const v = vals[k] || 0;
+                const h = Math.max(3, Math.round(v / maxV * 40));
+                const light = ["recovery", "rebuild", "gap", "low"].includes(x.type);
+                let op = x.status === "past" ? 0.95 : x.projected ? 0.4 : 0.75;
+                if (light) op *= 0.6;
+                const isView = x.mon === mon, isCur = x.mon === curMon;
+                const tip = `${fmtISO(x.mon, { day: "numeric", month: "short" })} · ${E.PHASE_INFO[x.phase].label}${TYPE_LABELS[x.type] ? " · " + TYPE_LABELS[x.type] : ""} · ${v}'${x.status === "past" ? " done" : " planned"}`;
+                return `<button class="season-bar" onclick="jumpToWeek('${x.mon}')" title="${escapeAttr(tip)}"
+                    style="height:${h}px;background:${PHASE_COLORS[x.phase]};opacity:${op.toFixed(2)};${isView ? "box-shadow:0 0 0 2px currentColor;" : ""}${isCur ? "border-bottom:3px solid #64748b;" : ""}"></button>`;
+            }).join("");
+            const segs = [];
+            plan.weeks.forEach(x => { const l = segs[segs.length - 1]; if (l && l.phase === x.phase) l.n++; else segs.push({ phase: x.phase, n: 1 }); });
+            const labels = segs.map(sg => `<div style="flex:${sg.n} 1 0;color:${PHASE_COLORS[sg.phase]}" class="truncate text-[10px] font-medium">${sg.n >= 2 ? E.PHASE_INFO[sg.phase].label : ""}</div>`).join("");
+
+            el.innerHTML = `
+                <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-semibold text-sm text-slate-700 dark:text-slate-200">🏁 ${escapeHtml(plan.race.label)}</span>
+                            <span class="text-slate-500">${fmtISO(s.raceDate, { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · ${countdown}</span>
+                        </div>
+                        <button onclick="openPlanWizard()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">plan settings</button>
+                    </div>
+                    <div class="mb-3">${weekHtml}</div>
+                    <div class="overflow-x-auto tab-scroll">
+                        <div style="min-width:${plan.weeks.length * 7}px">
+                            <div class="flex items-end gap-[2px] h-11 text-slate-700 dark:text-slate-200">${bars}</div>
+                            <div class="flex gap-[2px] mt-1">${labels}</div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        function hasPastPlanCells() {
+            const monday = currentMonday();
+            const { year, week } = getISOWeek(monday);
+            const today = todayISO();
+            for (let i = 0; i < 7; i++) {
+                if (isoOf(addDays(monday, i)) >= today) continue;
+                for (const slot of SLOTS) if (parseCell(getCellRaw(activePerson, year, week, i, slot.key)).auto) return true;
+            }
+            return false;
+        }
+
+        // ---------- autoplan: setup wizard ----------
+        function showModal(html) {
+            document.getElementById("modalBox").innerHTML = html;
+            const root = document.getElementById("modalRoot");
+            root.classList.remove("hidden");
+            root.classList.add("flex");
+        }
+        function closeModal() {
+            const root = document.getElementById("modalRoot");
+            root.classList.add("hidden");
+            root.classList.remove("flex");
+            wiz = null;
+        }
+        document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+        function detectBaseline(person) {
+            const mon = getMondayOfCurrentWeek();
+            const vals = [];
+            for (let k = 1; k <= 4; k++) {
+                const t = weekLoads(person, addDays(mon, -7 * k), false);
+                const run = t.done.z.reduce((a, b) => a + b, 0);
+                if (run > 0) vals.push(run);
+            }
+            return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length / 5) * 5 : null;
+        }
+
+        function openPlanWizard() {
+            const ex = planSettings[activePerson];
+            const today = todayISO();
+            const detected = detectBaseline(activePerson);
+            wiz = ex
+                ? Object.assign({}, ex, { start: "keep", peakTouched: true })
+                : { raceType: "half", raceDate: E.addDays(today, 7 * 20), experience: "mid", baselineMin: detected || 120,
+                    runDays: [1, 2, 3, 4, 5, 6], longRunDay: 6, doubles: false, strength: true, block: 3,
+                    start: E.weekday(today) >= 4 ? "next" : "this", peakTouched: false };
+            if (!wiz.peakMin) wiz.peakMin = E.suggestPeak(wiz.raceType, wiz.experience, wiz.baselineMin);
+            const person = PEOPLE.find(p => p.key === activePerson).label;
+            const nextMon = E.addDays(E.mondayOf(today), 7);
+            const field = "w-full text-sm bg-transparent border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 focus:outline-none focus:border-slate-500";
+            const lbl = "block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1";
+            showModal(`
+                <div class="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold leading-tight">${ex ? "Plan settings" : "Set up autoplan"} — ${person}</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Everything is in minutes, so it works at any level. You can change this later.</p>
+                    </div>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg leading-none">✕</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="${lbl}">Race</label>
+                        <select class="${field}" onchange="wizSet('raceType', this.value)">
+                            ${Object.entries(E.RACES).map(([k, r]) => `<option value="${k}" ${k === wiz.raceType ? "selected" : ""}>${r.label}</option>`).join("")}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="${lbl}">Race date</label>
+                        <input type="date" class="${field}" value="${wiz.raceDate}" min="${E.addDays(today, 14)}" max="${E.addDays(today, 420)}" oninput="wizSet('raceDate', this.value)">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="${lbl}">Running background</label>
+                        <select class="${field}" onchange="wizSet('experience', this.value)">
+                            <option value="new" ${wiz.experience === "new" ? "selected" : ""}>New to structured training</option>
+                            <option value="mid" ${wiz.experience === "mid" ? "selected" : ""}>Running regularly for 1–3 years</option>
+                            <option value="adv" ${wiz.experience === "adv" ? "selected" : ""}>Experienced, 3+ years of structured training</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="${lbl}">Running now (min/week)</label>
+                        <input type="number" min="30" max="1500" step="5" class="${field}" value="${wiz.baselineMin}" oninput="wizSet('baselineMin', Number(this.value))">
+                        <div class="text-[11px] text-slate-400 mt-0.5">${detected ? `Your logged weeks: ~${detected}'/week` : "Average of the last few weeks"}</div>
+                    </div>
+                    <div>
+                        <label class="${lbl}">Peak week (min/week)</label>
+                        <input id="wizPeak" type="number" min="30" max="1800" step="5" class="${field}" value="${wiz.peakMin}" oninput="wiz.peakTouched = true; wizSet('peakMin', Number(this.value))">
+                        <div id="wizPeakHint" class="text-[11px] text-slate-400 mt-0.5"></div>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="${lbl}">Days you can run</label>
+                        <div id="wizDays" class="flex flex-wrap gap-1"></div>
+                    </div>
+                    <div>
+                        <label class="${lbl}">Long run day</label>
+                        <select id="wizLong" class="${field}" onchange="wizSet('longRunDay', Number(this.value))"></select>
+                    </div>
+                    <div>
+                        <label class="${lbl}">Recovery rhythm</label>
+                        <select class="${field}" onchange="wizSet('block', Number(this.value))">
+                            <option value="3" ${wiz.block === 3 ? "selected" : ""}>3 weeks build + 1 easier</option>
+                            <option value="2" ${wiz.block === 2 ? "selected" : ""}>2 weeks build + 1 easier</option>
+                        </select>
+                    </div>
+                    <label class="col-span-2 flex items-start gap-2 text-sm">
+                        <input type="checkbox" class="mt-1" ${wiz.strength ? "checked" : ""} onchange="wizSet('strength', this.checked)">
+                        <span>Strength, plyometrics &amp; tendon work <span class="text-xs text-slate-400">(bodyweight, bands, loaded backpack)</span></span>
+                    </label>
+                    <label class="col-span-2 flex items-start gap-2 text-sm">
+                        <input type="checkbox" class="mt-1" ${wiz.doubles ? "checked" : ""} onchange="wizSet('doubles', this.checked)">
+                        <span>Allow two runs on one day <span class="text-xs text-slate-400">(only when easy days get long)</span></span>
+                    </label>
+                    <div class="col-span-2">
+                        <label class="${lbl}">Start</label>
+                        <select class="${field}" onchange="wizSet('start', this.value)">
+                            ${ex ? `<option value="keep" selected>Keep current plan start (${fmtISO(ex.startDate, { day: "numeric", month: "short" })})</option>` : ""}
+                            <option value="this" ${wiz.start === "this" ? "selected" : ""}>${ex ? "Restart from today" : "Today (rest of this week)"}</option>
+                            <option value="next" ${wiz.start === "next" ? "selected" : ""}>Next Monday (${fmtISO(nextMon, { day: "numeric", month: "short" })})</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="wizPreview" class="mt-4 text-xs"></div>
+                <div id="wizError" class="mt-2 text-xs text-red-500"></div>
+                <div class="flex flex-wrap items-center gap-2 mt-4">
+                    <button onclick="saveWizard()" class="text-xs px-3 py-1.5 rounded-md bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900">${ex ? "Save" : "Start autoplan"}</button>
+                    <button onclick="closeModal()" class="text-xs px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700">Cancel</button>
+                    ${ex ? `<button onclick="removePlan()" class="ml-auto text-xs text-slate-400 hover:text-red-500">turn autoplan off</button>` : ""}
+                </div>`);
+            renderWizDays();
+            updateWizardPreview();
+        }
+        function wizSet(field, value) {
+            if (!wiz) return;
+            wiz[field] = value;
+            if (["raceType", "experience", "baselineMin"].includes(field) && !wiz.peakTouched) {
+                wiz.peakMin = E.suggestPeak(wiz.raceType, wiz.experience, Number(wiz.baselineMin) || 60);
+                const el = document.getElementById("wizPeak");
+                if (el) el.value = wiz.peakMin;
+            }
+            updateWizardPreview();
+        }
+        function toggleWizDay(i) {
+            const set = new Set(wiz.runDays);
+            if (set.has(i)) set.delete(i); else set.add(i);
+            wiz.runDays = [...set].sort();
+            if (!wiz.runDays.includes(wiz.longRunDay) && wiz.runDays.length) wiz.longRunDay = wiz.runDays.includes(6) ? 6 : wiz.runDays[wiz.runDays.length - 1];
+            renderWizDays();
+            updateWizardPreview();
+        }
+        function renderWizDays() {
+            document.getElementById("wizDays").innerHTML = DAY_LABELS.map((d, i) => {
+                const on = wiz.runDays.includes(i);
+                return `<button type="button" onclick="toggleWizDay(${i})" class="day-pill ${on ? "bg-slate-700 text-white border-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200" : "border-slate-300 dark:border-slate-700 text-slate-500"}">${d}</button>`;
+            }).join("");
+            document.getElementById("wizLong").innerHTML = wiz.runDays.map(i => `<option value="${i}" ${i === wiz.longRunDay ? "selected" : ""}>${DAY_NAMES[i]}</option>`).join("");
+        }
+        function settingsFromWiz() {
+            const ex = planSettings[activePerson];
+            const today = todayISO();
+            const startDate = wiz.start === "keep" && ex ? ex.startDate : wiz.start === "next" ? E.addDays(E.mondayOf(today), 7) : today;
+            return {
+                raceType: wiz.raceType, raceDate: wiz.raceDate, experience: wiz.experience,
+                baselineMin: Math.round(Number(wiz.baselineMin) || 0), peakMin: Math.round(Number(wiz.peakMin) || 0),
+                runDays: wiz.runDays.slice(), longRunDay: wiz.longRunDay, doubles: !!wiz.doubles, strength: !!wiz.strength,
+                block: wiz.block === 2 ? 2 : 3, startDate
+            };
+        }
+        function wizardProblems(st) {
+            const p = [];
+            if (!st.raceDate || E.daysBetween(st.startDate, st.raceDate) < 14) p.push("The race needs to be at least 2 weeks after the plan starts.");
+            if (st.raceDate && E.daysBetween(st.startDate, st.raceDate) > 430) p.push("Pick a race within about a year.");
+            if (st.runDays.length < 2) p.push("Choose at least 2 run days (3+ works best).");
+            if (!(st.baselineMin >= 30)) p.push("Enter your current running in minutes per week (30 or more).");
+            if (!(st.peakMin >= 30)) p.push("Enter a peak week in minutes.");
+            return p;
+        }
+        function updateWizardPreview() {
+            if (!wiz) return;
+            const st = settingsFromWiz();
+            const problems = wizardProblems(st);
+            document.getElementById("wizError").textContent = problems.join(" ");
+            const hint = document.getElementById("wizPeakHint");
+            if (hint) {
+                const sug = E.suggestPeak(st.raceType, st.experience, st.baselineMin || 60);
+                hint.textContent = st.peakMin < st.baselineMin ? "Lower than now — the plan will start at this level." : `Suggested ~${sug}'`;
+            }
+            const box = document.getElementById("wizPreview");
+            if (problems.length) { box.innerHTML = ""; return; }
+            const pv = E.previewPhases(st);
+            const bar = pv.phases.map(ph => `<div style="flex:${ph.weeks} 1 0;background:${PHASE_COLORS[ph.phase]}" class="h-2 first:rounded-l last:rounded-r"></div>`).join("");
+            const txt = pv.phases.map(ph => `<span style="color:${PHASE_COLORS[ph.phase]}" class="font-medium">${ph.label} ${ph.weeks}</span>`).join(" · ");
+            const tips = [];
+            if (st.runDays.length <= 3) tips.push("With 3 run days you get 1 key session + long run per week.");
+            if (pv.totalWeeks < 8) tips.push("Short runway: mostly race-specific work and taper.");
+            if (st.experience === "new" && st.block === 3) tips.push("Tip: 2+1 suits new runners, 40+ or injury-prone runners.");
+            box.innerHTML = `
+                <div class="flex gap-[2px] mb-1.5">${bar}</div>
+                <div class="text-slate-500">${pv.totalWeeks} weeks: ${txt}</div>
+                <div class="text-slate-400 mt-0.5">Peak ~${pv.peak}'/week · building weeks grow ≤${Math.max(pv.growthPct, 0)}%${pv.growthPct >= 8 ? " (fastest allowed — peak may not be reached)" : ""}</div>
+                ${tips.map(t => `<div class="text-slate-400">${t}</div>`).join("")}`;
+        }
+        function saveWizard() {
+            const ex = planSettings[activePerson];
+            const st = settingsFromWiz();
+            const problems = wizardProblems(st);
+            if (problems.length) { document.getElementById("wizError").textContent = problems.join(" "); return; }
+            st.lockedThrough = ex && wiz.start === "keep" ? ex.lockedThrough : E.addDays(todayISO(), -1);
+            st.createdAt = ex && ex.createdAt ? ex.createdAt : todayISO();
+            planSettings[activePerson] = st;
+            savePlanSettings(activePerson);
+            closeModal();
+            runLocks(activePerson);
+            computePlan(activePerson);
+            renderWeek();
+            renderWeeklyTotals();
+            renderPlanBar();
+        }
+        function removePlan() {
+            if (!confirm("Turn the autoplan off? Sessions already written into cells stay; suggestions disappear.")) return;
+            planSettings[activePerson] = null;
+            planCache[activePerson] = null;
+            savePlanSettings(activePerson);
+            closeModal();
+            renderWeek();
+            renderWeeklyTotals();
+            renderPlanBar();
         }
 
         // ---------- notes: multiple nameable pages ----------
@@ -612,71 +1299,106 @@
                 return `${rep}${formatDuration(seg.minutes, seg.seconds)} Z${seg.zone}`;
             }).join(" + ");
         }
-        function segmentMinutes(seg) {
-            const secs = (Number(seg.minutes) || 0) * 60 + (Number(seg.seconds) || 0);
-            const repeat = Number(seg.repeat) || 1;
-            return (secs * repeat) / 60;
-        }
 
-        function computeZoneTotals(person, year, week) {
-            const totals = {}; ZONES.forEach(z => totals[z] = 0);
+        // Minutes per zone for a week: what's in the cells (manual text is parsed, programs counted exactly)
+        // plus, when includePlan, the autoplan suggestions on today/future empty cells.
+        function weekLoads(person, monday, includePlan) {
+            const { year, week } = getISOWeek(monday);
+            const plan = includePlan ? planCache[person] : null;
+            const pw = plan ? plan.weekByMonday(isoOf(monday)) : null;
+            const done = { z: [0, 0, 0, 0, 0, 0], strength: 0 };
+            const planned = { z: [0, 0, 0, 0, 0, 0], strength: 0 };
             for (let day = 0; day < 7; day++) {
                 for (const slot of SLOTS) {
-                    const raw = getCellRaw(person, year, week, day, slot.key);
-                    const parsed = parseCell(raw);
-                    if (!parsed.programId) continue;
-                    const program = programs.find(p => p.id === parsed.programId);
-                    if (!program) continue;
-                    program.segments.forEach(seg => {
-                        totals[seg.zone] = (totals[seg.zone] || 0) + segmentMinutes(seg);
-                    });
+                    const cell = E.parseRaw(getCellRaw(person, year, week, day, slot.key));
+                    if (!cell.empty) {
+                        const l = E.cellLoad(cell, programs);
+                        ZONES.forEach(z => done.z[z] += l.z[z]);
+                        done.strength += l.strength;
+                    } else if (pw && pw.days && !pw.days[day].past) {
+                        const sess = pw.days[day].slots[slot.key];
+                        if (sess) {
+                            ZONES.forEach(z => planned.z[z] += sess.load.z[z]);
+                            planned.strength += sess.load.strength;
+                        }
+                    }
                 }
             }
+            return { done, planned };
+        }
+        function computeZoneTotals(person, year, week, includePlan = true) {
+            // kept for compatibility: { zone: minutes } incl. plan suggestions
+            const monday = mondayFromISOWeek(year, week);
+            const { done, planned } = weekLoads(person, monday, includePlan);
+            const totals = {};
+            ZONES.forEach(z => totals[z] = done.z[z] + planned.z[z]);
             return totals;
+        }
+        function mondayFromISOWeek(year, week) {
+            const jan4 = new Date(year, 0, 4);
+            const mon = getMondayOfCurrentWeek(jan4);
+            return addDays(mon, (week - 1) * 7);
         }
 
         function renderWeeklyTotals() {
             const monday = currentMonday();
             const { year, week } = getISOWeek(monday);
             const prevMonday = addDays(monday, -7);
-            const { year: pYear, week: pWeek } = getISOWeek(prevMonday);
 
-            const totals = computeZoneTotals(activePerson, year, week);
-            const prevTotals = computeZoneTotals(activePerson, pYear, pWeek);
+            const cur = weekLoads(activePerson, monday, true);
+            const prev = weekLoads(activePerson, prevMonday, true);
             const personLabel = PEOPLE.find(p => p.key === activePerson).label;
+            const hasPlan = !!planCache[activePerson];
 
             document.getElementById("totalsHeading").textContent = `Weekly totals — ${personLabel} (Wk ${week})`;
 
             const zones = zoneSettings[activePerson] || defaultZones();
-            let totalMin = 0, prevTotalMin = 0;
+            let totalMin = 0, prevTotalMin = 0, totalPlanned = 0;
+            const fmtDiff = diff => diff === 0 ? "±0" : (diff > 0 ? `+${Math.round(diff)}` : `${Math.round(diff)}`);
+            const diffCls = diff => diff > 0 ? "text-emerald-500" : diff < 0 ? "text-red-500" : "text-slate-400";
             let rows = ZONES.map(z => {
-                const min = totals[z] || 0;
-                const prevMin = prevTotals[z] || 0;
+                const min = cur.done.z[z] + cur.planned.z[z];
+                const prevMin = prev.done.z[z] + prev.planned.z[z];
                 totalMin += min;
                 prevTotalMin += prevMin;
-                const diff = min - prevMin;
-                const diffStr = diff === 0 ? "±0" : (diff > 0 ? `+${Math.round(diff)}` : `${Math.round(diff)}`);
-                const diffClass = diff > 0 ? "text-emerald-500" : diff < 0 ? "text-red-500" : "text-slate-400";
+                totalPlanned += cur.planned.z[z];
+                const diff = Math.round(min) - Math.round(prevMin);
                 const ref = zones[z] && (zones[z].pace || zones[z].hrMin || zones[z].hrMax)
                     ? `<span class="text-slate-400"> · ${escapeHtml(zones[z].pace || "")}${zones[z].hrMin || zones[z].hrMax ? ` ${zones[z].hrMin || "?"}-${zones[z].hrMax || "?"}bpm` : ""}</span>`
                     : "";
                 return `
                     <div class="flex items-center justify-between text-xs">
                         <span class="text-slate-600 dark:text-slate-300">Zone ${z}${ref}</span>
-                        <span class="font-medium">${Math.round(min)} min <span class="${diffClass}">(${diffStr})</span></span>
+                        <span class="font-medium">${Math.round(min)} min <span class="${diffCls(diff)}">(${fmtDiff(diff)})</span></span>
                     </div>`;
             }).join("");
 
-            const totalDiff = totalMin - prevTotalMin;
-            const totalDiffStr = totalDiff === 0 ? "±0" : (totalDiff > 0 ? `+${Math.round(totalDiff)}` : `${Math.round(totalDiff)}`);
-            const totalDiffClass = totalDiff > 0 ? "text-emerald-500" : totalDiff < 0 ? "text-red-500" : "text-slate-400";
-
+            const totalDiff = Math.round(totalMin) - Math.round(prevTotalMin);
             rows += `
                 <div class="flex items-center justify-between text-xs font-semibold border-t border-slate-200 dark:border-slate-800 pt-1.5 mt-1.5">
-                    <span>Total</span>
-                    <span>${Math.round(totalMin)} min <span class="${totalDiffClass}">(${totalDiffStr})</span></span>
+                    <span>Total running${totalPlanned >= 0.5 ? ` <span class="font-normal text-slate-400">incl. plan</span>` : ""}</span>
+                    <span>${Math.round(totalMin)} min <span class="${diffCls(totalDiff)}">(${fmtDiff(totalDiff)})</span></span>
                 </div>`;
-
+            if (totalPlanned >= 0.5) {
+                const doneRun = ZONES.reduce((a, z) => a + cur.done.z[z], 0);
+                rows += `
+                    <div class="flex items-center justify-between text-xs text-slate-500">
+                        <span>Done so far · still planned</span><span>${Math.round(doneRun)} · ${Math.round(totalPlanned)} min</span>
+                    </div>`;
+            }
+            const strength = cur.done.strength + cur.planned.strength;
+            if (strength > 0 || hasPlan) {
+                rows += `
+                    <div class="flex items-center justify-between text-xs text-slate-500">
+                        <span>Strength / tendon</span><span>${Math.round(strength)} min</span>
+                    </div>`;
+            }
+            if (totalMin > 0) {
+                const zt = z => cur.done.z[z] + cur.planned.z[z];
+                const pct = v => Math.round(v / totalMin * 100);
+                rows += `
+                    <div class="text-[11px] text-slate-400 pt-1">Easy (Z1–2) ${pct(zt(1) + zt(2))}% · Threshold (Z3) ${pct(zt(3))}% · Hard (Z4–5) ${pct(zt(4) + zt(5))}%</div>`;
+            }
             document.getElementById("weeklyTotals").innerHTML = rows;
         }
 
@@ -703,6 +1425,10 @@
                 </div>`).join("");
 
             document.getElementById("zoneSettingsTable").innerHTML = rows;
+            document.getElementById("zoneLegend").innerHTML = ZONES.map(z => {
+                const info = E.ZONE_INFO[z];
+                return `<div><b>Z${z} ${info.name}</b> <span class="text-slate-400">${info.hr}</span> — ${info.feel}</div>`;
+            }).join("") + `<div class="text-slate-400 pt-1">Writing your own session? Use minutes and zones, e.g. <code>Easy 40' Z2</code> or <code>15' Z2, 5×6' Z3 /1' Z1, 10' Z1</code> — the planner counts it.</div>`;
         }
         function updateZoneField(zone, field, value) {
             if (!zoneSettings[activePerson]) zoneSettings[activePerson] = defaultZones();
@@ -773,16 +1499,20 @@
             builderProgram = null;
             renderProgramBuilder();
             renderProgramsList();
+            computePlan(activePerson);
             renderWeek();
             renderWeeklyTotals();
+            renderPlanBar();
         }
         function deleteProgram(id) {
-            if (!confirm("Delete this program? Cells that used it will keep their text but stop counting toward weekly totals.")) return;
+            if (!confirm("Delete this program? Cells that used it keep their text; the planner then reads the minutes from that text.")) return;
             programs = programs.filter(p => p.id !== id);
             savePrograms();
             renderProgramsList();
+            computePlan(activePerson);
             renderWeek();
             renderWeeklyTotals();
+            renderPlanBar();
         }
 
         function renderProgramBuilder() {
@@ -826,6 +1556,9 @@
         }
 
         // ---------- PDF export: both Jacob's and Zara's table + totals for the current week ----------
+        function pdfSafe(t) {
+            return String(t || "").replace(/₂/g, "2").replace(/≈/g, "~").replace(/→/g, "->").replace(/[’′]/g, "'").replace(/✓/g, "").replace(/🏁/g, "");
+        }
         function exportWeekPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -833,6 +1566,7 @@
             const { year, week } = getISOWeek(monday);
             const sunday = addDays(monday, 6);
             const dayDates = Array.from({ length: 7 }, (_, i) => formatShort(addDays(monday, i)));
+            const mon = isoOf(monday);
 
             doc.setFontSize(14);
             doc.text(`Training — Week ${week}, ${year}`, 14, 16);
@@ -844,13 +1578,28 @@
             let startY = 28;
 
             PEOPLE.forEach(person => {
+                const plan = planCache[person.key];
+                const pw = plan ? plan.weekByMonday(mon) : null;
                 doc.setFontSize(11);
                 doc.text(person.label, 14, startY);
+                if (pw) {
+                    doc.setFontSize(8);
+                    doc.setTextColor(120);
+                    const info = `${plan.race.label} ${planSettings[person.key].raceDate} · ${E.PHASE_INFO[pw.phase].label}${TYPE_LABELS[pw.type] ? " · " + TYPE_LABELS[pw.type] : ""}${pw.target ? ` · target ${pw.target}'` : ""}`;
+                    doc.text(pdfSafe(info), 40, startY);
+                    doc.setTextColor(0);
+                }
 
                 const head = [["", ...DAY_LABELS.map((d, i) => `${d} ${dayDates[i]}`)]];
                 const body = SLOTS.map(slot => [
                     slot.label,
-                    ...Array.from({ length: 7 }, (_, i) => parseCell(getCellRaw(person.key, year, week, i, slot.key)).text || "")
+                    ...Array.from({ length: 7 }, (_, i) => {
+                        const c = parseCell(getCellRaw(person.key, year, week, i, slot.key));
+                        if (c.status === "missed") return "(missed)";
+                        if (!c.empty) return pdfSafe(c.text);
+                        const sess = pw && pw.days && !pw.days[i].past ? pw.days[i].slots[slot.key] : null;
+                        return sess ? pdfSafe(`[plan] ${sess.text}`) : "";
+                    })
                 ]);
 
                 doc.autoTable({
@@ -864,7 +1613,7 @@
                 });
                 startY = doc.lastAutoTable.finalY + 4;
 
-                const totals = computeZoneTotals(person.key, year, week);
+                const totals = computeZoneTotals(person.key, year, week, true);
                 const totalsBody = [ZONES.map(z => `Z${z}: ${Math.round(totals[z] || 0)}m`)];
                 doc.autoTable({
                     startY,
@@ -880,7 +1629,11 @@
         }
 
         // ---------- init ----------
-        fetchTraining();
+        if (!E) {
+            document.getElementById("planBar").innerHTML = `<div class="text-xs text-red-500">The planner engine (engine.js) didn't load. Check your connection and reload.</div>`;
+        } else {
+            fetchTraining();
+        }
     </script>
 </body>
 </html>
