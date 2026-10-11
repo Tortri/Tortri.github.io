@@ -73,6 +73,14 @@
             </div>
         </header>
 
+        <!-- Person switch: Jacob and Zara each have their own notes, sections, bookmarks and drawings -->
+        <div class="flex items-center gap-3 mb-3">
+            <div class="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-700 text-xs font-medium" role="group" aria-label="Whose notes">
+                <button onclick="setPerson('jacob')" id="personBtnJacob" class="px-4 py-1.5 transition">Jacob</button>
+                <button onclick="setPerson('zara')" id="personBtnZara" class="px-4 py-1.5 transition border-l border-slate-300 dark:border-slate-700">Zara</button>
+            </div>
+        </div>
+
         <!-- Bookmarks Bar -->
         <div class="mb-4 p-2 bg-slate-200/50 dark:bg-slate-800/40 rounded-lg border border-slate-300 dark:border-slate-800/60 flex items-center justify-between gap-2">
             <div id="bookmarksContainer" class="flex flex-wrap items-center gap-2 select-none flex-1">
@@ -124,7 +132,17 @@
         let noteOrder = null;           // saved card order (array of note ids), null until first drag
         let drawings = new Map();       // note id -> drawing document
         let drawingsAvailable = true;   // false when the worker has no /drawings route yet
-        let activeSection = localStorage.getItem("active_section") || "ALL";
+        // Whose notes are shown. Jacob's are the original data; Zara has her own,
+        // completely separate save (own notes, sections, bookmarks and drawings).
+        const PEOPLE = [{ key: "jacob", label: "Jacob" }, { key: "zara", label: "Zara" }];
+        let activePerson = localStorage.getItem("notes_active_person") === "zara" ? "zara" : "jacob";
+        const sectionStorageKey = (person = activePerson) => person === "jacob" ? "active_section" : `active_section_${person}`;
+        let activeSection = localStorage.getItem(sectionStorageKey()) || "ALL";
+        // Zara's notes are only loaded/saved once the worker confirms it keeps
+        // people apart - an older worker would otherwise put them in Jacob's notes.
+        const personConfirmed = { jacob: true, zara: false };
+        let personLoading = false;
+        let fetchToken = 0;
         let activeOpenFolderId = null;
         let bookmarksHidden = localStorage.getItem("bookmarks_hidden") === "true";
         let searchQuery = "";
@@ -453,7 +471,7 @@
             }
             // The drawing editor shows the state of its own drawing.
             if (drawEditor && expandedNoteId) {
-                const j = saveJobs.get(`draw:${expandedNoteId}`);
+                const j = saveJobs.get(`draw:${activePerson}:${expandedNoteId}`);
                 if (!j) drawEditor.setStatus("");
                 else if (j.failed && !j.dirty) drawEditor.setStatus("⚠ not saved", "err", j.error);
                 else if (j.failed) drawEditor.setStatus("retrying…", "warn", "Couldn't reach the server - retrying");
@@ -462,9 +480,20 @@
             }
         }
 
-        async function apiPost(path, body, opts = {}) {
+        // Every notes request says whose notes it is about (no parameter = Jacob).
+        function apiUrl(path, person = activePerson) {
+            if (person === "jacob") return `${API_BASE}${path}`;
+            return `${API_BASE}${path}${path.includes("?") ? "&" : "?"}person=${encodeURIComponent(person)}`;
+        }
+
+        async function apiPost(path, body, opts = {}, person = activePerson) {
+            if (!personConfirmed[person]) {
+                const e = new Error(`the worker doesn't keep ${person}'s notes separate yet`);
+                e.retry = false; e.userMessage = "not saved – update the worker";
+                throw e;
+            }
             const payload = JSON.stringify(body);
-            const res = await fetch(`${API_BASE}${path}`, {
+            const res = await fetch(apiUrl(path, person), {
                 method: "POST",
                 headers: getAuthHeader(),
                 body: payload,
@@ -502,9 +531,7 @@
         });
 
         // --- NOTES: LOAD & SAVE ---
-        function postItem(id, opts) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return Promise.resolve(); // deleted in the meantime
+        function postItem(el, person, opts) {
             serializeLines(el);
             return apiPost("/items", {
                 id: el.id,
@@ -512,17 +539,34 @@
                 title: el.title || "",
                 content: el.content,
                 is_completed: el.is_completed ? 1 : 0,
-            }, opts);
+            }, opts, person);
+        }
+
+        // Each save is tied to the note and the person it belongs to, so it
+        // still lands in the right place if you switch person before it is sent.
+        function itemSaver(id) {
+            const el = itemsCache.find(i => i.id === id);
+            if (!el) return null;
+            const person = activePerson;
+            return [`item:${person}:${id}`, (opts) => postItem(el, person, opts)];
         }
 
         // Save a note now (returns a promise that resolves once it is stored).
         function saveItem(id) {
-            return saveNow(`item:${id}`, (opts) => postItem(id, opts));
+            const s = itemSaver(id);
+            return s ? saveNow(s[0], s[1]) : Promise.resolve();
         }
 
         // Save a note shortly (used while typing).
         function scheduleItemSave(id) {
-            queueSave(`item:${id}`, (opts) => postItem(id, opts), 500);
+            const s = itemSaver(id);
+            if (s) queueSave(s[0], s[1], 500);
+        }
+
+        // Send anything waiting and wait for it, so a reload shows the latest text.
+        async function settleSaves() {
+            flushPendingSaves();
+            await Promise.all([...saveJobs.values()].map(j => j.running).filter(Boolean));
         }
 
         function applyNoteOrder() {
@@ -535,25 +579,42 @@
 
         function saveNoteOrder() {
             noteOrder = itemsCache.filter(i => !isSystemItem(i)).map(i => i.id);
-            queueSave("sys:order", (opts) => apiPost("/items", {
+            const person = activePerson, content = JSON.stringify(noteOrder);
+            queueSave(`sys:${person}:order`, (opts) => apiPost("/items", {
                 id: "SYSTEM_NOTE_ORDER",
                 type: "SYSTEM_INTERNAL",
                 title: "SYSTEM_NOTE_ORDER",
-                content: JSON.stringify(itemsCache.filter(i => !isSystemItem(i)).map(i => i.id)),
+                content,
                 is_completed: 0
-            }, opts), 300);
+            }, opts, person), 300);
         }
 
         async function fetchItems() {
+            const token = ++fetchToken;
+            const person = activePerson;
             try {
+                await settleSaves();
                 const headers = getAuthHeader();
                 const [res, drawRes] = await Promise.all([
-                    fetch(`${API_BASE}/items`, { headers }),
-                    fetch(`${API_BASE}/drawings`, { headers }).catch(() => null),
+                    fetch(apiUrl("/items", person), { headers }),
+                    fetch(apiUrl("/drawings", person), { headers }).catch(() => null),
                 ]);
+                if (token !== fetchToken) return; // switched person in the meantime
                 if (res.status === 401) { alert("Incorrect password!"); logout(); return; }
                 if (!res.ok) throw new Error(`server returned ${res.status}`);
-                itemsCache = (await res.json()).map(normalizeItem);
+                if (person !== "jacob" && res.headers.get("X-Notes-Person") !== person) {
+                    // Old worker: it would have answered with Jacob's notes. Show nothing, save nothing.
+                    personConfirmed[person] = false;
+                    personLoading = false;
+                    itemsCache = []; sections = ["ALL"]; bookmarks = []; noteOrder = null; drawings = new Map();
+                    renderUI();
+                    return;
+                }
+                personConfirmed[person] = true;
+                const rows = await res.json();
+                if (token !== fetchToken) return;
+                itemsCache = rows.map(normalizeItem);
+                personLoading = false;
 
                 const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
                 if (sectionsData) {
@@ -576,10 +637,12 @@
                     try { const o = JSON.parse(orderData.content); noteOrder = Array.isArray(o) ? o : null; } catch (e) { noteOrder = null; }
                 }
                 applyNoteOrder();
+                if (!sections.includes(activeSection)) activeSection = "ALL";
 
                 if (drawRes && drawRes.ok && window.NoteDraw) {
-                    const rows = await drawRes.json();
-                    drawings = new Map(rows.map(r => [r.note_id, NoteDraw.normalizeDoc(r.data)]));
+                    const drawRows = await drawRes.json();
+                    if (token !== fetchToken) return;
+                    drawings = new Map(drawRows.map(r => [r.note_id, NoteDraw.normalizeDoc(r.data)]));
                     drawingsAvailable = true;
                 } else if (drawRes && drawRes.status === 404) {
                     drawingsAvailable = false;
@@ -607,19 +670,21 @@
         async function deleteItem(id) {
             if (!confirm("Delete this item?")) return;
             if (expandedNoteId === id) closeDraw();
+            const person = activePerson;
             // Make sure a save that is still on its way can't bring the note back.
-            await Promise.all([cancelJob(`item:${id}`), cancelJob(`draw:${id}`)]);
-            const res = await fetch(`${API_BASE}/items/${encodeURIComponent(id)}`, { method: "DELETE", headers: getAuthHeader() });
+            await Promise.all([cancelJob(`item:${person}:${id}`), cancelJob(`draw:${person}:${id}`)]);
+            const res = await fetch(apiUrl(`/items/${encodeURIComponent(id)}`, person), { method: "DELETE", headers: getAuthHeader() });
             if (res.status === 401) { logout(); return; }
             drawings.delete(id);
             if (drawingsAvailable) {
                 // older worker versions don't remove the drawing together with the note
-                fetch(`${API_BASE}/drawings/${encodeURIComponent(id)}`, { method: "DELETE", headers: getAuthHeader() }).catch(() => {});
+                fetch(apiUrl(`/drawings/${encodeURIComponent(id)}`, person), { method: "DELETE", headers: getAuthHeader() }).catch(() => {});
             }
             fetchItems();
         }
 
         function createNewNote() {
+            if (!personConfirmed[activePerson]) { alert(notReadyMessage()); return; }
             if (searchQuery) {
                 searchQuery = "";
                 document.getElementById("searchInput").value = "";
@@ -810,10 +875,9 @@
         // "draw" on a note opens it big (on top of everything) with the pen
         // tools. The drawing is saved separately from the note's text.
         // =====================================================================
-        function postDrawing(id, opts) {
-            const doc = drawings.get(id);
+        function postDrawing(id, doc, person, opts) {
             const data = doc && !NoteDraw.isEmpty(doc) ? JSON.stringify(doc) : null;
-            return apiPost("/drawings", { note_id: id, data }, opts).catch(err => {
+            return apiPost("/drawings", { note_id: id, data }, opts, person).catch(err => {
                 if (err.status === 404) {
                     drawingsAvailable = false;
                     err.retry = false;
@@ -825,8 +889,9 @@
             });
         }
 
-        function queueDrawingSave(id) {
-            queueSave(`draw:${id}`, (opts) => postDrawing(id, opts), 800);
+        function queueDrawingSave(id, doc) {
+            const person = activePerson;
+            queueSave(`draw:${person}:${id}`, (opts) => postDrawing(id, doc, person, opts), 800);
         }
 
         function openDraw(id) {
@@ -839,7 +904,7 @@
             saveItem(id); // a brand-new note must exist on the server before its drawing does
             drawEditor = NoteDraw.createEditor({
                 doc: drawings.get(id) || NoteDraw.emptyDoc(),
-                onChange: (doc) => { drawings.set(id, doc); queueDrawingSave(id); },
+                onChange: (doc) => { drawings.set(id, doc); queueDrawingSave(id, doc); },
             });
             document.body.classList.add("overflow-hidden");
             document.getElementById("drawBackdrop").classList.remove("hidden");
@@ -859,8 +924,9 @@
             const id = expandedNoteId;
             expandedNoteId = null;
             if (drawEditor) { drawEditor.destroy(); drawEditor = null; }
-            const j = saveJobs.get(`draw:${id}`);
-            if (j && j.timer) { clearTimeout(j.timer); j.timer = null; runJob(`draw:${id}`); }
+            const key = `draw:${activePerson}:${id}`;
+            const j = saveJobs.get(key);
+            if (j && j.timer) { clearTimeout(j.timer); j.timer = null; runJob(key); }
             document.body.classList.remove("overflow-hidden");
             document.getElementById("drawBackdrop").classList.add("hidden");
             renderUI();
@@ -903,13 +969,14 @@
 
         // --- BOOKMARKS & FOLDERS ---
         function saveBookmarksToDatabase() {
-            return saveNow("sys:bookmarks", (opts) => apiPost("/items", {
+            const person = activePerson, content = JSON.stringify(bookmarks);
+            return saveNow(`sys:${person}:bookmarks`, (opts) => apiPost("/items", {
                 id: "SYSTEM_BOOKMARKS_CONFIG",
                 type: "SYSTEM_INTERNAL",
                 title: "SYSTEM_BOOKMARKS",
-                content: JSON.stringify(bookmarks),
+                content,
                 is_completed: 0
-            }, opts));
+            }, opts, person));
         }
 
         function addBookmarkPrompt() {
@@ -1086,7 +1153,7 @@
             doc.setFont("helvetica", "bold");
             doc.setFontSize(20);
             doc.setTextColor(30, 41, 59); // Slate-800
-            doc.text(`Notes - ${activeSection}`, margin, y + 15);
+            doc.text(`Notes - ${personLabel()} - ${activeSection}`, margin, y + 15);
 
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
@@ -1305,17 +1372,18 @@
                 doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 20, { align: "center" });
             }
 
-            doc.save(`notes_${activeSection.toLowerCase()}_${Date.now()}.pdf`);
+            doc.save(`notes_${activePerson}_${activeSection.toLowerCase()}_${Date.now()}.pdf`);
         }
 
         function saveSectionsToDatabase(updatedSectionsList) {
-            return saveNow("sys:sections", (opts) => apiPost("/items", {
+            const person = activePerson, content = JSON.stringify(updatedSectionsList || sections);
+            return saveNow(`sys:${person}:sections`, (opts) => apiPost("/items", {
                 id: "SYSTEM_SECTIONS_CONFIG",
                 type: "SYSTEM_INTERNAL",
                 title: "SYSTEM_SECTIONS",
-                content: JSON.stringify(updatedSectionsList || sections),
+                content,
                 is_completed: 0
-            }, opts));
+            }, opts, person));
         }
 
         async function addSection() {
@@ -1349,7 +1417,7 @@
 
                 if (activeSection === name) {
                     activeSection = "ALL";
-                    localStorage.setItem("active_section", "ALL");
+                    localStorage.setItem(sectionStorageKey(), "ALL");
                 }
                 fetchItems();
             }
@@ -1357,7 +1425,7 @@
 
         function selectSection(name) {
             activeSection = name;
-            localStorage.setItem("active_section", name);
+            localStorage.setItem(sectionStorageKey(), name);
             renderUI();
         }
 
@@ -1579,7 +1647,10 @@
             if (filtered.length === 0) {
                 const empty = document.createElement("div");
                 empty.className = "col-span-full text-center text-sm text-slate-400 dark:text-slate-600 py-16";
-                empty.textContent = q ? `No notes match “${searchQuery.trim()}”.` : "No notes here yet — press + to make one.";
+                empty.textContent = !personConfirmed[activePerson] ? notReadyMessage()
+                    : personLoading ? "Loading…"
+                    : q ? `No notes match “${searchQuery.trim()}”.`
+                    : "No notes here yet — press + to make one.";
                 grid.appendChild(empty);
             }
 
@@ -1609,6 +1680,48 @@
             });
         }
 
+        // --- PERSON SWITCH (Jacob / Zara) ---
+        function personLabel(person = activePerson) {
+            return (PEOPLE.find(p => p.key === person) || PEOPLE[0]).label;
+        }
+
+        function notReadyMessage() {
+            return `${personLabel()}'s notes need the updated worker. Deploy the new worker.js in Cloudflare, then reload.`;
+        }
+
+        function renderPersonButtons() {
+            PEOPLE.forEach(p => {
+                const btn = document.getElementById(`personBtn${p.label}`);
+                if (!btn) return;
+                const active = activePerson === p.key;
+                btn.setAttribute("aria-pressed", active ? "true" : "false");
+                btn.className = `px-4 py-1.5 transition ${p.key !== PEOPLE[0].key ? 'border-l border-slate-300 dark:border-slate-700' : ''} ${
+                    active
+                        ? 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900'
+                        : 'bg-transparent text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800'
+                }`;
+            });
+            document.title = activePerson === "jacob" ? "Notes & Bookmarks" : `Notes & Bookmarks · ${personLabel()}`;
+        }
+
+        function setPerson(person) {
+            if (person === activePerson || !PEOPLE.some(p => p.key === person)) return;
+            if (expandedNoteId) closeDraw();
+            flushPendingSaves(); // the current person's edits go out now (each save knows whose it is)
+            activePerson = person;
+            localStorage.setItem("notes_active_person", person);
+            activeSection = localStorage.getItem(sectionStorageKey()) || "ALL";
+            itemsCache = []; sections = ["ALL"]; bookmarks = []; noteOrder = null; drawings = new Map();
+            activeOpenFolderId = null;
+            searchQuery = "";
+            document.getElementById("searchInput").value = "";
+            personLoading = true;
+            renderPersonButtons();
+            renderUI();
+            updateSyncStatus();
+            fetchItems();
+        }
+
         // --- SEARCH ---
         let searchTimer = null;
         document.getElementById("searchInput").addEventListener("input", (e) => {
@@ -1616,6 +1729,8 @@
             searchTimer = setTimeout(() => { searchQuery = e.target.value; renderUI(); }, 120);
         });
 
+        renderPersonButtons();
+        personLoading = true;
         fetchItems();
     </script>
 </body>
