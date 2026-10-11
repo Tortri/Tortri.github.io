@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <!-- Drawing editor (pen / touch / mouse). Bump ?v= after changing draw.js so browsers fetch the new copy. -->
-    <script src="draw.js?v=1"></script>
+    <script src="draw.js?v=2"></script>
     <style>
         .sortable-ghost { opacity: 0.3; }
         .sortable-drag { cursor: grabbing !important; }
@@ -23,12 +23,11 @@
         .drawing-preview canvas { display: block; margin: 0 auto; }
         /* Let the drawing toolbar stick flush to the top edge of the open note
            (minus the note's padding), so nothing peeks out above it. */
-        .note-expanded { --nd-sticky-top: -0.75rem; }
+        .note-expanded > div:last-child { flex-shrink: 0; }
         /* One-note-per-row view: a little larger text */
         #notesGrid.notes-big .line-input { font-size: 0.95rem; }
         #notesGrid.notes-big input[id^="title-"] { font-size: 1.125rem; }
         dialog::backdrop { background: rgba(15, 23, 42, .6); }
-        @media (min-width: 640px) { .note-expanded { --nd-sticky-top: -1.25rem; } }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
@@ -965,8 +964,6 @@
                 if (!drawEditor) return;
                 drawEditor.layout();
                 const card = document.querySelector(`#notesGrid [data-id="${CSS.escape(id)}"]`);
-                const slot = card && card.querySelector(".draw-slot");
-                if (card && slot && slot.offsetTop > card.clientHeight * 0.45) card.scrollTop = slot.offsetTop - 12;
             });
         }
 
@@ -1006,6 +1003,8 @@
                 NoteDraw.renderPreview(canvas, doc, { width: w, maxHeight: viewCols === 1 ? 520 : 320, dark });
             });
         }
+
+        window.addEventListener("notedraw:imageload", () => renderDrawingPreviews());
 
         // Re-draw previews when the cards change width (rotate phone, resize window).
         let previewRaf = 0, lastGridWidth = 0;
@@ -1453,18 +1452,26 @@
         }
 
         // "export pdf": the open folder including its subfolders, or every note.
-        function exportToPDF() {
+        // Bucket fills are images; make sure they're loaded before drawing the PDF.
+        function preloadDrawings(notes) {
+            if (!window.NoteDraw || !NoteDraw.preload) return Promise.resolve();
+            return NoteDraw.preload(notes.map(n => drawings.get(n.id)).filter(Boolean));
+        }
+
+        async function exportToPDF() {
             const inAll = currentFolder === "ALL";
             const notes = inAll ? itemsCache.filter(i => !isSystemItem(i)) : notesInTreeOrder(currentFolder);
             const where = inAll ? "All notes" : folderPathText(currentFolder);
+            await preloadDrawings(notes);
             const doc = buildNotesPDF({ heading: `Notes - ${personLabel()} - ${where}`, notes, includeBookmarks: true, showFolders: true });
             doc.save(`notes_${activePerson}_${slugify(where) || "all"}_${Date.now()}.pdf`);
         }
 
         // "pdf" button on a single note.
-        function exportNotePDF(id) {
+        async function exportNotePDF(id) {
             const item = itemsCache.find(i => i.id === id);
             if (!item) return;
+            await preloadDrawings([item]);
             const folder = item.type ? folderById(item.type) : null;
             const heading = `${personLabel()} - ${folder ? folderPathText(folder.id) : "Notes"}`;
             const doc = buildNotesPDF({ heading, notes: [item], includeBookmarks: false, showFolders: false });
@@ -1875,7 +1882,7 @@
 
         // --- NOTE CARD ---
         const CARD_CLASSES = "p-4 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/60 transition flex flex-col justify-between space-y-3 shadow-sm dark:shadow-none";
-        const EXPANDED_CARD_CLASSES = "note-expanded fixed inset-0 sm:inset-4 lg:inset-y-6 z-50 mx-auto w-full max-w-5xl overflow-y-auto overscroll-contain p-3 sm:p-5 sm:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col justify-between space-y-3";
+        const EXPANDED_CARD_CLASSES = "note-expanded fixed inset-0 sm:inset-4 lg:inset-y-6 z-50 mx-auto w-full max-w-5xl overflow-y-auto overscroll-contain p-3 sm:p-5 sm:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col gap-2";
 
         function buildNoteCard(item) {
             const isExpanded = item.id === expandedNoteId;
@@ -1906,14 +1913,14 @@
                 : '';
 
             let inner = `
-                <div class="w-full">
+                <div class="w-full ${isExpanded ? 'flex-1 min-h-0 flex flex-col' : ''}">
                     <div class="flex items-center gap-2 mb-2">
                         ${handleHtml}
                         ${titleHtml}
                         ${chipHtml}
                         ${doneHtml}
                     </div>
-                    <div class="lines-list space-y-1">`;
+                    <div class="lines-list space-y-1 ${isExpanded ? 'shrink-0 max-h-[22vh] overflow-y-auto overscroll-contain pr-1' : ''}">`;
 
             (item.lines || []).forEach(line => {
                 const foundUrl = extractFirstURL(line.text);
@@ -1943,7 +1950,7 @@
                     </div>`;
 
             if (isExpanded) {
-                inner += `<div class="draw-slot mt-3"></div>`;
+                inner += `<div class="draw-slot flex-1 min-h-0 flex flex-col mt-2"></div>`;
             } else if (hasDrawing) {
                 inner += `
                     <div class="drawing-preview mt-3 rounded-md overflow-hidden cursor-pointer" data-note="${escapeHtml(item.id)}" title="Open drawing">
