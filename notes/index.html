@@ -24,12 +24,16 @@
         /* Let the drawing toolbar stick flush to the top edge of the open note
            (minus the note's padding), so nothing peeks out above it. */
         .note-expanded { --nd-sticky-top: -0.75rem; }
+        /* One-note-per-row view: a little larger text */
+        #notesGrid.notes-big .line-input { font-size: 0.95rem; }
+        #notesGrid.notes-big input[id^="title-"] { font-size: 1.125rem; }
+        dialog::backdrop { background: rgba(15, 23, 42, .6); }
         @media (min-width: 640px) { .note-expanded { --nd-sticky-top: -1.25rem; } }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
 
-    <div class="max-w-4xl mx-auto p-4 sm:p-8">
+    <div class="max-w-4xl lg:max-w-6xl mx-auto p-4 sm:p-8">
         <!-- Header -->
         <header class="flex justify-between items-baseline border-b border-slate-300 dark:border-slate-800 pb-3 mb-3 relative">
 
@@ -61,7 +65,7 @@
             <div class="flex items-center gap-3">
                 <!-- Save status: shows when changes are still being sent or could not be saved -->
                 <span id="syncStatus" class="text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap" aria-live="polite"></span>
-                <button onclick="exportToPDF()" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
+                <button onclick="exportToPDF()" title="Export the open folder (or all notes) as a PDF" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
                     export pdf
                 </button>
                 <button onclick="toggleTheme()" id="themeToggleBtn" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition underline decoration-dotted">
@@ -73,7 +77,7 @@
             </div>
         </header>
 
-        <!-- Person switch: Jacob and Zara each have their own notes, sections, bookmarks and drawings -->
+        <!-- Person switch: Jacob and Zara each have their own notes, folders, bookmarks and drawings -->
         <div class="flex items-center gap-3 mb-3">
             <div class="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-700 text-xs font-medium" role="group" aria-label="Whose notes">
                 <button onclick="setPerson('jacob')" id="personBtnJacob" class="px-4 py-1.5 transition">Jacob</button>
@@ -96,28 +100,77 @@
             </div>
         </div>
 
-        <!-- Section Navigation Header -->
-        <div class="relative mb-6 border-b border-slate-300 dark:border-slate-800 pb-1">
-            <div class="flex items-center justify-between">
-                <div id="sectionsContainer" class="flex gap-2 overflow-x-auto scrollbar-none py-1 pr-12 scroll-smooth flex-1 select-none">
+        <div class="lg:flex lg:items-start lg:gap-6">
+            <!-- Folder tree (wide screens). On phones/tablets the breadcrumb + folder tiles do the same job. -->
+            <aside id="folderSidebar" class="hidden lg:block w-60 shrink-0 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pr-1">
+                <div class="flex items-center justify-between mb-2 pl-2">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Folders</span>
+                    <button onclick="openFolderDialog({ parent: null })" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg leading-none px-1.5" title="New folder">+</button>
                 </div>
-                <button onclick="addSection()" class="absolute right-0 bg-slate-100 dark:bg-slate-900 pl-4 pr-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 text-lg font-bold" title="Add Section">+</button>
-            </div>
+                <nav id="folderTree" class="text-sm select-none" aria-label="Folders"></nav>
+            </aside>
+
+            <main class="flex-1 min-w-0">
+                <!-- Where you are + actions for this folder -->
+                <div class="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-300 dark:border-slate-800 min-h-[2.25rem]">
+                    <nav id="breadcrumb" class="flex items-center flex-wrap gap-x-1 gap-y-0.5 text-sm min-w-0" aria-label="Folder path"></nav>
+                    <div id="folderActions" class="flex items-center gap-3 shrink-0 text-xs"></div>
+                </div>
+
+                <!-- Subfolders of the open folder -->
+                <div id="folderTiles" class="hidden grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 mb-4 select-none"></div>
+
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <input id="searchInput" type="search" placeholder="search notes…" autocomplete="off"
+                        class="w-full max-w-xs bg-transparent text-sm px-3 py-2 rounded-full border border-slate-300 dark:border-slate-800 focus:outline-none focus:border-slate-400 dark:focus:border-slate-600 placeholder-slate-400 dark:placeholder-slate-600 text-slate-700 dark:text-slate-200">
+                    <div class="flex items-center gap-2 shrink-0">
+                        <!-- One big note per row, or two per row -->
+                        <div id="viewToggle" class="hidden sm:flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-700" role="group" aria-label="Layout">
+                            <button data-cols="1" onclick="setViewCols(1)" title="One note per row (big)" class="px-2 py-1.5 transition">
+                                <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/></svg>
+                            </button>
+                            <button data-cols="2" onclick="setViewCols(2)" title="Two notes per row" class="px-2 py-1.5 transition border-l border-slate-300 dark:border-slate-700">
+                                <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="16" rx="1.5"/><rect x="13" y="4" width="7" height="16" rx="1.5"/></svg>
+                            </button>
+                        </div>
+                        <button onclick="createNewNote()" title="New note" class="shrink-0 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
+                            +
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notes Grid -->
+                <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </main>
         </div>
-
-        <main>
-            <div class="flex items-center justify-between gap-3 mb-4">
-                <input id="searchInput" type="search" placeholder="search notes…" autocomplete="off"
-                    class="w-full max-w-xs bg-transparent text-sm px-3 py-2 rounded-full border border-slate-300 dark:border-slate-800 focus:outline-none focus:border-slate-400 dark:focus:border-slate-600 placeholder-slate-400 dark:placeholder-slate-600 text-slate-700 dark:text-slate-200">
-                <button onclick="createNewNote()" title="New note" class="shrink-0 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xl w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm">
-                    +
-                </button>
-            </div>
-
-            <!-- Notes Grid -->
-            <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-        </main>
     </div>
+
+    <!-- New / edit folder -->
+    <dialog id="folderDialog" class="m-auto rounded-xl p-0 w-[min(92vw,380px)] bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl backdrop:bg-slate-900/60">
+        <form id="folderForm" class="p-5 space-y-4">
+            <h2 id="folderDialogTitle" class="font-semibold text-base">New folder</h2>
+            <label class="block">
+                <span class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Name</span>
+                <input id="folderNameInput" required maxlength="60" autocomplete="off"
+                    class="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-slate-500">
+            </label>
+            <div>
+                <span class="block text-xs text-slate-500 dark:text-slate-400 mb-1.5">Colour</span>
+                <div id="folderColorSwatches" class="flex flex-wrap gap-2"></div>
+            </div>
+            <label class="block">
+                <span class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Inside</span>
+                <select id="folderParentSelect" class="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-2 text-sm focus:outline-none"></select>
+            </label>
+            <div class="flex items-center justify-between pt-1">
+                <button type="button" id="folderDeleteBtn" class="text-xs text-red-500 hover:underline">delete folder</button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="document.getElementById('folderDialog').close()" class="text-xs px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">cancel</button>
+                    <button type="submit" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 hover:opacity-90">save</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
 
     <!-- Dimmed background behind a note that is open in drawing mode -->
     <div id="drawBackdrop" onclick="closeDraw()" class="hidden fixed inset-0 z-40 bg-slate-900/50 dark:bg-black/60 backdrop-blur-[2px]"></div>
@@ -125,19 +178,24 @@
     <script>
         const API_BASE = "https://notes-backend.tortrix03.workers.dev/api";
         // Config rows that live in the items table but are not notes.
-        const SYSTEM_IDS = new Set(["SYSTEM_SECTIONS_CONFIG", "SYSTEM_BOOKMARKS_CONFIG", "SYSTEM_NOTE_ORDER"]);
+        const SYSTEM_IDS = new Set(["SYSTEM_SECTIONS_CONFIG", "SYSTEM_FOLDERS_CONFIG", "SYSTEM_BOOKMARKS_CONFIG", "SYSTEM_NOTE_ORDER"]);
         let itemsCache = [];
-        let sections = ["ALL"];
+        // Folders: [{ id, name, parent, color }]. A note's `type` is the id of its folder.
+        // Old sections became folders with id = their name, so existing notes stay put.
+        let noteFolders = [];
+        const FOLDER_COLORS = ["#64748b", "#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#0ea5e9", "#6366f1", "#a855f7", "#ec4899"];
+        let viewCols = localStorage.getItem("notes_view_cols") === "1" ? 1 : 2;
         let bookmarks = [];
         let noteOrder = null;           // saved card order (array of note ids), null until first drag
         let drawings = new Map();       // note id -> drawing document
         let drawingsAvailable = true;   // false when the worker has no /drawings route yet
         // Whose notes are shown. Jacob's are the original data; Zara has her own,
-        // completely separate save (own notes, sections, bookmarks and drawings).
+        // completely separate save (own notes, folders, bookmarks and drawings).
         const PEOPLE = [{ key: "jacob", label: "Jacob" }, { key: "zara", label: "Zara" }];
         let activePerson = localStorage.getItem("notes_active_person") === "zara" ? "zara" : "jacob";
         const sectionStorageKey = (person = activePerson) => person === "jacob" ? "active_section" : `active_section_${person}`;
-        let activeSection = localStorage.getItem(sectionStorageKey()) || "ALL";
+        // Open folder id, or "ALL" for every note. (Same storage key the old sections used.)
+        let currentFolder = localStorage.getItem(sectionStorageKey()) || "ALL";
         // Zara's notes are only loaded/saved once the worker confirms it keeps
         // people apart - an older worker would otherwise put them in Jacob's notes.
         const personConfirmed = { jacob: true, zara: false };
@@ -606,7 +664,7 @@
                     // Old worker: it would have answered with Jacob's notes. Show nothing, save nothing.
                     personConfirmed[person] = false;
                     personLoading = false;
-                    itemsCache = []; sections = ["ALL"]; bookmarks = []; noteOrder = null; drawings = new Map();
+                    itemsCache = []; noteFolders = []; bookmarks = []; noteOrder = null; drawings = new Map();
                     renderUI();
                     return;
                 }
@@ -616,16 +674,7 @@
                 itemsCache = rows.map(normalizeItem);
                 personLoading = false;
 
-                const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
-                if (sectionsData) {
-                    try {
-                        const loaded = JSON.parse(sectionsData.content);
-                        const updatedLoaded = loaded.map(s => s === "all" ? "ALL" : s);
-                        sections = updatedLoaded.includes("ALL") ? updatedLoaded : ["ALL", ...updatedLoaded];
-                    } catch (e) { sections = ["ALL"]; }
-                } else {
-                    saveSectionsToDatabase(["ALL"]);
-                }
+                loadFolders();
 
                 const bookmarksData = itemsCache.find(i => i.id === "SYSTEM_BOOKMARKS_CONFIG");
                 if (bookmarksData) {
@@ -637,7 +686,7 @@
                     try { const o = JSON.parse(orderData.content); noteOrder = Array.isArray(o) ? o : null; } catch (e) { noteOrder = null; }
                 }
                 applyNoteOrder();
-                if (!sections.includes(activeSection)) activeSection = "ALL";
+                if (currentFolder !== "ALL" && !folderById(currentFolder)) currentFolder = "ALL";
 
                 if (drawRes && drawRes.ok && window.NoteDraw) {
                     const drawRows = await drawRes.json();
@@ -692,7 +741,7 @@
             const firstLineId = uid();
             const newItem = {
                 id: crypto.randomUUID(),
-                type: activeSection === 'ALL' ? null : activeSection,
+                type: currentFolder === 'ALL' ? null : currentFolder,
                 title: '',
                 lines: [{ id: firstLineId, text: '', checked: null }],
                 is_completed: 0
@@ -703,15 +752,17 @@
             focusLine(newItem.id, firstLineId, 0);
         }
 
+        // Focus right away (not on a timer): keys typed quickly after Enter
+        // would otherwise arrive before the cursor moved and be lost.
         function focusLine(itemId, lineId, caretPos) {
-            setTimeout(() => {
+            const go = () => {
                 const node = document.getElementById(`line-${itemId}-${lineId}`);
-                if (!node) return;
+                if (!node) return false;
                 node.focus();
-                if (typeof caretPos === 'number') {
-                    node.setSelectionRange(caretPos, caretPos);
-                }
-            }, 0);
+                if (typeof caretPos === 'number') node.setSelectionRange(caretPos, caretPos);
+                return true;
+            };
+            if (!go()) setTimeout(go, 0);
         }
 
         function updateTitle(id, value) {
@@ -952,7 +1003,7 @@
                 const canvas = box.querySelector("canvas");
                 const w = box.clientWidth;
                 if (!doc || !canvas || !w) return;
-                NoteDraw.renderPreview(canvas, doc, { width: w, maxHeight: 320, dark });
+                NoteDraw.renderPreview(canvas, doc, { width: w, maxHeight: viewCols === 1 ? 520 : 320, dark });
             });
         }
 
@@ -1118,14 +1169,21 @@
             });
         }
 
-        function exportToPDF() {
+        // --- PDF ---
+        const hexToRgb = (hex) => {
+            const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+            if (!m) return null;
+            const n = parseInt(m[1], 16);
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+        };
+        const slugify = (text) => (text || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
+            .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+
+        // Draws notes as cards into a new PDF. Used by "export pdf" (the open
+        // folder, or all notes) and by the "pdf" button on a single note.
+        function buildNotesPDF({ heading, notes, includeBookmarks, showFolders }) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: "pt", format: "a4" });
-
-            const filtered = itemsCache.filter(item =>
-                !isSystemItem(item) &&
-                (activeSection === 'ALL' || item.type === activeSection)
-            );
 
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
@@ -1139,7 +1197,7 @@
             if (window.NoteDraw) {
                 const maxW = contentWidth - 24;
                 const maxH = pageHeight - (margin * 2) - 80;
-                filtered.forEach(item => {
+                notes.forEach(item => {
                     const d = drawings.get(item.id);
                     if (!d || NoteDraw.isEmpty(d)) return;
                     const img = NoteDraw.renderToDataURL(d, { pxWidth: 1400, dark: false });
@@ -1153,7 +1211,7 @@
             doc.setFont("helvetica", "bold");
             doc.setFontSize(20);
             doc.setTextColor(30, 41, 59); // Slate-800
-            doc.text(`Notes - ${personLabel()} - ${activeSection}`, margin, y + 15);
+            doc.text(doc.splitTextToSize(heading, contentWidth - 120)[0], margin, y + 15);
 
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
@@ -1170,7 +1228,7 @@
             y += 20;
 
             // --- SECTION 1: BOOKMARKS EXPORT ---
-            if (bookmarks.length > 0) {
+            if (includeBookmarks && bookmarks.length > 0) {
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(14);
                 doc.setTextColor(30, 41, 59);
@@ -1246,14 +1304,14 @@
             }
 
             // --- SECTION 2: NOTES EXPORT ---
-            if (filtered.length === 0) {
+            if (notes.length === 0) {
                 doc.setFont("helvetica", "italic");
                 doc.setFontSize(11);
                 doc.setTextColor(100, 116, 139);
-                doc.text("No notes available in this section.", margin, y);
+                doc.text("No notes in this folder.", margin, y);
             }
 
-            filtered.forEach((item, index) => {
+            notes.forEach((item, index) => {
                 const estimatedHeight = calculateNoteHeight(item);
                 const printableAreaHeight = pageHeight - (margin * 2);
 
@@ -1266,13 +1324,26 @@
 
                 let cardStartY = y;
                 let cardInternalY = y + 16;
+                const folder = item.type ? folderById(item.type) : null;
+                const folderRgb = folder ? hexToRgb(folder.color) : null;
+
+                // Folder name (top right, in the folder's colour)
+                let labelWidth = 0;
+                if (showFolders && folder) {
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8);
+                    const label = doc.splitTextToSize(folderPathText(folder.id), contentWidth * 0.4)[0];
+                    labelWidth = doc.getTextWidth(label) + 12;
+                    doc.setTextColor(...(folderRgb || [100, 116, 139]));
+                    doc.text(label, pageWidth - margin - 12, cardInternalY, { align: "right" });
+                }
 
                 // Card Title
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(12);
                 doc.setTextColor(15, 23, 42); // Slate-900
                 const titleText = item.title || `Untitled Note #${index + 1}`;
-                const splitTitle = doc.splitTextToSize(titleText, contentWidth - 24);
+                const splitTitle = doc.splitTextToSize(titleText, contentWidth - 24 - labelWidth);
 
                 doc.text(splitTitle, margin + 12, cardInternalY);
                 cardInternalY += (splitTitle.length * 14) + 4;
@@ -1359,6 +1430,12 @@
                 doc.setFillColor(255, 255, 255); // White background
                 doc.roundedRect(margin, cardStartY, contentWidth, cardHeight, 6, 6, "S");
 
+                // Folder colour stripe on the left edge of the card
+                if (folderRgb && cardHeight > 14) {
+                    doc.setFillColor(...folderRgb);
+                    doc.roundedRect(margin + 2.5, cardStartY + 6, 3, cardHeight - 12, 1.5, 1.5, "F");
+                }
+
                 y = cardInternalY + 14; // Gap before next card
             });
 
@@ -1372,73 +1449,424 @@
                 doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 20, { align: "center" });
             }
 
-            doc.save(`notes_${activePerson}_${activeSection.toLowerCase()}_${Date.now()}.pdf`);
+            return doc;
         }
 
-        function saveSectionsToDatabase(updatedSectionsList) {
-            const person = activePerson, content = JSON.stringify(updatedSectionsList || sections);
-            return saveNow(`sys:${person}:sections`, (opts) => apiPost("/items", {
-                id: "SYSTEM_SECTIONS_CONFIG",
+        // "export pdf": the open folder including its subfolders, or every note.
+        function exportToPDF() {
+            const inAll = currentFolder === "ALL";
+            const notes = inAll ? itemsCache.filter(i => !isSystemItem(i)) : notesInTreeOrder(currentFolder);
+            const where = inAll ? "All notes" : folderPathText(currentFolder);
+            const doc = buildNotesPDF({ heading: `Notes - ${personLabel()} - ${where}`, notes, includeBookmarks: true, showFolders: true });
+            doc.save(`notes_${activePerson}_${slugify(where) || "all"}_${Date.now()}.pdf`);
+        }
+
+        // "pdf" button on a single note.
+        function exportNotePDF(id) {
+            const item = itemsCache.find(i => i.id === id);
+            if (!item) return;
+            const folder = item.type ? folderById(item.type) : null;
+            const heading = `${personLabel()} - ${folder ? folderPathText(folder.id) : "Notes"}`;
+            const doc = buildNotesPDF({ heading, notes: [item], includeBookmarks: false, showFolders: false });
+            doc.save(`${slugify(item.title) || "note"}.pdf`);
+        }
+
+        // =====================================================================
+        // FOLDERS
+        // =====================================================================
+        const folderById = (id) => noteFolders.find(f => f.id === id) || null;
+        const childFolders = (parent) => noteFolders.filter(f => (f.parent || null) === (parent || null));
+
+        function folderPath(id) {
+            const path = [], seen = new Set();
+            let f = folderById(id);
+            while (f && !seen.has(f.id)) { seen.add(f.id); path.unshift(f); f = f.parent ? folderById(f.parent) : null; }
+            return path;
+        }
+        const folderPathText = (id) => folderPath(id).map(f => f.name).join(" / ");
+
+        // A folder plus everything inside it (subfolders, sub-subfolders, ...).
+        function descendantIds(id) {
+            const out = new Set([id]);
+            let grew = true;
+            while (grew) {
+                grew = false;
+                for (const f of noteFolders) if (f.parent && out.has(f.parent) && !out.has(f.id)) { out.add(f.id); grew = true; }
+            }
+            return out;
+        }
+
+        function noteCount(folderId) {
+            const ids = descendantIds(folderId);
+            return itemsCache.filter(i => !isSystemItem(i) && ids.has(i.type)).length;
+        }
+
+        // Notes of a folder first, then each subfolder's notes (for PDF export).
+        function notesInTreeOrder(rootId) {
+            const out = [];
+            const add = (fid) => {
+                itemsCache.forEach(i => { if (!isSystemItem(i) && i.type === fid) out.push(i); });
+                childFolders(fid).forEach(c => add(c.id));
+            };
+            add(rootId);
+            return out;
+        }
+
+        function hexToRgba(hex, alpha) {
+            const rgb = hexToRgb(hex);
+            return rgb ? `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})` : "transparent";
+        }
+
+        function folderIcon(color, cls = "w-4 h-4") {
+            return `<svg viewBox="0 0 24 24" class="${cls} shrink-0" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.6l2 2h7.4A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" fill="${escapeHtml(color || '#94a3b8')}"/><path d="M3 10h18" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/></svg>`;
+        }
+
+        function cleanFolders(list) {
+            const out = [], ids = new Set();
+            (Array.isArray(list) ? list : []).forEach((f, i) => {
+                if (!f || typeof f !== "object") return;
+                const id = String(f.id || "").trim();
+                if (!id || id.toUpperCase() === "ALL" || ids.has(id)) return;
+                ids.add(id);
+                out.push({
+                    id,
+                    name: String(f.name || id).slice(0, 60),
+                    parent: f.parent ? String(f.parent) : null,
+                    color: /^#[0-9a-f]{6}$/i.test(f.color || "") ? f.color : FOLDER_COLORS[(i + 1) % FOLDER_COLORS.length],
+                });
+            });
+            // parents must exist and must not loop back to the folder itself
+            out.forEach(f => {
+                if (f.parent && !ids.has(f.parent)) f.parent = null;
+                let p = f.parent, steps = 0;
+                while (p && steps++ < 100) { if (p === f.id) { f.parent = null; break; } p = (out.find(x => x.id === p) || {}).parent; }
+            });
+            return out;
+        }
+
+        function loadFolders() {
+            noteFolders = [];
+            const foldersData = itemsCache.find(i => i.id === "SYSTEM_FOLDERS_CONFIG");
+            if (foldersData) {
+                try {
+                    const parsed = JSON.parse(foldersData.content);
+                    noteFolders = cleanFolders(Array.isArray(parsed) ? parsed : parsed.folders);
+                } catch (e) { noteFolders = []; }
+                return;
+            }
+            // First time with folders: every old section becomes a folder. Its id
+            // stays the old section name, so the notes in it don't have to change.
+            const sectionsData = itemsCache.find(i => i.id === "SYSTEM_SECTIONS_CONFIG");
+            if (!sectionsData) return;
+            try {
+                const names = JSON.parse(sectionsData.content).filter(n => typeof n === "string" && n.trim() && n.toUpperCase() !== "ALL");
+                noteFolders = cleanFolders(names.map((name, i) => ({ id: name, name, parent: null, color: FOLDER_COLORS[(i + 1) % FOLDER_COLORS.length] })));
+                if (noteFolders.length) saveFolders();
+            } catch (e) { noteFolders = []; }
+        }
+
+        function saveFolders() {
+            const person = activePerson, content = JSON.stringify({ v: 1, folders: noteFolders });
+            return saveNow(`sys:${person}:folders`, (opts) => apiPost("/items", {
+                id: "SYSTEM_FOLDERS_CONFIG",
                 type: "SYSTEM_INTERNAL",
-                title: "SYSTEM_SECTIONS",
+                title: "SYSTEM_FOLDERS",
                 content,
                 is_completed: 0
             }, opts, person));
         }
 
-        async function addSection() {
-            const raw = prompt("Enter new section/type name:");
-            if (!raw) return;
-            const name = raw.trim();
-            if (name && !sections.includes(name)) {
-                sections.push(name);
-                await saveSectionsToDatabase(sections);
-                selectSection(name);
-            }
-        }
-
-        async function deleteSection(name, event) {
-            event.stopPropagation();
-            if (name === "ALL") {
-                alert("Cannot delete the 'ALL' section.");
-                return;
-            }
-            if (confirm(`Delete section "${name}"? Notes in it will be moved to uncategorized.`)) {
-                sections = sections.filter(s => s !== name);
-                await saveSectionsToDatabase(sections);
-
-                // Notes in the deleted section become uncategorized.
-                // (Needs the updated worker, which now saves `type` changes.)
-                const orphaned = itemsCache.filter(i => i.type === name);
-                for (const item of orphaned) {
-                    item.type = null;
-                    await saveItem(item.id);
-                }
-
-                if (activeSection === name) {
-                    activeSection = "ALL";
-                    localStorage.setItem(sectionStorageKey(), "ALL");
-                }
-                fetchItems();
-            }
-        }
-
-        function selectSection(name) {
-            activeSection = name;
-            localStorage.setItem(sectionStorageKey(), name);
+        function openFolder(id) {
+            currentFolder = id && id !== "ALL" && folderById(id) ? id : "ALL";
+            localStorage.setItem(sectionStorageKey(), currentFolder);
+            if (searchQuery) { searchQuery = ""; document.getElementById("searchInput").value = ""; }
+            // opening a folder in the tree also shows the folders above it
+            folderPath(currentFolder).forEach(f => collapsedFolders.delete(f.id));
             renderUI();
         }
 
-        async function changeNoteSection(id, selectElement) {
+        // Drag-to-reorder among folders with the same parent (tree or tiles).
+        function reorderSiblings(parent, orderedIds) {
+            const siblings = orderedIds.map(id => folderById(id)).filter(f => f && (f.parent || null) === (parent || null));
+            if (!siblings.length) return;
+            const others = noteFolders.filter(f => !siblings.includes(f));
+            noteFolders = [...others, ...siblings];
+            saveFolders();
+            renderUI();
+        }
+
+        // Collapsed folders in the tree are remembered per device and person.
+        const collapsedKey = () => `notes_collapsed_${activePerson}`;
+        let collapsedFolders = new Set();
+        function loadCollapsed() {
+            try { collapsedFolders = new Set(JSON.parse(localStorage.getItem(collapsedKey()) || "[]")); } catch (e) { collapsedFolders = new Set(); }
+        }
+        function toggleCollapsed(id) {
+            if (collapsedFolders.has(id)) collapsedFolders.delete(id); else collapsedFolders.add(id);
+            localStorage.setItem(collapsedKey(), JSON.stringify([...collapsedFolders]));
+            renderFolderTree();
+        }
+        loadCollapsed();
+
+        // --- folder dialog (new / edit / move / delete) ---
+        let folderDialogState = null;
+
+        function openFolderDialog({ id = null, parent = null } = {}) {
+            if (!personConfirmed[activePerson]) { alert(notReadyMessage()); return; }
+            const f = id ? folderById(id) : null;
+            folderDialogState = {
+                id: f ? f.id : null,
+                color: f ? f.color : FOLDER_COLORS[(noteFolders.length + 1) % FOLDER_COLORS.length],
+            };
+            const parentId = f ? f.parent : (parent && folderById(parent) ? parent : null);
+            document.getElementById("folderDialogTitle").textContent =
+                f ? "Edit folder" : (parentId ? `New folder in ${folderById(parentId).name}` : "New folder");
+            const nameInput = document.getElementById("folderNameInput");
+            nameInput.value = f ? f.name : "";
+
+            // "Inside": top level or any folder that isn't this one (or inside it)
+            const blocked = f ? descendantIds(f.id) : new Set();
+            let opts = `<option value="">(top level)</option>`;
+            const walk = (p, depth) => childFolders(p).forEach(c => {
+                if (blocked.has(c.id)) return;
+                opts += `<option value="${escapeHtml(c.id)}" ${c.id === parentId ? "selected" : ""}>${"   ".repeat(depth)}${escapeHtml(c.name)}</option>`;
+                walk(c.id, depth + 1);
+            });
+            walk(null, 0);
+            document.getElementById("folderParentSelect").innerHTML = opts;
+
+            document.getElementById("folderDeleteBtn").classList.toggle("hidden", !f);
+            renderFolderSwatches();
+            document.getElementById("folderDialog").showModal();
+            nameInput.focus();
+            nameInput.select();
+        }
+
+        function renderFolderSwatches() {
+            const box = document.getElementById("folderColorSwatches");
+            box.innerHTML = FOLDER_COLORS.map(c => `
+                <button type="button" data-color="${c}" title="${c}" aria-pressed="${c === folderDialogState.color}"
+                    class="w-7 h-7 rounded-full transition ${c === folderDialogState.color ? 'ring-2 ring-offset-2 ring-slate-500 dark:ring-offset-slate-800' : 'hover:scale-110'}"
+                    style="background:${c}"></button>`).join("");
+            box.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+                folderDialogState.color = b.dataset.color;
+                renderFolderSwatches();
+            }));
+        }
+
+        document.getElementById("folderForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const name = document.getElementById("folderNameInput").value.trim();
+            if (!name || !folderDialogState) return;
+            const parent = document.getElementById("folderParentSelect").value || null;
+            const existing = folderDialogState.id ? folderById(folderDialogState.id) : null;
+            if (existing) {
+                existing.name = name;
+                existing.color = folderDialogState.color;
+                if (!parent || !descendantIds(existing.id).has(parent)) existing.parent = parent;
+                saveFolders();
+                document.getElementById("folderDialog").close();
+                renderUI();
+            } else {
+                const folder = { id: `f_${uid()}`, name, parent, color: folderDialogState.color };
+                noteFolders.push(folder);
+                saveFolders();
+                document.getElementById("folderDialog").close();
+                openFolder(folder.id);
+            }
+        });
+
+        document.getElementById("folderDeleteBtn").addEventListener("click", async () => {
+            const f = folderDialogState && folderById(folderDialogState.id);
+            if (!f) return;
+            const parent = f.parent ? folderById(f.parent) : null;
+            const where = parent ? `"${parent.name}"` : "no folder (they stay in All notes)";
+            const hasKids = childFolders(f.id).length > 0;
+            if (!confirm(`Delete the folder "${f.name}"?\n\nIts notes${hasKids ? " and subfolders" : ""} move to ${where}. No notes are deleted.`)) return;
+            document.getElementById("folderDialog").close();
+            childFolders(f.id).forEach(c => { c.parent = f.parent || null; });
+            noteFolders = noteFolders.filter(x => x.id !== f.id);
+            await saveFolders();
+            for (const item of itemsCache.filter(i => !isSystemItem(i) && i.type === f.id)) {
+                item.type = f.parent || null;
+                saveItem(item.id);
+            }
+            if (currentFolder === f.id) openFolder(f.parent || "ALL"); else renderUI();
+        });
+
+        async function moveNoteToFolder(id, selectElement) {
             const el = itemsCache.find(i => i.id === id);
             if (!el) return;
             el.type = selectElement.value || null;
             renderUI();
-            // The worker used to ignore `type` when updating an existing note,
-            // which is why category changes reverted after a reload. Fixed in
-            // the worker; the frontend just has to send it.
             await saveItem(id);
         }
+
+        function folderOptionsHtml(selectedId) {
+            let html = `<option value="" ${!selectedId ? 'selected' : ''}>no folder</option>`;
+            if (selectedId && !folderById(selectedId)) {
+                // The note points at a folder that no longer exists (e.g. an old deleted section).
+                html += `<option value="${escapeHtml(selectedId)}" selected>${escapeHtml(selectedId)} (deleted)</option>`;
+            }
+            const walk = (parent, depth) => childFolders(parent).forEach(f => {
+                html += `<option value="${escapeHtml(f.id)}" ${f.id === selectedId ? 'selected' : ''}>${"   ".repeat(depth)}${escapeHtml(f.name)}</option>`;
+                walk(f.id, depth + 1);
+            });
+            walk(null, 0);
+            return html;
+        }
+
+        // --- folder tree (sidebar) ---
+        function renderFolderTree() {
+            const tree = document.getElementById("folderTree");
+            if (!tree) return;
+            tree.innerHTML = "";
+            const total = itemsCache.filter(i => !isSystemItem(i)).length;
+
+            const row = (f, depth, count, hasKids) => {
+                const isAll = f.id === "ALL";
+                const active = currentFolder === f.id;
+                const el = document.createElement("div");
+                el.className = `tree-row group flex items-center gap-1 rounded-md pr-1 ${active
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800/50'}`;
+                el.style.paddingLeft = `${4 + depth * 14}px`;
+                const toggle = hasKids
+                    ? `<button type="button" data-act="toggle" class="w-4 h-6 text-[9px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" title="Show / hide subfolders">${collapsedFolders.has(f.id) ? '▶' : '▼'}</button>`
+                    : `<span class="w-4"></span>`;
+                const icon = isAll
+                    ? `<svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>`
+                    : folderIcon(f.color);
+                el.innerHTML = `
+                    ${toggle}
+                    <button type="button" data-act="open" class="flex-1 min-w-0 flex items-center gap-2 py-1.5 text-left">
+                        ${icon}
+                        <span class="truncate ${active ? 'font-medium' : ''}">${escapeHtml(f.name)}</span>
+                    </button>
+                    <span class="text-[11px] tabular-nums text-slate-400 dark:text-slate-500 group-hover:hidden">${count || ''}</span>
+                    ${isAll ? '' : `<button type="button" data-act="edit" class="hidden group-hover:block text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-1" title="Rename, colour, move or delete">edit</button>`}`;
+                el.querySelector('[data-act="open"]').addEventListener("click", () => openFolder(f.id));
+                const t = el.querySelector('[data-act="toggle"]');
+                if (t) t.addEventListener("click", (e) => { e.stopPropagation(); toggleCollapsed(f.id); });
+                const ed = el.querySelector('[data-act="edit"]');
+                if (ed) ed.addEventListener("click", (e) => { e.stopPropagation(); openFolderDialog({ id: f.id }); });
+                return el;
+            };
+
+            tree.appendChild(row({ id: "ALL", name: "All notes" }, 0, total, false));
+
+            const buildList = (parent, depth) => {
+                const kids = childFolders(parent);
+                if (!kids.length) return null;
+                const list = document.createElement("div");
+                kids.forEach(f => {
+                    const wrap = document.createElement("div");
+                    wrap.dataset.id = f.id;
+                    const hasKids = childFolders(f.id).length > 0;
+                    wrap.appendChild(row(f, depth, noteCount(f.id), hasKids));
+                    if (hasKids && !collapsedFolders.has(f.id)) {
+                        const sub = buildList(f.id, depth + 1);
+                        if (sub) wrap.appendChild(sub);
+                    }
+                    list.appendChild(wrap);
+                });
+                makeSortable(`tree:${parent || ""}`, list, {
+                    group: `tree-${parent || "root"}`, // reorder among siblings only
+                    animation: 150, delay: 150, delayOnTouchOnly: true,
+                    onEnd: () => reorderSiblings(parent, Array.from(list.children).map(c => c.dataset.id)),
+                });
+                return list;
+            };
+            const rootList = buildList(null, 0);
+            if (rootList) tree.appendChild(rootList);
+            else {
+                const hint = document.createElement("p");
+                hint.className = "text-xs text-slate-400 dark:text-slate-500 px-2 py-2";
+                hint.textContent = "No folders yet — press + to make one.";
+                tree.appendChild(hint);
+            }
+        }
+
+        // --- breadcrumb + folder actions ---
+        function renderBreadcrumb() {
+            const bc = document.getElementById("breadcrumb");
+            const actions = document.getElementById("folderActions");
+            if (!bc || !actions) return;
+            const path = currentFolder === "ALL" ? [] : folderPath(currentFolder);
+            const crumb = (label, id, isLast, color) => isLast
+                ? `<span class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100 min-w-0">${color ? folderIcon(color) : ''}<span class="truncate">${escapeHtml(label)}</span></span>`
+                : `<button type="button" data-open="${escapeHtml(id)}" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:underline">${escapeHtml(label)}</button>`;
+            const sep = `<span class="text-slate-300 dark:text-slate-600">/</span>`;
+            let html = crumb("All notes", "ALL", path.length === 0, null);
+            path.forEach((f, i) => { html += sep + crumb(f.name, f.id, i === path.length - 1, f.color); });
+            bc.innerHTML = html;
+            bc.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => openFolder(b.dataset.open)));
+
+            const link = "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline decoration-dotted";
+            if (currentFolder === "ALL") {
+                actions.innerHTML = `<button type="button" data-act="new" class="${link}">+ folder</button>`;
+            } else {
+                actions.innerHTML = `<button type="button" data-act="new" class="${link}">+ subfolder</button>
+                    <button type="button" data-act="edit" class="${link}">edit folder</button>`;
+            }
+            actions.querySelector('[data-act="new"]').addEventListener("click", () =>
+                openFolderDialog({ parent: currentFolder === "ALL" ? null : currentFolder }));
+            const ed = actions.querySelector('[data-act="edit"]');
+            if (ed) ed.addEventListener("click", () => openFolderDialog({ id: currentFolder }));
+        }
+
+        // --- subfolder tiles ---
+        function renderFolderTiles() {
+            const box = document.getElementById("folderTiles");
+            if (!box) return;
+            const parent = currentFolder === "ALL" ? null : currentFolder;
+            const kids = childFolders(parent);
+            box.innerHTML = "";
+            if (searchQuery.trim() || !kids.length) { box.classList.add("hidden"); return; }
+            box.classList.remove("hidden");
+            kids.forEach(f => {
+                const n = noteCount(f.id), subs = childFolders(f.id).length;
+                const tile = document.createElement("button");
+                tile.type = "button";
+                tile.dataset.id = f.id;
+                tile.className = "folder-tile flex items-center gap-2.5 text-left px-3 py-2.5 rounded-lg border transition hover:-translate-y-px hover:shadow-sm min-w-0";
+                tile.style.background = hexToRgba(f.color, 0.1);
+                tile.style.borderColor = hexToRgba(f.color, 0.35);
+                tile.innerHTML = `
+                    ${folderIcon(f.color, "w-7 h-7")}
+                    <span class="min-w-0">
+                        <span class="block text-sm font-medium truncate text-slate-800 dark:text-slate-100">${escapeHtml(f.name)}</span>
+                        <span class="block text-[11px] text-slate-500 dark:text-slate-400">${n} note${n === 1 ? '' : 's'}${subs ? ` · ${subs} folder${subs === 1 ? '' : 's'}` : ''}</span>
+                    </span>`;
+                tile.addEventListener("click", () => openFolder(f.id));
+                box.appendChild(tile);
+            });
+            makeSortable("tiles", box, {
+                animation: 150, delay: 150, delayOnTouchOnly: true,
+                onEnd: () => reorderSiblings(parent, Array.from(box.children).map(c => c.dataset.id)),
+            });
+        }
+
+        // --- one or two notes per row ---
+        function setViewCols(n) {
+            viewCols = n === 1 ? 1 : 2;
+            localStorage.setItem("notes_view_cols", String(viewCols));
+            applyViewCols();
+            renderDrawingPreviews();
+        }
+        function applyViewCols() {
+            const grid = document.getElementById("notesGrid");
+            grid.className = viewCols === 1 ? "notes-big grid grid-cols-1 gap-4" : "grid grid-cols-1 sm:grid-cols-2 gap-4";
+            document.querySelectorAll("#viewToggle [data-cols]").forEach(b => {
+                const on = Number(b.dataset.cols) === viewCols;
+                b.setAttribute("aria-pressed", on ? "true" : "false");
+                b.classList.toggle("bg-slate-700", on); b.classList.toggle("text-white", on);
+                b.classList.toggle("dark:bg-slate-200", on); b.classList.toggle("dark:text-slate-900", on);
+                b.classList.toggle("text-slate-500", !on);
+            });
+            grid.querySelectorAll(".line-input").forEach(autoGrow);
+        }
+
 
         function noteMatches(item, q) {
             if ((item.title || "").toLowerCase().includes(q)) return true;
@@ -1455,6 +1883,17 @@
             const card = document.createElement("div");
             card.dataset.id = item.id;
             card.className = isExpanded ? EXPANDED_CARD_CLASSES : CARD_CLASSES;
+            const folder = item.type ? folderById(item.type) : null;
+            if (folder) {
+                // the note wears its folder's colour on its left edge
+                card.classList.add("border-l-4");
+                card.style.borderLeftColor = folder.color;
+            }
+            // When notes from different folders are mixed (All notes, search), show which folder each is in.
+            const showFolderChip = folder && (currentFolder === "ALL" || searchQuery.trim()) && folder.id !== currentFolder;
+            const chipHtml = showFolderChip
+                ? `<button type="button" data-action="open-folder" title="Open folder" class="shrink-0 max-w-[40%] truncate text-[10px] font-medium px-1.5 py-0.5 rounded" style="color:${escapeHtml(folder.color)};background:${hexToRgba(folder.color, 0.14)}">${escapeHtml(folder.name)}</button>`
+                : '';
 
             const handleHtml = isExpanded
                 ? ''
@@ -1471,6 +1910,7 @@
                     <div class="flex items-center gap-2 mb-2">
                         ${handleHtml}
                         ${titleHtml}
+                        ${chipHtml}
                         ${doneHtml}
                     </div>
                     <div class="lines-list space-y-1">`;
@@ -1513,26 +1953,19 @@
             inner += `
                 </div>`;
 
-            const customSections = sections.filter(s => s !== 'ALL');
-            let options = `<option value="" ${!item.type ? 'selected' : ''}>uncategorized</option>`;
-            if (item.type && !customSections.includes(item.type)) {
-                // The note's stored type doesn't match any current section
-                // (e.g. that section was deleted). Show it explicitly rather
-                // than letting the dropdown silently show "uncategorized".
-                options += `<option value="${escapeHtml(item.type)}" selected>${escapeHtml(item.type)} (deleted)</option>`;
-            }
-            options += customSections.map(s => `<option value="${escapeHtml(s)}" ${item.type === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('');
+            const options = folderOptionsHtml(item.type);
 
             const drawLabel = isExpanded ? 'done' : (hasDrawing ? 'edit drawing' : 'draw');
             const footerArea = `
                 <div class="flex justify-end items-center border-t border-slate-200 dark:border-slate-800/50 pt-2 text-xs text-slate-400 dark:text-slate-500">
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
                         <button data-action="toggle-draw" class="flex items-center gap-1 text-slate-500 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 transition" title="Draw or write with a pen, finger or mouse">
                             <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/></svg>
                             <span>${drawLabel}</span>
                         </button>
                         <button onclick="copyNote('${item.id}', this)" class="text-slate-500 dark:text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition">copy</button>
-                        <select onchange="changeNoteSection('${item.id}', this)" class="bg-transparent text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-400 border-none focus:ring-0 cursor-pointer text-xs p-0 w-24">
+                        <button data-action="note-pdf" class="text-slate-500 dark:text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition" title="Download this note as a PDF">pdf</button>
+                        <select onchange="moveNoteToFolder('${item.id}', this)" title="Move to folder" class="bg-transparent text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-400 border-none focus:ring-0 cursor-pointer text-xs p-0 max-w-[7.5rem]">
                             ${options}
                         </select>
                         <button onclick="deleteItem('${item.id}')" class="text-slate-500 dark:text-slate-600 hover:text-red-500 transition">delete</button>
@@ -1548,6 +1981,8 @@
 
             card.querySelectorAll('[data-action="toggle-draw"]').forEach(b => b.addEventListener('click', () => toggleDraw(item.id)));
             card.querySelectorAll('[data-action="close-draw"]').forEach(b => b.addEventListener('click', () => closeDraw()));
+            card.querySelectorAll('[data-action="note-pdf"]').forEach(b => b.addEventListener('click', () => exportNotePDF(item.id)));
+            card.querySelectorAll('[data-action="open-folder"]').forEach(b => b.addEventListener('click', () => openFolder(folder.id)));
             const preview = card.querySelector('.drawing-preview');
             if (preview) preview.addEventListener('click', () => openDraw(item.id));
             if (isExpanded && drawEditor) card.querySelector('.draw-slot').appendChild(drawEditor.el);
@@ -1583,48 +2018,24 @@
             return card;
         }
 
+        function notesInView(q) {
+            let pool = itemsCache.filter(i => !isSystemItem(i));
+            if (q) {
+                // search looks in the open folder and everything inside it
+                if (currentFolder !== "ALL") { const ids = descendantIds(currentFolder); pool = pool.filter(i => ids.has(i.type)); }
+                return pool.filter(i => noteMatches(i, q));
+            }
+            if (currentFolder === "ALL") return pool;          // every note, like the old ALL tab
+            return pool.filter(i => i.type === currentFolder);   // just this folder; subfolders show as tiles
+        }
+
         function renderUI() {
             renderBookmarks();
             applyBookmarksVisibility();
-
-            // --- Render Section Tabs ---
-            const sectContainer = document.getElementById("sectionsContainer");
-            sectContainer.innerHTML = "";
-
-            sections.forEach(s => {
-                const tab = document.createElement("div");
-                tab.dataset.section = s;
-                tab.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
-                    activeSection === s
-                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                }`;
-                tab.onclick = () => selectSection(s);
-
-                const textSpan = document.createElement("span");
-                textSpan.textContent = s;
-                tab.appendChild(textSpan);
-
-                if (s !== "ALL") {
-                    const deleteBtn = document.createElement("button");
-                    deleteBtn.className = "text-[10px] text-slate-400 dark:text-slate-500 hover:text-red-500 font-bold px-1 rounded";
-                    deleteBtn.textContent = "×";
-                    deleteBtn.onclick = (e) => deleteSection(s, e);
-                    tab.appendChild(deleteBtn);
-                }
-                sectContainer.appendChild(tab);
-            });
-
-            makeSortable("sections", sectContainer, {
-                animation: 150,
-                delay: 150,
-                delayOnTouchOnly: true,
-                onEnd: function () {
-                    const newOrder = Array.from(sectContainer.children).map(child => child.dataset.section);
-                    sections = newOrder;
-                    saveSectionsToDatabase(sections);
-                }
-            });
+            renderFolderTree();
+            renderBreadcrumb();
+            renderFolderTiles();
+            applyViewCols();
 
             // --- Render Notes Grid ---
             const grid = document.getElementById("notesGrid");
@@ -1633,11 +2044,7 @@
             grid.innerHTML = "";
 
             const q = searchQuery.trim().toLowerCase();
-            const filtered = itemsCache.filter(item =>
-                !isSystemItem(item) &&
-                (activeSection === 'ALL' || item.type === activeSection) &&
-                (!q || noteMatches(item, q))
-            );
+            const filtered = notesInView(q);
             // Never lose the note that is open in drawing mode.
             if (expandedNoteId && !filtered.some(i => i.id === expandedNoteId)) {
                 const ex = itemsCache.find(i => i.id === expandedNoteId);
@@ -1647,9 +2054,11 @@
             if (filtered.length === 0) {
                 const empty = document.createElement("div");
                 empty.className = "col-span-full text-center text-sm text-slate-400 dark:text-slate-600 py-16";
+                const hasSubfolders = childFolders(currentFolder === "ALL" ? null : currentFolder).length > 0;
                 empty.textContent = !personConfirmed[activePerson] ? notReadyMessage()
                     : personLoading ? "Loading…"
                     : q ? `No notes match “${searchQuery.trim()}”.`
+                    : currentFolder !== "ALL" && hasSubfolders ? "No notes directly in this folder — open a subfolder above, or press + to add one here."
                     : "No notes here yet — press + to make one.";
                 grid.appendChild(empty);
             }
@@ -1669,7 +2078,7 @@
                 disabled: !!expandedNoteId,
                 onEnd: function () {
                     // Put the dragged cards in their new order, keeping notes that
-                    // aren't visible (other sections / search) where they were.
+                    // aren't visible (other folders / search) where they were.
                     const byId = new Map(itemsCache.map(i => [i.id, i]));
                     const visibleIds = Array.from(grid.children).map(c => c.dataset.id).filter(id => byId.has(id));
                     const visible = new Set(visibleIds);
@@ -1710,8 +2119,9 @@
             flushPendingSaves(); // the current person's edits go out now (each save knows whose it is)
             activePerson = person;
             localStorage.setItem("notes_active_person", person);
-            activeSection = localStorage.getItem(sectionStorageKey()) || "ALL";
-            itemsCache = []; sections = ["ALL"]; bookmarks = []; noteOrder = null; drawings = new Map();
+            currentFolder = localStorage.getItem(sectionStorageKey()) || "ALL";
+            itemsCache = []; noteFolders = []; bookmarks = []; noteOrder = null; drawings = new Map();
+            loadCollapsed();
             activeOpenFolderId = null;
             searchQuery = "";
             document.getElementById("searchInput").value = "";
