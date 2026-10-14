@@ -24,7 +24,7 @@
         /* Let the drawing toolbar stick flush to the top edge of the open note
            (minus the note's padding), so nothing peeks out above it. */
         /* One-note-per-row view: a little larger text */
-        #notesGrid.notes-big .line-input { font-size: 0.95rem; }
+        #notesGrid.notes-big .note-body { font-size: 0.95rem; }
         #notesGrid.notes-big input[id^="title-"] { font-size: 1.125rem; }
         dialog::backdrop { background: rgba(15, 23, 42, .6); }
     </style>
@@ -392,8 +392,84 @@
         }
 
         function autoGrow(el) {
+            if (!el.isConnected || !el.offsetParent) return;   // not visible: measuring now gives wrong heights
             el.style.height = "auto";
             el.style.height = el.scrollHeight + "px";
+        }
+        // Heights measured before the page's styles/fonts were ready left gaps;
+        // measure again once they are, and whenever the cards change width.
+        function regrowAll() { document.querySelectorAll("#notesGrid .note-body").forEach(autoGrow); }
+
+        // A text note is one text box. Checklist lines start with ☐ / ☑
+        // (type *() at the start of a line); stored as the same list of lines as before.
+        const BOX_OPEN = "☐", BOX_DONE = "☑";
+        function linesToText(lines) {
+            return (lines || []).map(l => l.checked === null || l.checked === undefined ? (l.text || "") : `${l.checked ? BOX_DONE : BOX_OPEN} ${l.text || ""}`).join("\n");
+        }
+        function textToLines(text) {
+            return String(text).split("\n").map(t => {
+                const m = /^([☐☑])\s?(.*)$/.exec(t);
+                return m ? { id: uid(), text: m[2], checked: m[1] === BOX_DONE } : { id: uid(), text: t, checked: null };
+            });
+        }
+        function allURLs(text) {
+            const out = [];
+            const re = /\[[^\]]*\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s"'<>]+)/g;
+            let m;
+            while ((m = re.exec(text || "")) && out.length < 8) { const u = m[1] || m[2]; if (!out.includes(u)) out.push(u); }
+            return out;
+        }
+        function linksHtml(text) {
+            return allURLs(text).map(u => {
+                let label = u; try { label = new URL(u).hostname.replace(/^www\./, ""); } catch (e) { /* keep */ }
+                return `<a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer" class="text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">↗ ${escapeHtml(label)}</a>`;
+            }).join("");
+        }
+
+        function onBodyInput(item, ta) {
+            // "*()" at the start of a line becomes a checkbox
+            if (/(^|\n)\*\(\)\s?/.test(ta.value)) {
+                const before = ta.value.slice(0, ta.selectionStart);
+                const fix = v => v.replace(/(^|\n)\*\(\)( ?)/g, `$1${BOX_OPEN}$2`);
+                const caret = fix(before).length;
+                ta.value = fix(ta.value);
+                ta.setSelectionRange(caret, caret);
+            }
+            autoGrow(ta);
+            item.lines = textToLines(ta.value);
+            scheduleItemSave(item.id);
+            const links = ta.parentElement.querySelector(".note-links");
+            if (links) links.innerHTML = linksHtml(ta.value);
+        }
+
+        function onBodyKeydown(item, ta, e) {
+            if (e.key !== "Enter" || e.shiftKey || e.isComposing) return;
+            const v = ta.value, pos = ta.selectionStart;
+            const lineStart = v.lastIndexOf("\n", pos - 1) + 1;
+            const line = v.slice(lineStart, pos);
+            const m = /^([☐☑]) ?/.exec(line);
+            if (!m) return;
+            e.preventDefault();
+            if (line.trim() === m[1]) {
+                // Enter on an empty checklist line ends the list
+                ta.setRangeText("", lineStart, pos, "end");
+            } else {
+                ta.setRangeText(`\n${BOX_OPEN} `, pos, ta.selectionEnd, "end");
+            }
+            onBodyInput(item, ta);
+        }
+
+        // Tapping a ☐ / ☑ ticks it on or off.
+        function onBodyClick(item, ta) {
+            if (ta.selectionStart !== ta.selectionEnd) return;
+            const v = ta.value, pos = ta.selectionStart;
+            const lineStart = v.lastIndexOf("\n", pos - 1) + 1;
+            const ch = v[lineStart];
+            if ((ch !== BOX_OPEN && ch !== BOX_DONE) || pos - lineStart > 1) return;
+            ta.setRangeText(ch === BOX_OPEN ? BOX_DONE : BOX_OPEN, lineStart, lineStart + 1, "preserve");
+            ta.setSelectionRange(lineStart + 2, lineStart + 2);
+            item.lines = textToLines(ta.value);
+            saveItem(item.id);
         }
 
         function extractFirstURL(text) {
@@ -483,7 +559,12 @@
             if (!j) return Promise.resolve();
             if (j.running) return j.running; // the running loop picks up the newest state
             clearTimeout(j.retryTimer);
-            j.running = (async () => {
+            // Nothing new to send (the loop already sent it): don't start a "save".
+            // Before, this case left a finished save marked as running forever,
+            // which blocked every later save of that note ("saving…" stuck).
+            if (!j.dirty) { updateSyncStatus(); return Promise.resolve(); }
+            const run = (async () => {
+                await null; // let j.running be set before anything below can finish
                 try {
                     while (j.dirty) {
                         j.dirty = false;
@@ -504,12 +585,13 @@
                         opts = undefined;
                     }
                 } finally {
-                    j.running = null;
+                    if (j.running === run) j.running = null;
                     updateSyncStatus();
                 }
             })();
+            j.running = run;
             updateSyncStatus();
-            return j.running;
+            return run;
         }
 
         function cancelJob(key) {
@@ -809,20 +891,8 @@
             if (Array.isArray(noteOrder)) saveNoteOrder();
             if (kind === 'draw') { openDraw(newItem.id); return; }
             renderUI();
-            focusLine(newItem.id, firstLineId, 0);
-        }
-
-        // Focus right away (not on a timer): keys typed quickly after Enter
-        // would otherwise arrive before the cursor moved and be lost.
-        function focusLine(itemId, lineId, caretPos) {
-            const go = () => {
-                const node = document.getElementById(`line-${itemId}-${lineId}`);
-                if (!node) return false;
-                node.focus();
-                if (typeof caretPos === 'number') node.setSelectionRange(caretPos, caretPos);
-                return true;
-            };
-            if (!go()) setTimeout(go, 0);
+            const body = document.getElementById(`body-${newItem.id}`);
+            if (body) body.focus();
         }
 
         function updateTitle(id, value) {
@@ -830,120 +900,6 @@
             if (!el) return;
             el.title = value;
             scheduleItemSave(id);
-        }
-
-        function handleLineInput(id, lineId, inputEl) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const line = el.lines.find(l => l.id === lineId);
-            if (!line) return;
-
-            let value = inputEl.value;
-
-            if (line.checked === null) {
-                const match = value.match(/^\*\(\)\s?(.*)$/);
-                if (match) {
-                    line.checked = false;
-                    line.text = match[1];
-                    saveItem(id);
-                    renderUI();
-                    focusLine(id, lineId, line.text.length);
-                    return;
-                }
-            }
-
-            line.text = value;
-            scheduleItemSave(id);
-
-            const url = extractFirstURL(value);
-            const linkBtnNode = document.getElementById(`url-btn-${id}-${lineId}`);
-            if (linkBtnNode) {
-                if (url) {
-                    linkBtnNode.href = url;
-                    linkBtnNode.classList.remove('hidden');
-                } else {
-                    linkBtnNode.classList.add('hidden');
-                }
-            }
-        }
-
-        function toggleCheck(id, lineId, checkbox) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const line = el.lines.find(l => l.id === lineId);
-            if (!line) return;
-            line.checked = checkbox.checked;
-            saveItem(id);
-            renderUI();
-        }
-
-        function performEnterSplit(id, lineId, textareaEl) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const idx = el.lines.findIndex(l => l.id === lineId);
-            if (idx === -1) return;
-            const line = el.lines[idx];
-
-            const caret = textareaEl.selectionStart;
-            const before = line.text.slice(0, caret);
-            const after = line.text.slice(caret);
-            line.text = before;
-
-            const newLine = { id: uid(), text: after, checked: line.checked !== null ? false : null };
-            el.lines.splice(idx + 1, 0, newLine);
-            saveItem(id);
-            renderUI();
-            focusLine(id, newLine.id, 0);
-        }
-
-        function handleLineKeydown(e, id, lineId) {
-            const el = itemsCache.find(i => i.id === id);
-            if (!el) return;
-            const idx = el.lines.findIndex(l => l.id === lineId);
-            if (idx === -1) return;
-            const line = el.lines[idx];
-            const inputEl = e.target;
-
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                performEnterSplit(id, lineId, inputEl);
-                return;
-            }
-
-            if (e.key === 'Backspace') {
-                const atStart = inputEl.selectionStart === 0 && inputEl.selectionEnd === 0;
-                if (!atStart) return;
-
-                if (line.checked !== null) {
-                    e.preventDefault();
-                    line.checked = null;
-                    saveItem(id);
-                    renderUI();
-                    focusLine(id, lineId, 0);
-                    return;
-                }
-
-                if (idx > 0) {
-                    e.preventDefault();
-                    const prev = el.lines[idx - 1];
-                    const mergeCaret = prev.text.length;
-                    prev.text = prev.text + line.text;
-                    el.lines.splice(idx, 1);
-                    saveItem(id);
-                    renderUI();
-                    focusLine(id, prev.id, mergeCaret);
-                }
-                return;
-            }
-
-            if (e.key === 'ArrowUp' && idx > 0 && inputEl.selectionStart === 0) {
-                e.preventDefault();
-                focusLine(id, el.lines[idx - 1].id, el.lines[idx - 1].text.length);
-            }
-            if (e.key === 'ArrowDown' && idx < el.lines.length - 1 && inputEl.selectionStart === line.text.length) {
-                e.preventDefault();
-                focusLine(id, el.lines[idx + 1].id, 0);
-            }
         }
 
         async function copyNote(id, btn) {
@@ -1933,8 +1889,11 @@
                 b.classList.toggle("dark:bg-slate-200", on); b.classList.toggle("dark:text-slate-900", on);
                 b.classList.toggle("text-slate-500", !on);
             });
-            grid.querySelectorAll(".line-input").forEach(autoGrow);
+            grid.querySelectorAll(".note-body").forEach(autoGrow);
         }
+        window.addEventListener("load", regrowAll);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(regrowAll);
+        new ResizeObserver(() => requestAnimationFrame(regrowAll)).observe(document.getElementById("notesGrid"));
 
 
         function noteMatches(item, q) {
@@ -1987,34 +1946,8 @@
                         ${chipHtml}
                         ${doneHtml}
                     </div>
-                    <div class="lines-list space-y-1 ${isDrawNote ? 'hidden' : ''} ${isExpanded ? 'shrink-0 max-h-[18vh] overflow-y-auto overscroll-contain pr-1' : ''}">`;
-
-            (item.lines || []).forEach(line => {
-                const foundUrl = extractFirstURL(line.text);
-                const linkBtnClass = foundUrl ? "" : "hidden";
-
-                if (line.checked === null) {
-                    inner += `
-                        <div data-line-id="${line.id}" class="line-item flex items-start gap-1 group">
-                            <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-50 sm:opacity-0 group-hover:opacity-100 transition p-0.5">⋮⋮</span>
-                            <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="write..." class="line-input w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 py-0.5 resize-none overflow-hidden leading-snug break-words">${escapeHtml(line.text)}</textarea>
-                            <a id="url-btn-${item.id}-${line.id}" href="${escapeHtml(foundUrl || '#')}" target="_blank" rel="noopener noreferrer" class="${linkBtnClass} shrink-0 text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded mt-0.5 transition">↗ open</a>
-                        </div>`;
-                } else {
-                    inner += `
-                        <div data-line-id="${line.id}" class="line-item flex items-start gap-1 group">
-                            <span class="line-handle cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-400 text-xs mt-1 select-none opacity-50 sm:opacity-0 group-hover:opacity-100 transition p-0.5">⋮⋮</span>
-                            <div class="flex items-start gap-2 w-full">
-                                <input type="checkbox" ${line.checked ? 'checked' : ''} onchange="toggleCheck('${item.id}','${line.id}', this)" class="h-3.5 w-3.5 mt-1.5 rounded border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 checked:bg-slate-500 focus:ring-0 shrink-0">
-                                <textarea id="line-${item.id}-${line.id}" data-id="${item.id}" data-line="${line.id}" rows="1" placeholder="task..." class="line-input w-full bg-transparent text-sm focus:outline-none py-0.5 resize-none overflow-hidden leading-snug break-words ${line.checked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}">${escapeHtml(line.text)}</textarea>
-                                <a id="url-btn-${item.id}-${line.id}" href="${escapeHtml(foundUrl || '#')}" target="_blank" rel="noopener noreferrer" class="${linkBtnClass} shrink-0 text-[10px] font-semibold text-blue-500 hover:underline bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded mt-0.5 transition">↗ open</a>
-                            </div>
-                        </div>`;
-                }
-            });
-
-            inner += `
-                    </div>`;
+                    ${isDrawNote ? '' : `<textarea id="body-${item.id}" rows="1" placeholder="write... (*() at the start of a line makes a checkbox)" class="note-body block w-full bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 dark:placeholder-slate-600 resize-none overflow-hidden leading-relaxed break-words ${isExpanded ? 'max-h-[18vh] !overflow-y-auto' : ''}">${escapeHtml(linesToText(item.lines))}</textarea>
+                    <div class="note-links flex flex-wrap gap-1.5 mt-1 empty:hidden">${linksHtml(linesToText(item.lines))}</div>`}`;
 
             if (isExpanded) {
                 inner += `<div class="draw-slot flex-1 min-h-0 flex flex-col ${isDrawNote ? '' : 'mt-2'}"></div>`;
@@ -2067,33 +2000,12 @@
             if (preview) preview.addEventListener('click', () => openDraw(item.id));
             if (isExpanded && drawEditor) card.querySelector('.draw-slot').appendChild(drawEditor.el);
 
-            card.querySelectorAll('.line-input').forEach(inputEl => {
-                const lineId = inputEl.dataset.line;
-                inputEl.addEventListener('input', () => { autoGrow(inputEl); handleLineInput(item.id, lineId, inputEl); });
-                inputEl.addEventListener('keydown', (e) => handleLineKeydown(e, item.id, lineId));
-                inputEl.addEventListener('beforeinput', (e) => {
-                    if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') {
-                        e.preventDefault();
-                        performEnterSplit(item.id, lineId, inputEl);
-                    }
-                });
-            });
-
-            const linesContainer = card.querySelector('.lines-list');
-            if (linesContainer && !isDrawNote) new Sortable(linesContainer, {
-                handle: '.line-handle',
-                animation: 150,
-                onEnd: function () {
-                    const lineElements = Array.from(linesContainer.querySelectorAll('.line-item'));
-                    const newLinesOrder = lineElements.map(el => {
-                        const lId = el.dataset.lineId;
-                        return item.lines.find(l => l.id === lId);
-                    }).filter(Boolean);
-
-                    item.lines = newLinesOrder;
-                    saveItem(item.id);
-                }
-            });
+            const body = card.querySelector('.note-body');
+            if (body) {
+                body.addEventListener('input', () => onBodyInput(item, body));
+                body.addEventListener('keydown', (e) => onBodyKeydown(item, body, e));
+                body.addEventListener('click', () => onBodyClick(item, body));
+            }
 
             return card;
         }
@@ -2121,6 +2033,9 @@
             const grid = document.getElementById("notesGrid");
             const openCard = expandedNoteId && grid.querySelector(`[data-id="${CSS.escape(expandedNoteId)}"]`);
             const openScroll = openCard ? openCard.scrollTop : 0;
+            // keep typing where you were if the list is redrawn while you write
+            const ae = document.activeElement;
+            const focusState = ae && ae.id && grid.contains(ae) && typeof ae.selectionStart === "number" ? { id: ae.id, a: ae.selectionStart, b: ae.selectionEnd } : null;
             grid.innerHTML = "";
 
             const q = searchQuery.trim().toLowerCase();
@@ -2145,7 +2060,11 @@
 
             filtered.forEach(item => grid.appendChild(buildNoteCard(item)));
             // auto-size textareas once they are in the page
-            grid.querySelectorAll('.line-input').forEach(autoGrow);
+            grid.querySelectorAll('.note-body').forEach(autoGrow);
+            if (focusState) {
+                const again = document.getElementById(focusState.id);
+                if (again) { again.focus({ preventScroll: true }); try { again.setSelectionRange(focusState.a, focusState.b); } catch (e) { /* not a text field */ } }
+            }
             renderDrawingPreviews();
             if (openScroll) {
                 const again = grid.querySelector(`[data-id="${CSS.escape(expandedNoteId)}"]`);
