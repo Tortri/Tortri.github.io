@@ -571,12 +571,26 @@
                 throw e;
             }
             const payload = JSON.stringify(body);
-            const res = await fetch(apiUrl(path, person), {
-                method: "POST",
-                headers: getAuthHeader(),
-                body: payload,
-                keepalive: !!opts.keepalive && payload.length < 60000,
-            });
+            // Never wait forever: a request that gets no answer (tab put in the
+            // background, flaky mobile connection) is cancelled and retried.
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 15000);
+            let res;
+            try {
+                res = await fetch(apiUrl(path, person), {
+                    method: "POST",
+                    headers: getAuthHeader(),
+                    body: payload,
+                    keepalive: !!opts.keepalive && payload.length < 60000,
+                    signal: ctrl.signal,
+                });
+            } catch (err) {
+                const e = new Error(ctrl.signal.aborted ? "no answer from the server" : (err.message || "network error"));
+                e.retry = true;
+                throw e;
+            } finally {
+                clearTimeout(timer);
+            }
             if (res.status === 401) {
                 logout();
                 const e = new Error("unauthorized"); e.retry = false; throw e;
@@ -596,7 +610,11 @@
             if (document.visibilityState === "hidden") {
                 lastHiddenAt = Date.now();
                 flushPendingSaves();
-            } else if (lastHiddenAt && Date.now() - lastHiddenAt > 30000) {
+            } else {
+                // back on the tab: send anything that is still waiting
+                for (const [key, j] of saveJobs) if (j.dirty && !j.running) { clearTimeout(j.retryTimer); runJob(key); }
+            }
+            if (document.visibilityState === "visible" && lastHiddenAt && Date.now() - lastHiddenAt > 30000) {
                 refreshIfIdle(); // pick up changes made on another device in the meantime
             }
         });
@@ -644,7 +662,8 @@
         // Send anything waiting and wait for it, so a reload shows the latest text.
         async function settleSaves() {
             flushPendingSaves();
-            await Promise.all([...saveJobs.values()].map(j => j.running).filter(Boolean));
+            const running = Promise.all([...saveJobs.values()].map(j => j.running).filter(Boolean));
+            await Promise.race([running, new Promise(r => setTimeout(r, 20000))]);
         }
 
         function applyNoteOrder() {
@@ -691,7 +710,18 @@
                 personConfirmed[person] = true;
                 const rows = await res.json();
                 if (token !== fetchToken) return;
-                itemsCache = rows.map(normalizeItem);
+                // Notes with edits that haven't reached the server yet keep the
+                // local version, so a reload of the list never throws them away.
+                const unsaved = new Map();
+                for (const [key, j] of saveJobs) {
+                    const m = /^item:([^:]+):(.+)$/.exec(key);
+                    if (m && m[1] === person && (j.dirty || j.timer || j.running)) {
+                        const local = itemsCache.find(i => i.id === m[2]);
+                        if (local) unsaved.set(local.id, local);
+                    }
+                }
+                itemsCache = rows.map(r => unsaved.get(r.id) || normalizeItem(r));
+                unsaved.forEach((local, id) => { if (!itemsCache.some(i => i.id === id)) itemsCache.unshift(local); });
                 personLoading = false;
 
                 loadFolders();
@@ -742,6 +772,7 @@
             const person = activePerson;
             // Make sure a save that is still on its way can't bring the note back.
             await Promise.all([cancelJob(`item:${person}:${id}`), cancelJob(`draw:${person}:${id}`)]);
+            saveJobs.delete(`item:${person}:${id}`); saveJobs.delete(`draw:${person}:${id}`);
             const res = await fetch(apiUrl(`/items/${encodeURIComponent(id)}`, person), { method: "DELETE", headers: getAuthHeader() });
             if (res.status === 401) { logout(); return; }
             drawings.delete(id);
