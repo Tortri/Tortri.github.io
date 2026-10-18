@@ -96,6 +96,150 @@
     .tile.featured .tile-name { color:#fff; } .tile.featured .tile-desc { color:#94a3b8; }
     .tile.featured .tile-icon { background:#1e293b; color:#93c5fd; }
     .tile.featured:hover { background:#1e293b; }
+
+    /* ================= LaTeX editor ================= */
+    #view-latex { position:fixed; inset:0; z-index:40; display:flex; flex-direction:column; background:#f1f5f9; color:#0f172a; }
+    #view-latex.hidden { display:none !important; }
+    #view-latex svg.lucide { width:17px; height:17px; }
+    #view-latex button:disabled { opacity:.4; cursor:not-allowed; }
+    .lx-top { height:50px; flex-shrink:0; display:flex; align-items:center; gap:4px; padding:0 8px; background:#fff; border-bottom:1px solid #e2e8f0; }
+    .lx-tb { display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 9px; border-radius:8px; font-size:13px; font-weight:600; color:#334155; flex-shrink:0; white-space:nowrap; }
+    .lx-tb:hover:not(:disabled) { background:#f1f5f9; } .lx-tb.on { background:#eff6ff; color:#1d4ed8; }
+    .lx-name { min-width:60px; width:clamp(90px, 20vw, 240px); height:34px; padding:0 9px; border:1px solid transparent; border-radius:8px; font-size:14px; font-weight:600; background:transparent; text-overflow:ellipsis; }
+    .lx-name:hover { border-color:#e2e8f0; } .lx-name:focus { outline:none; border-color:#3b82f6; background:#fff; }
+    .lx-primary { display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 13px; border-radius:8px; background:#2563eb; color:#fff; font-size:13px; font-weight:600; flex-shrink:0; white-space:nowrap; }
+    .lx-primary:hover:not(:disabled) { background:#1d4ed8; }
+    .lx-split-btn { display:inline-flex; flex-shrink:0; } .lx-split-btn > .lx-primary:first-child { border-radius:8px 0 0 8px; } .lx-split-btn > .lx-primary:last-child { border-radius:0 8px 8px 0; padding:0 7px; border-left:1px solid #1e40af; }
+    .lx-ghost { display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; font-size:13px; font-weight:600; flex-shrink:0; white-space:nowrap; }
+    .lx-ghost:hover:not(:disabled) { background:#f8fafc; border-color:#94a3b8; }
+    .lx-status { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 10px; border-radius:999px; font-size:12px; font-weight:600; color:#475569; background:#f1f5f9; max-width:260px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; flex-shrink:1; min-width:0; cursor:default; }
+    .lx-status span { overflow:hidden; text-overflow:ellipsis; }
+    .lx-status.ok { color:#047857; background:#ecfdf5; } .lx-status.err { color:#b91c1c; background:#fef2f2; cursor:pointer; } .lx-status.busy { color:#1d4ed8; background:#eff6ff; }
+    .lx-status svg.lucide { width:14px !important; height:14px !important; flex-shrink:0; }
+    .lx-auto { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#475569; padding:0 6px; flex-shrink:0; cursor:pointer; user-select:none; }
+    .lx-auto input { width:15px; height:15px; accent-color:#2563eb; }
+    .lx-body { flex:1; min-height:0; display:flex; position:relative; }
+    .lx-files { width:210px; flex-shrink:0; background:#fff; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; min-height:0; }
+    .lx-files.collapsed { display:none; }
+    .lx-files-head { display:flex; align-items:center; gap:2px; padding:8px 6px 6px 12px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#64748b; }
+    .lx-files-head .lx-ib { width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:#475569; }
+    .lx-files-head .lx-ib:hover { background:#f1f5f9; color:#0f172a; }
+    .lx-files-list { flex:1; overflow-y:auto; padding:0 6px 10px; }
+    .lx-file { display:flex; align-items:center; gap:7px; height:32px; padding:0 6px; border-radius:7px; font-size:13px; color:#334155; cursor:pointer; position:relative; }
+    .lx-file:hover { background:#f1f5f9; } .lx-file.active { background:#eff6ff; color:#1d4ed8; font-weight:600; }
+    .lx-file .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lx-file svg.lucide { width:15px !important; height:15px !important; flex-shrink:0; }
+    .lx-file .acts { display:none; gap:1px; } .lx-file:hover .acts, .lx-file.confirm .acts { display:flex; }
+    .lx-file .acts button { width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:5px; color:#64748b; }
+    .lx-file .acts button:hover { background:#e2e8f0; color:#0f172a; } .lx-file .acts button.danger:hover { background:#fee2e2; color:#b91c1c; }
+    .lx-file .main-badge { font-size:10px; font-weight:700; color:#2563eb; background:#dbeafe; border-radius:4px; padding:1px 4px; }
+    .lx-file input { flex:1; min-width:0; height:24px; border:1px solid #3b82f6; border-radius:5px; padding:0 5px; font-size:13px; }
+    .lx-files-foot { padding:10px 12px; border-top:1px solid #f1f5f9; font-size:11px; color:#94a3b8; line-height:1.45; }
+    .lx-drop-hint { margin:6px; padding:10px; border:1.5px dashed #cbd5e1; border-radius:8px; font-size:11.5px; color:#64748b; text-align:center; }
+    .lx-edit { flex:1 1 50%; min-width:0; display:flex; flex-direction:column; background:#fff; }
+    .lx-insert { display:flex; align-items:center; gap:1px; padding:4px 6px; border-bottom:1px solid #e2e8f0; overflow-x:auto; flex-shrink:0; scrollbar-width:none; }
+    .lx-insert::-webkit-scrollbar { display:none; }
+    .lx-insert button { height:30px; min-width:30px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; gap:5px; border-radius:6px; font-size:12.5px; font-weight:600; color:#475569; flex-shrink:0; }
+    .lx-insert button:hover { background:#f1f5f9; color:#0f172a; }
+    .lx-insert .sep { width:1px; height:18px; background:#e2e8f0; margin:0 4px; flex-shrink:0; }
+    .lx-editor-host { flex:1; min-height:0; position:relative; }
+    .lx-editor-host .CodeMirror { position:absolute; inset:0; height:auto; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; font-size:13.5px; line-height:1.55; }
+    .lx-editor-host textarea.lx-plain { position:absolute; inset:0; width:100%; height:100%; resize:none; border:0; outline:none; padding:10px 14px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13.5px; line-height:1.55; color:#0f172a; tab-size:2; }
+    .lx-editor-host .lx-binary { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:24px; background:#f8fafc; color:#475569; font-size:13px; text-align:center; }
+    .lx-editor-host .lx-binary img { max-width:min(90%, 520px); max-height:55%; border-radius:8px; box-shadow:0 4px 20px rgba(15,23,42,.12); background:#fff; }
+    .CodeMirror-gutters { background:#f8fafc; border-right:1px solid #eef2f7; }
+    .CodeMirror-linenumber { color:#94a3b8; padding:0 8px 0 6px; }
+    .CodeMirror-activeline-background { background:#f8fafc; }
+    .lx-editor-host .CodeMirror .cm-tag { color:#1d4ed8; } .lx-editor-host .CodeMirror .cm-atom { color:#7c3aed; } .lx-editor-host .CodeMirror .cm-keyword { color:#0f766e; font-weight:600; }
+    .lx-editor-host .CodeMirror .cm-variable-2 { color:#0e7490; } .lx-editor-host .CodeMirror .cm-number { color:#b45309; } .lx-editor-host .CodeMirror .cm-bracket { color:#94a3b8; }
+    .lx-editor-host .CodeMirror .cm-builtin { color:#be185d; } .lx-editor-host .CodeMirror .cm-string { color:#047857; }
+    .lx-editor-host .CodeMirror .cm-comment { color:#94a3b8; font-style:italic; } .lx-editor-host .CodeMirror .cm-error { color:#dc2626; background:none; }
+    .CodeMirror-matchingbracket { color:#047857 !important; background:#d1fae5; } .CodeMirror-nonmatchingbracket { color:#dc2626 !important; }
+    .CodeMirror .lx-line-err { background:#fef2f2; } .CodeMirror .lx-line-warn { background:#fffbeb; }
+    .CodeMirror .lx-line-flash { background:#fde68a; transition:background .8s; }
+    .lx-gutter-mark { width:16px; } .lx-gm { display:block; width:8px; height:8px; border-radius:50%; margin:6px 0 0 5px; } .lx-gm.err { background:#ef4444; } .lx-gm.warn { background:#f59e0b; }
+    .lx-problems { flex-shrink:0; border-top:1px solid #e2e8f0; background:#fff; display:flex; flex-direction:column; max-height:40%; }
+    .lx-problems-head { height:34px; display:flex; align-items:center; gap:8px; padding:0 10px; font-size:12px; font-weight:600; color:#475569; cursor:pointer; user-select:none; flex-shrink:0; }
+    .lx-problems-head:hover { background:#f8fafc; }
+    .lx-problems-head .cnt { display:inline-flex; align-items:center; gap:4px; } .cnt.err { color:#dc2626; } .cnt.warn { color:#d97706; } .cnt.info { color:#64748b; }
+    .lx-problems-list { overflow-y:auto; border-top:1px solid #f1f5f9; }
+    .lx-problems.collapsed .lx-problems-list { display:none; }
+    .lx-prob { display:flex; gap:8px; padding:7px 12px; font-size:12.5px; line-height:1.4; border-bottom:1px solid #f8fafc; cursor:pointer; }
+    .lx-prob:hover { background:#f8fafc; }
+    .lx-prob .ic { flex-shrink:0; margin-top:1px; } .lx-prob.err .ic { color:#dc2626; } .lx-prob.warn .ic { color:#d97706; } .lx-prob.info .ic { color:#94a3b8; }
+    .lx-prob .msg { flex:1; min-width:0; color:#0f172a; word-break:break-word; } .lx-prob .msg small { display:block; color:#64748b; font-family:ui-monospace, Menlo, monospace; font-size:11.5px; white-space:pre-wrap; margin-top:2px; }
+    .lx-prob .loc { flex-shrink:0; color:#64748b; font-size:11.5px; font-family:ui-monospace, Menlo, monospace; }
+    .lx-rawlog { margin:0; padding:10px 12px; font-size:11.5px; line-height:1.45; font-family:ui-monospace, Menlo, monospace; white-space:pre-wrap; color:#334155; background:#f8fafc; max-height:320px; overflow:auto; }
+    .lx-divider { width:7px; flex-shrink:0; cursor:col-resize; background:#e2e8f0; position:relative; }
+    .lx-divider:hover, .lx-divider.drag { background:#93c5fd; }
+    .lx-divider::after { content:''; position:absolute; left:2px; top:50%; width:3px; height:28px; margin-top:-14px; border-left:1px solid #94a3b8; border-right:1px solid #94a3b8; opacity:.6; }
+    .lx-preview { flex:1 1 50%; min-width:0; display:flex; flex-direction:column; background:#525659; position:relative; }
+    .lx-ptool { height:38px; flex-shrink:0; display:flex; align-items:center; gap:2px; padding:0 8px; background:#3b3f42; color:#e2e8f0; font-size:12px; }
+    .lx-ptool button { height:28px; min-width:28px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; gap:5px; border-radius:6px; color:#e2e8f0; font-size:12px; font-weight:600; }
+    .lx-ptool button:hover:not(:disabled) { background:#4b5054; }
+    .lx-ptool .lx-pinfo { padding:0 6px; color:#cbd5e1; white-space:nowrap; }
+    .lx-ptool svg.lucide { width:16px !important; height:16px !important; }
+    .lx-pbar { position:absolute; top:38px; left:0; right:0; height:3px; overflow:hidden; z-index:3; pointer-events:none; opacity:0; transition:opacity .2s; }
+    .lx-pbar.on { opacity:1; } .lx-pbar::after { content:''; position:absolute; top:0; bottom:0; width:35%; background:#60a5fa; animation:lxbar 1s ease-in-out infinite; }
+    @keyframes lxbar { 0% { left:-35%; } 100% { left:100%; } }
+    .lx-pages { flex:1; min-height:0; overflow:auto; position:relative; }
+    .lx-pages-inner { display:flex; flex-direction:column; align-items:center; gap:14px; padding:16px; min-width:fit-content; }
+    .lx-page { position:relative; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.35); flex-shrink:0; }
+    .lx-page canvas { position:absolute; inset:0; width:100%; height:100%; }
+    .lx-page.stale canvas { opacity:.55; }
+    .lx-pages.dim .lx-page { opacity:.55; }
+    .lx-banner { position:absolute; left:50%; transform:translateX(-50%); top:48px; z-index:4; display:flex; align-items:center; gap:8px; max-width:calc(100% - 24px); padding:8px 12px; border-radius:10px; background:#fffbeb; color:#92400e; border:1px solid #fde68a; font-size:12.5px; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,.25); cursor:pointer; }
+    .lx-banner.hidden { display:none; }
+    .lx-banner svg.lucide { width:16px !important; height:16px !important; flex-shrink:0; }
+    .lx-empty { position:absolute; inset:38px 0 0 0; display:flex; align-items:center; justify-content:center; padding:24px; z-index:2; }
+    .lx-empty.hidden { display:none; }
+    .lx-card { width:min(420px, 100%); background:#fff; border-radius:14px; padding:22px; box-shadow:0 10px 40px rgba(0,0,0,.35); text-align:center; color:#0f172a; }
+    .lx-card h4 { font-size:15px; font-weight:700; } .lx-card p { font-size:12.5px; color:#64748b; margin-top:6px; line-height:1.5; }
+    .lx-card .bar { height:6px; border-radius:99px; background:#e2e8f0; overflow:hidden; margin-top:14px; } .lx-card .bar > div { height:100%; width:0; background:#2563eb; transition:width .2s; }
+    .lx-card pre { text-align:left; margin-top:10px; padding:10px; background:#fef2f2; color:#991b1b; border-radius:8px; font-size:11.5px; white-space:pre-wrap; max-height:180px; overflow:auto; }
+    .lx-menu { position:fixed; z-index:60; min-width:210px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 12px 32px rgba(15,23,42,.18); padding:5px; }
+    .lx-menu.hidden { display:none; }
+    .lx-menu button { width:100%; display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px; font-size:13px; color:#0f172a; text-align:left; }
+    .lx-menu button:hover { background:#f1f5f9; } .lx-menu hr { border:0; border-top:1px solid #f1f5f9; margin:4px 2px; }
+    .lx-menu button small { margin-left:auto; color:#94a3b8; font-size:11px; }
+    .lx-modal { position:fixed; inset:0; z-index:55; background:rgba(15,23,42,.45); display:flex; align-items:flex-start; justify-content:center; padding:5vh 16px 16px; overflow-y:auto; }
+    .lx-modal.hidden { display:none; }
+    .lx-modal-card { width:min(880px, 100%); background:#fff; border-radius:16px; box-shadow:0 24px 64px rgba(15,23,42,.35); padding:20px 22px 18px; }
+    .lx-modal-card h3 { font-size:17px; font-weight:700; } .lx-modal-card h5 { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#64748b; margin:18px 0 8px; }
+    .lx-tpls { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+    .lx-tpl { text-align:left; border:1px solid #e2e8f0; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px; min-height:92px; }
+    .lx-tpl:hover { border-color:#3b82f6; background:#f8fbff; box-shadow:0 2px 10px rgba(37,99,235,.12); }
+    .lx-tpl .ic { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:#eff6ff; color:#2563eb; }
+    .lx-tpl b { font-size:13px; } .lx-tpl span { font-size:11.5px; color:#64748b; line-height:1.35; }
+    .lx-recent { display:flex; flex-direction:column; gap:2px; max-height:260px; overflow-y:auto; }
+    .lx-recent-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px; font-size:13px; cursor:pointer; }
+    .lx-recent-row:hover { background:#f1f5f9; } .lx-recent-row.cur { background:#eff6ff; }
+    .lx-recent-row .nm { flex:1; min-width:0; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lx-recent-row small { color:#94a3b8; font-size:11.5px; white-space:nowrap; }
+    .lx-recent-row button { width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:#94a3b8; }
+    .lx-recent-row button:hover { background:#fee2e2; color:#b91c1c; }
+    .lx-credit { margin-top:16px; font-size:11px; color:#94a3b8; line-height:1.5; }
+    .lx-credit a { text-decoration:underline; }
+    .lx-mobile-only { display:none; }
+    .lx-drop-overlay { position:absolute; inset:0; z-index:20; background:rgba(37,99,235,.12); border:3px dashed #3b82f6; display:none; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#1d4ed8; pointer-events:none; }
+    #view-latex.dragover .lx-drop-overlay { display:flex; }
+    @media (max-width: 860px) {
+      .lx-mobile-only { display:inline-flex; }
+      .lx-desk-only { display:none !important; }
+      .lx-files { position:absolute; left:0; top:0; bottom:0; z-index:10; box-shadow:8px 0 24px rgba(15,23,42,.18); }
+      .lx-divider { display:none; }
+      #view-latex[data-pane="code"] .lx-preview { display:none; }
+      #view-latex[data-pane="preview"] .lx-edit { display:none; }
+      .lx-edit, .lx-preview { flex:1 1 100% !important; }
+      .lx-top { gap:2px; padding:0 6px; }
+      .lx-tb { padding:0 6px; }
+      .lx-ghost { padding:0 8px; }
+      .lx-status { max-width:30px; padding:0 8px; } .lx-status span { display:none; }
+      #lx-download-more { display:none; } .lx-split-btn > .lx-primary:first-child { border-radius:8px; }
+      .lx-name { width:auto; flex:1 1 60px; }
+    }
+    /* CodeMirror 5.65 (MIT, (c) Marijn Haverbeke and others) */
+    .CodeMirror{font-family:monospace;height:300px;color:black;direction:ltr}.CodeMirror-lines{padding:4px 0}.CodeMirror pre.CodeMirror-line,.CodeMirror pre.CodeMirror-line-like{padding:0 4px}.CodeMirror-scrollbar-filler,.CodeMirror-gutter-filler{background-color:white}.CodeMirror-gutters{border-right:1px solid #ddd;background-color:#f7f7f7;white-space:nowrap}.CodeMirror-linenumbers{}.CodeMirror-linenumber{padding:0 3px 0 5px;min-width:20px;text-align:right;color:#999;white-space:nowrap}.CodeMirror-guttermarker{color:black}.CodeMirror-guttermarker-subtle{color:#999}.CodeMirror-cursor{border-left:1px solid black;border-right:none;width:0}.CodeMirror div.CodeMirror-secondarycursor{border-left:1px solid silver}.cm-fat-cursor .CodeMirror-cursor{width:auto;border:0 !important;background:#7e7}.cm-fat-cursor div.CodeMirror-cursors{z-index:1}.cm-fat-cursor .CodeMirror-line::selection,.cm-fat-cursor .CodeMirror-line>span::selection,.cm-fat-cursor .CodeMirror-line>span>span::selection{background:transparent}.cm-fat-cursor .CodeMirror-line::-moz-selection,.cm-fat-cursor .CodeMirror-line>span::-moz-selection,.cm-fat-cursor .CodeMirror-line>span>span::-moz-selection{background:transparent}.cm-fat-cursor{caret-color:transparent}@-moz-keyframes blink{0%{}50%{background-color:transparent}100%{}}@-webkit-keyframes blink{0%{}50%{background-color:transparent}100%{}}@keyframes blink{0%{}50%{background-color:transparent}100%{}}.CodeMirror-overwrite .CodeMirror-cursor{}.cm-tab{display:inline-block;text-decoration:inherit}.CodeMirror-rulers{position:absolute;left:0;right:0;top:-50px;bottom:0;overflow:hidden}.CodeMirror-ruler{border-left:1px solid #ccc;top:0;bottom:0;position:absolute}.cm-s-default .cm-header{color:blue}.cm-s-default .cm-quote{color:#090}.cm-negative{color:#d44}.cm-positive{color:#292}.cm-header,.cm-strong{font-weight:bold}.cm-em{font-style:italic}.cm-link{text-decoration:underline}.cm-strikethrough{text-decoration:line-through}.cm-s-default .cm-keyword{color:#708}.cm-s-default .cm-atom{color:#219}.cm-s-default .cm-number{color:#164}.cm-s-default .cm-def{color:#00f}.cm-s-default .cm-variable,.cm-s-default .cm-punctuation,.cm-s-default .cm-property,.cm-s-default .cm-operator{}.cm-s-default .cm-variable-2{color:#05a}.cm-s-default .cm-variable-3,.cm-s-default .cm-type{color:#085}.cm-s-default .cm-comment{color:#a50}.cm-s-default .cm-string{color:#a11}.cm-s-default .cm-string-2{color:#f50}.cm-s-default .cm-meta{color:#555}.cm-s-default .cm-qualifier{color:#555}.cm-s-default .cm-builtin{color:#30a}.cm-s-default .cm-bracket{color:#997}.cm-s-default .cm-tag{color:#170}.cm-s-default .cm-attribute{color:#00c}.cm-s-default .cm-hr{color:#999}.cm-s-default .cm-link{color:#00c}.cm-s-default .cm-error{color:#f00}.cm-invalidchar{color:#f00}.CodeMirror-composing{border-bottom:2px solid}div.CodeMirror span.CodeMirror-matchingbracket{color:#0b0}div.CodeMirror span.CodeMirror-nonmatchingbracket{color:#a22}.CodeMirror-matchingtag{background:rgba(255,150,0,.3)}.CodeMirror-activeline-background{background:#e8f2ff}.CodeMirror{position:relative;overflow:hidden;background:white}.CodeMirror-scroll{overflow:scroll !important;margin-bottom:-50px;margin-right:-50px;padding-bottom:50px;height:100%;outline:none;position:relative;z-index:0}.CodeMirror-sizer{position:relative;border-right:50px solid transparent}.CodeMirror-vscrollbar,.CodeMirror-hscrollbar,.CodeMirror-scrollbar-filler,.CodeMirror-gutter-filler{position:absolute;z-index:6;display:none;outline:none}.CodeMirror-vscrollbar{right:0;top:0;overflow-x:hidden;overflow-y:scroll}.CodeMirror-hscrollbar{bottom:0;left:0;overflow-y:hidden;overflow-x:scroll}.CodeMirror-scrollbar-filler{right:0;bottom:0}.CodeMirror-gutter-filler{left:0;bottom:0}.CodeMirror-gutters{position:absolute;left:0;top:0;min-height:100%;z-index:3}.CodeMirror-gutter{white-space:normal;height:100%;display:inline-block;vertical-align:top;margin-bottom:-50px}.CodeMirror-gutter-wrapper{position:absolute;z-index:4;background:none !important;border:none !important}.CodeMirror-gutter-background{position:absolute;top:0;bottom:0;z-index:4}.CodeMirror-gutter-elt{position:absolute;cursor:default;z-index:4}.CodeMirror-gutter-wrapper::selection{background-color:transparent}.CodeMirror-gutter-wrapper::-moz-selection{background-color:transparent}.CodeMirror-lines{cursor:text;min-height:1px}.CodeMirror pre.CodeMirror-line,.CodeMirror pre.CodeMirror-line-like{-moz-border-radius:0;-webkit-border-radius:0;border-radius:0;border-width:0;background:transparent;font-family:inherit;font-size:inherit;margin:0;white-space:pre;word-wrap:normal;line-height:inherit;color:inherit;z-index:2;position:relative;overflow:visible;-webkit-tap-highlight-color:transparent;-webkit-font-variant-ligatures:contextual;font-variant-ligatures:contextual}.CodeMirror-wrap pre.CodeMirror-line,.CodeMirror-wrap pre.CodeMirror-line-like{word-wrap:break-word;white-space:pre-wrap;word-break:normal}.CodeMirror-linebackground{position:absolute;left:0;right:0;top:0;bottom:0;z-index:0}.CodeMirror-linewidget{position:relative;z-index:2;padding:0.1px}.CodeMirror-widget{}.CodeMirror-rtl pre{direction:rtl}.CodeMirror-code{outline:none}.CodeMirror-scroll,.CodeMirror-sizer,.CodeMirror-gutter,.CodeMirror-gutters,.CodeMirror-linenumber{-moz-box-sizing:content-box;box-sizing:content-box}.CodeMirror-measure{position:absolute;width:100%;height:0;overflow:hidden;visibility:hidden}.CodeMirror-cursor{position:absolute;pointer-events:none}.CodeMirror-measure pre{position:static}div.CodeMirror-cursors{visibility:hidden;position:relative;z-index:3}div.CodeMirror-dragcursors{visibility:visible}.CodeMirror-focused div.CodeMirror-cursors{visibility:visible}.CodeMirror-selected{background:#d9d9d9}.CodeMirror-focused .CodeMirror-selected{background:#d7d4f0}.CodeMirror-crosshair{cursor:crosshair}.CodeMirror-line::selection,.CodeMirror-line>span::selection,.CodeMirror-line>span>span::selection{background:#d7d4f0}.CodeMirror-line::-moz-selection,.CodeMirror-line>span::-moz-selection,.CodeMirror-line>span>span::-moz-selection{background:#d7d4f0}.cm-searching{background-color:#ffa;background-color:rgba(255,255,0,.4)}.cm-force-border{padding-right:.1px}@media print{.CodeMirror div.CodeMirror-cursors{visibility:hidden}}.cm-tab-wrap-hack:after{content:''}span.CodeMirror-selectedtext{background:none}.CodeMirror-dialog{position:absolute;left:0;right:0;background:inherit;z-index:15;padding:.1em .8em;overflow:hidden;color:inherit}.CodeMirror-dialog-top{border-bottom:1px solid #eee;top:0}.CodeMirror-dialog-bottom{border-top:1px solid #eee;bottom:0}.CodeMirror-dialog input{border:none;outline:none;background:transparent;width:20em;color:inherit;font-family:monospace}.CodeMirror-dialog button{font-size:70%}
     /* ================= Design Studio (editor) ================= */
     #view-editor { position:fixed; inset:0; z-index:40; display:flex; flex-direction:column; background:#e9ecf1; color:#0f172a; }
     #view-editor.hidden { display:none !important; }
@@ -269,6 +413,9 @@
           <button onclick="navigateToDashboard()" id="nav-home-btn" class="hidden text-sm font-medium text-slate-600 hover:text-brand-600 transition items-center gap-1">
             <i data-lucide="layout-grid" class="w-4 h-4"></i><span class="hidden sm:inline">All tools</span>
           </button>
+          <a href="#latex" data-latex-link class="text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-lg px-3 py-1.5 inline-flex items-center gap-1.5">
+            <i data-lucide="sigma" class="w-4 h-4"></i><span class="hidden sm:inline">LaTeX</span>
+          </a>
           <a href="" data-studio-link class="text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg px-3 py-1.5 inline-flex items-center gap-1.5">
             <i data-lucide="palette" class="w-4 h-4"></i><span>Design Studio</span>
           </a>
@@ -358,6 +505,9 @@
 
   <!-- Design Studio editor (built by script on first open) -->
   <div id="view-editor" class="hidden"></div>
+
+  <!-- LaTeX editor (built by script on first open) -->
+  <div id="view-latex" class="hidden"></div>
 
   <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 pointer-events-none max-w-sm"></div>
 
@@ -790,7 +940,7 @@
       const card = (tool) => {
         const inner = `<span class="tile-icon"><i data-lucide="${tool.icon}" class="w-4 h-4"></i></span>
           <span class="min-w-0"><span class="tile-name">${esc(tool.name)}</span><span class="tile-desc">${esc(tool.short || tool.description)}</span></span>`;
-        return `<button type="button" onclick="selectTool('${tool.id}')" class="tile ${tool.featured ? 'featured' : ''}" title="${esc(tool.description)}">${inner}</button>`;
+        return `<button type="button" onclick="selectTool('${tool.id}')" data-tool="${tool.id}" class="tile ${tool.featured ? 'featured' : ''}" title="${esc(tool.description)}">${inner}</button>`;
       };
 
       const visible = TOOLS.filter(match);
@@ -1106,6 +1256,8 @@
 
     window.addEventListener('popstate', () => {
       const id = location.hash.slice(1);
+      if (id !== 'latex' && LXS.open) lxClose({ fromHash: true });
+      if (id === 'latex') { if (!LXS.open) lxOpen({ noHash: true }); return; }
       if (id === 'design') { if (!DS.open) dsOpen({ noHash: true }); return; }
       if (DS.open) dsClose({ fromHash: true });
       if (id && TOOLS.some(t => t.id === id && !t.open)) selectTool(id, { fromHash: true });
@@ -1114,11 +1266,20 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('[data-studio-link]').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); dsOpen(); }));
+      document.querySelectorAll('[data-latex-link]').forEach(a => {
+        a.addEventListener('click', (e) => { e.preventDefault(); lxOpen(); });
+        a.addEventListener('pointerover', () => lxPrewarm(), { passive: true });
+      });
       $('tool-search').addEventListener('input', renderDashboard);
+      // pointing at a LaTeX tile starts the engine download, so it is ready sooner
+      const prewarm = (e) => { const t = e.target.closest && e.target.closest('[data-tool="latex"],[data-tool="latex2pdf"]'); if (t) lxPrewarm(); };
+      $('view-dashboard').addEventListener('pointerover', prewarm, { passive: true });
+      $('view-dashboard').addEventListener('focusin', prewarm);
       setupDropzone();
       const id = location.hash.slice(1);
       renderDashboard();
       if (id === 'design') dsOpen({ noHash: true });
+      else if (id === 'latex') lxOpen({ noHash: true });
       else if (id && TOOLS.some(t => t.id === id && !t.open)) selectTool(id, { fromHash: true });
       lucide.createIcons();
     });
@@ -2861,6 +3022,7 @@
       if (ODT_EXTS.includes(e)) return odtToPdfBytes(file, opts);
       if (SHEET_EXTS.includes(e)) return spreadsheetToPdfBytes(file, { ...opts, header: true, orientation: 'auto' });
       if (ODP_EXTS.includes(e)) return presentationToPdfBytes(file, opts);
+      if (e === '.tex') return latexFileToPdfBytes(file);
       if (TEXT_EXTS.includes(e)) return textFileToPdfBytes(file, opts);
       if (e === '.epub') { const r = await epubToHtml(file); return htmlToPdfBytes(await normalizeHtmlImages(r.html), { ...opts, title: r.title }); }
       throw new Error(`Unsupported file type: ${file.name}`);
@@ -2927,11 +3089,11 @@
       }
     };
 
-    const ALL_CONVERTIBLE = ['.pdf', ...IMAGE_EXTS, '.docx', ...ODT_EXTS, ...SHEET_EXTS, ...ODP_EXTS, ...TEXT_EXTS, '.epub'];
+    const ALL_CONVERTIBLE = ['.pdf', ...IMAGE_EXTS, '.docx', ...ODT_EXTS, ...SHEET_EXTS, ...ODP_EXTS, ...TEXT_EXTS, '.epub', '.tex'];
     const toolBatch = {
       id: 'batch', name: 'Batch Convert & Combine', icon: 'layers', category: 'Convert to PDF', isNew: true,
       description: 'Drop a mix of Word, LibreOffice, Excel, images, text and PDFs — get one combined PDF or a ZIP of PDFs.',
-      accept: ALL_CONVERTIBLE.join(','), acceptLabel: 'Accepts PDF, images (incl. HEIC), DOCX, ODT, ODS, ODP, ODG, XLSX, CSV, TXT, MD, HTML and EPUB', multiple: true, ordered: true,
+      accept: ALL_CONVERTIBLE.join(','), acceptLabel: 'Accepts PDF, images (incl. HEIC), DOCX, ODT, ODS, ODP, ODG, XLSX, CSV, TXT, MD, HTML, EPUB and LaTeX (.tex)', multiple: true, ordered: true,
       keywords: 'bulk many files any document office libreoffice',
       options: () => ui.select('opt-batch-out', 'Output', [['merge', 'One combined PDF (in list order)'], ['zip', 'Separate PDFs in a ZIP']], 'merge') + pageSizeOption() +
         ui.check('opt-batch-bookmarks', 'Add a bookmark per file (combined PDF)', true) +
@@ -5569,8 +5731,10 @@ ${[[1, '20pt'], [2, '16pt'], [3, '14pt'], [4, '12pt'], [5, '11pt'], [6, '10.5pt'
       { id: 'studio', featured: true, name: 'Design Studio', short: 'CVs, slides, posters', icon: 'palette', category: 'Create', description: 'Canva-style editor: design CVs, presentations, posters and social posts with text, shapes, icons and photos — choose any page size.', keywords: 'canva editor design create poster flyer instagram', open: () => dsOpen() },
       { id: 'studio-cv', name: 'Make a CV', short: 'Résumé templates', icon: 'id-card', category: 'Create', description: 'Start from a CV / résumé template with contact icons, photo frame, skill bars and colours. Everything is editable.', keywords: 'resume curriculum vitae cv template job', open: () => dsOpen({ template: 'cv-sidebar' }) },
       { id: 'studio-pdf', name: 'Edit PDF or File', short: 'Add text, photos, shapes', icon: 'file-pen-line', category: 'Create', description: 'Open a PDF, Word, ODT, presentation or image and add or change text, pictures, shapes and signatures.', keywords: 'edit pdf text annotate fill write on pdf docx odt pptx odp', open: () => dsOpen({ pickImport: true }) },
+      { id: 'latex', featured: true, name: 'LaTeX Editor', short: 'Live PDF preview', icon: 'sigma', category: 'Create', description: 'Write LaTeX and see the real PDF update as you type: pdfTeX runs in your browser. Templates for articles, reports, homework, CVs, letters and Beamer slides.', keywords: 'latex tex overleaf pdflatex math equations formula thesis report beamer article', open: () => lxOpen() },
       { id: 'studio-slides', name: 'Make a Presentation', short: '16:9 slides → PDF', icon: 'presentation', category: 'Create', description: 'Design a slide deck from a presentation template and download it as PDF or images.', keywords: 'slides powerpoint deck keynote', open: () => dsOpen({ template: 'pres' }) },
     ];
+    const toolLatex2Pdf = { id: 'latex2pdf', name: 'LaTeX to PDF', short: '.tex / Overleaf .zip', icon: 'file-code', category: 'Convert to PDF', description: 'Open a .tex file or an Overleaf project .zip, compile it with pdfTeX in your browser and download the PDF.', keywords: 'latex tex compile pdflatex overleaf zip', open: () => lxOpen({ pickImport: true }) };
     const SHORT = {
       merge: 'Combine PDFs into one', split: 'Extract or separate pages', organize: 'Reorder, rotate, delete pages', interleave: 'Mix pages from several PDFs', nup: '2, 4, 6… pages on one sheet',
       watermark: 'Stamp text on every page', pagenumbers: 'Numbers, headers, footers', crop: 'Trim page margins', resize: 'Change to A4, Letter…', metadata: 'Title, author, privacy', compress: 'Make PDFs smaller',
@@ -5597,7 +5761,7 @@ ${[[1, '20pt'], [2, '16pt'], [3, '14pt'], [4, '12pt'], [5, '11pt'], [6, '10.5pt'
       // Security
       toolProtect, toolUnlock, toolRedact,
       // Convert to PDF
-      toolImg2Pdf, toolWord2Pdf, toolExcel2Pdf, toolText2Pdf, toolEpub2Pdf, toolBatch,
+      toolImg2Pdf, toolWord2Pdf, toolExcel2Pdf, toolText2Pdf, toolEpub2Pdf, toolLatex2Pdf, toolBatch,
       // Convert from PDF
       toolPdf2Word, toolToPptx, toolPdf2Img, toolExtractText, toolExtractImages,
       // Images
@@ -8217,6 +8381,2456 @@ ${[[1, '20pt'], [2, '16pt'], [3, '14pt'], [4, '12pt'], [5, '11pt'], [6, '10.5pt'
       const choice = await dsModal({ title: 'Use this template?', body: '<p class="text-sm text-slate-600">Replace your current design, or add the template as new pages at the end?</p>', buttons: [{ label: 'Cancel', value: null }, { label: 'Add pages', value: 'add' }, { label: 'Replace design', primary: true, value: 'replace' }] });
       if (choice === 'replace') { const keepId = DS.doc.id; doc.id = keepId; dsLoadDoc(doc); }
       else if (choice === 'add') { DS.doc.pages.push(...doc.pages); DS.page = DS.doc.pages.length - doc.pages.length; DS.sel = new Set(); dsRenderPages(); dsCommit(); }
+    }
+
+    // ===================================================================
+    // LaTeX engine: real pdfTeX (SwiftLaTeX build, WebAssembly) in a Web Worker.
+    // Engine + format come from TeXbrain's vendored copy (MIT app, engine
+    // EPL-2.0/GPL-2.0); TeX Live 2020 packages are fetched on demand, once:
+    //   1. TeXbrain's bundled subset (~4,500 common files)
+    //   2. a full texmf-dist mirror, looked up by name through its ls-R index
+    //   3. a SwiftLaTeX-compatible TeX Live server (only if 2 is unreachable)
+    // Everything runs in the browser; only file names are requested, never
+    // the document itself.
+    // ===================================================================
+    const LX_CONF = {
+      sources: [
+        'https://cdn.jsdelivr.net/gh/swimmingbrain/texbrain@3e628b07e1a79f695dbba66de896b26d3344069c/static/',
+        'https://tex.swimmingbrain.dev/',
+        'https://raw.githubusercontent.com/swimmingbrain/texbrain/3e628b07e1a79f695dbba66de896b26d3344069c/static/',
+      ],
+      mirrors: [
+        'https://cdn.jsdelivr.net/gh/SachaNevsky/latexdiff-texmf-dist@aca46fc00975feebf98e038976790805c3e932df/',
+        'https://raw.githubusercontent.com/SachaNevsky/latexdiff-texmf-dist/aca46fc00975feebf98e038976790805c3e932df/',
+      ],
+      texlyre: 'https://texlive.texlyre.org/',
+      sizes: { js: 90882, wasm: 1782913, fmt: 10360227 },
+      warmKey: 'pdfstudio.latex.warm',
+      knownKey: 'pdfstudio.latex.known',
+    };
+
+    // Files the default templates need: fetched in parallel as soon as the
+    // engine starts, so the first compile does not wait on ~100 sequential
+    // requests. Extended at run time with whatever the user's documents use.
+    // { dir: [names] } -> { name: dir }
+    function lxDirMap(byDir) { const o = {}; for (const d in byDir) for (const n of byDir[d]) o[n] = d; return o; }
+    function lxWarm(o) { return [...(o.b || []).map(n => 'b:' + n), ...(o.m || []).map(n => 'm:' + n)]; }
+    const LX_WARM_DEFAULT = lxWarm({"b":["amsbsy.sty","amsfonts.sty","amsgen.sty","amsmath.sty","amsopn.sty","amssymb.sty","amstext.sty","article.cls","atbegshi.sty","atveryend.sty","auxhook.sty","bigintcalc.sty","bitset.sty","booktabs.sty","cmr10.tfm","color.cfg","dvipsnam.def","ec-lmbx10.tfm","ec-lmbx12.tfm","ec-lmr10.tfm","ec-lmr12.tfm","ec-lmr17.tfm","ec-lmr8.tfm","ec-lmri10.tfm","ecrm1095.tfm","enumitem.sty","etexcmds.sty","fontenc.sty","geometry.sty","gettitlestring.sty","hpdftex.def","hycolor.sty","hyperref.sty","iftex.sty","ifvtex.sty","infwarerr.sty","intcalc.sty","keyval.sty","kvdefinekeys.sty","kvoptions.sty","kvsetkeys.sty","l3backend-pdfmode.def","letltxmacro.sty","lm-ec.enc","lm-mathit.enc","lm-rm.enc","lmbx10.pfb","lmbx12.pfb","lmex10.tfm","lmmi10.tfm","lmmi6.tfm","lmmi8.pfb","lmmi8.tfm","lmodern.sty","lmr10.pfb","lmr12.pfb","lmr8.pfb","lmri10.pfb","lmsy10.tfm","lmsy6.tfm","lmsy8.tfm","ltxcmds.sty","msam10.tfm","msam7.tfm","msbm10.tfm","msbm7.tfm","nameref.sty","omllmm.fd","omslmsy.fd","omxlmex.fd","ot1lmr.fd","pd1enc.def","pdfescape.sty","pdftex.def","pdftex.map","pdftexcmds.sty","refcount.sty","rerunfilecheck.sty","rm-lmr10.tfm","rm-lmr6.tfm","rm-lmr8.tfm","size11.clo","t1lmr.fd","umsa.fd","umsb.fd","uniquecounter.sty","url.sty","xcolor.sty"],"m":["tex/context/base/mkii/supp-pdf.mkii"]});
+    const LX_WARM_TPL = {'article':lxWarm({"b":["graphics.cfg","graphics.sty","graphicx.sty","lm-mathex.enc","lm-mathsy.enc","lm-ts1.enc","lmex10.pfb","lmmi10.pfb","lmmi12.tfm","lmr17.pfb","lmr6.pfb","lmsy10.pfb","lmsy8.pfb","microtype-pdftex.def","microtype.cfg","microtype.sty","mt-cmr.cfg","mt-msa.cfg","mt-msb.cfg","rm-lmr12.tfm","trig.sty","ts1-lmr10.tfm","ts1lmr.fd"],"m":[]}),'paper':lxWarm({"b":["color.sty","ec-lmri8.tfm","ec-lmtt10.tfm","lmmi12.tfm","lmr17.pfb","lmri8.pfb","lmtt10.pfb","rm-lmr12.tfm","t1lmtt.fd"],"m":["bibtex/bst/natbib/plainnat.bst","tex/latex/natbib/natbib.sty"]}),'report-es':lxWarm({"b":["array.sty","babel.def","babel.sty","colortbl.sty","ec-lmr6.tfm","fancyhdr.sty","lmmi5.tfm","lmsy5.tfm","msam10.pfb","msam5.tfm","msbm5.tfm","rm-lmr5.tfm","switch.def","tabularx.sty","txtbabel.def"],"m":["tex/generic/babel-spanish/spanish.ldf"]}),'homework':lxWarm({"b":["amsthm.sty","fancyhdr.sty","lm-mathex.enc","lm-mathsy.enc","lmex10.pfb","lmmi10.pfb","lmsy10.pfb","lmsy8.pfb","msbm10.pfb"],"m":[]}),'cv':lxWarm({"b":["array.sty","ec-lmss10.tfm","ec-lmss12.tfm","ec-lmss17.tfm","ec-lmss8.tfm","ec-lmssbx10.tfm","ec-lmsso10.tfm","expl3.sty","l3keys2e.sty","lm-ts1.enc","lmss10.pfb","lmss12.pfb","lmss8.pfb","lmssbx10.pfb","lmsso10.pfb","t1lmss.fd","tabularx.sty","titlesec.sty","ts1-lmss10.tfm","ts1lmss.fd","xparse-2018-04-12.sty","xparse.sty"],"m":["fonts/enc/dvips/fontawesome5/fa5brands0.enc","fonts/enc/dvips/fontawesome5/fa5free1.enc","fonts/enc/dvips/fontawesome5/fa5free2.enc","fonts/tfm/public/fontawesome5/fa5brands0.tfm","fonts/tfm/public/fontawesome5/fa5free1solid.tfm","fonts/tfm/public/fontawesome5/fa5free2solid.tfm","fonts/type1/public/fontawesome5/FontAwesome5Brands-Regular.pfb","fonts/type1/public/fontawesome5/FontAwesome5Free-Solid.pfb","tex/latex/fontawesome5/fontawesome5-generic-helper.sty","tex/latex/fontawesome5/fontawesome5-mapping.def","tex/latex/fontawesome5/fontawesome5.sty","tex/latex/fontawesome5/ufontawesomebrands0.fd","tex/latex/fontawesome5/ufontawesomefree1.fd","tex/latex/fontawesome5/ufontawesomefree2.fd"]}),'beamer':lxWarm({"b":["amsthm.sty","cmss10.tfm","ec-lmss10.tfm","ec-lmss12.tfm","ec-lmss8.tfm","ec-lmsso10.tfm","ec-lmsso8.tfm","ecss1095.tfm","enumerate.sty","etoolbox.sty","everyshi-2001-05-15.sty","everyshi.sty","expl3.sty","graphics.cfg","graphics.sty","graphicx.sty","ifpdf.sty","lmss10.pfb","lmss12.pfb","lmss8.pfb","lmsso10.pfb","lmsso8.pfb","ot1lmss.fd","pgf.cfg","pgf.revision.tex","pgfcore.code.tex","pgfcore.sty","pgfcorearrows.code.tex","pgfcoreexternal.code.tex","pgfcoregraphicstate.code.tex","pgfcoreimage.code.tex","pgfcorelayers.code.tex","pgfcoreobjects.code.tex","pgfcorepathconstruct.code.tex","pgfcorepathprocessing.code.tex","pgfcorepathusage.code.tex","pgfcorepatterns.code.tex","pgfcorepoints.code.tex","pgfcorequick.code.tex","pgfcorerdf.code.tex","pgfcorescopes.code.tex","pgfcoreshade.code.tex","pgfcoretransformations.code.tex","pgfcoretransparency.code.tex","pgfint.code.tex","pgfkeys.code.tex","pgfkeysfiltered.code.tex","pgfmath.code.tex","pgfmathcalc.code.tex","pgfmathfloat.code.tex","pgfmathfunctions.base.code.tex","pgfmathfunctions.basic.code.tex","pgfmathfunctions.code.tex","pgfmathfunctions.comparison.code.tex","pgfmathfunctions.integerarithmetics.code.tex","pgfmathfunctions.misc.code.tex","pgfmathfunctions.random.code.tex","pgfmathfunctions.round.code.tex","pgfmathfunctions.trigonometric.code.tex","pgfmathparser.code.tex","pgfmathutil.code.tex","pgfrcs.code.tex","pgfrcs.sty","pgfsys-common-pdf.def","pgfsys-pdftex.def","pgfsys.code.tex","pgfsys.sty","pgfsysprotocol.code.tex","pgfsyssoftpath.code.tex","pgfutil-common-lists.tex","pgfutil-common.tex","pgfutil-latex.def","rm-lmss10.tfm","rm-lmss8.tfm","scrlfile-patcholdlatex.sty","scrlfile.sty","scrlogo.sty","t1lmss.fd","trig.sty","xparse-2018-04-12.sty","xparse.sty","xxcolor.sty"],"m":["tex/latex/beamer/beamer.cls","tex/latex/beamer/beamerbaseauxtemplates.sty","tex/latex/beamer/beamerbaseboxes.sty","tex/latex/beamer/beamerbasecolor.sty","tex/latex/beamer/beamerbasecompatibility.sty","tex/latex/beamer/beamerbasedecode.sty","tex/latex/beamer/beamerbasefont.sty","tex/latex/beamer/beamerbaseframe.sty","tex/latex/beamer/beamerbaseframecomponents.sty","tex/latex/beamer/beamerbaseframesize.sty","tex/latex/beamer/beamerbaselocalstructure.sty","tex/latex/beamer/beamerbasemisc.sty","tex/latex/beamer/beamerbasemodes.sty","tex/latex/beamer/beamerbasenavigation.sty","tex/latex/beamer/beamerbasenotes.sty","tex/latex/beamer/beamerbaseoptions.sty","tex/latex/beamer/beamerbaseoverlay.sty","tex/latex/beamer/beamerbaserequires.sty","tex/latex/beamer/beamerbasesection.sty","tex/latex/beamer/beamerbasetemplates.sty","tex/latex/beamer/beamerbasethemes.sty","tex/latex/beamer/beamerbasetheorems.sty","tex/latex/beamer/beamerbasetitle.sty","tex/latex/beamer/beamerbasetoc.sty","tex/latex/beamer/beamerbasetranslator.sty","tex/latex/beamer/beamerbasetwoscreens.sty","tex/latex/beamer/beamerbaseverbatim.sty","tex/latex/beamer/beamercolorthemedefault.sty","tex/latex/beamer/beamercolorthemeorchid.sty","tex/latex/beamer/beamercolorthemewhale.sty","tex/latex/beamer/beamerfontthemedefault.sty","tex/latex/beamer/beamericonarticle.20.pdf","tex/latex/beamer/beamericonarticle.pdf","tex/latex/beamer/beamericonbook.20.pdf","tex/latex/beamer/beamericonbook.pdf","tex/latex/beamer/beamericononline.20.pdf","tex/latex/beamer/beamericononline.pdf","tex/latex/beamer/beamerinnerthemedefault.sty","tex/latex/beamer/beamerinnerthemerounded.sty","tex/latex/beamer/beamerouterthemedefault.sty","tex/latex/beamer/beamerouterthemeinfolines.sty","tex/latex/beamer/beamerthemeMadrid.sty","tex/latex/beamer/beamerthemedefault.sty","tex/latex/sansmathaccent/sansmathaccent.sty","tex/latex/translator/translator-basic-dictionary-English.dict","tex/latex/translator/translator-bibliography-dictionary-English.dict","tex/latex/translator/translator-environment-dictionary-English.dict","tex/latex/translator/translator-months-dictionary-English.dict","tex/latex/translator/translator-numbers-dictionary-English.dict","tex/latex/translator/translator-theorem-dictionary-English.dict","tex/latex/translator/translator.sty"]}),'blank':lxWarm({"b":["ecrm1000.tfm","size10.clo"],"m":[]})};
+    const LX_KNOWN_DEFAULT = Object.assign(lxDirMap({"bibtex/bst/natbib":["plainnat.bst"],"fonts/enc/dvips/fontawesome5":["fa5brands0.enc","fa5free1.enc","fa5free2.enc"],"fonts/tfm/adobe/symbol":["psyr.tfm"],"fonts/tfm/adobe/zapfding":["pzdr.tfm"],"fonts/tfm/public/cm":["lasy6.tfm"],"fonts/tfm/public/eurosym":["feymr10.tfm"],"fonts/tfm/public/fontawesome5":["fa5brands0.tfm","fa5free1solid.tfm","fa5free2solid.tfm"],"fonts/tfm/public/marvosym":["umvs.tfm"],"fonts/type1/public/eurosym":["feymr10.pfb"],"fonts/type1/public/fontawesome5":["FontAwesome5Brands-Regular.pfb","FontAwesome5Free-Solid.pfb"],"fonts/type1/public/marvosym":["marvosym.pfb"],"fonts/type1/urw/zapfding":["uzdr.pfb"],"tex/context/base/mkii":["supp-pdf.mkii"],"tex/generic/babel-catalan":["catalan.ldf"],"tex/generic/babel-french":["french.ldf"],"tex/generic/babel-italian":["italian.ldf"],"tex/generic/babel-portuges":["portuges.ldf"],"tex/generic/babel-spanish":["spanish.ldf"],"tex/generic/ulem":["ulem.sty"],"tex/generic/xkeyval":["xkeyval.tex","xkvutils.tex"],"tex/latex/algorithmicx":["algorithmicx.sty","algpseudocode.sty"],"tex/latex/algorithms":["algorithm.sty"],"tex/latex/beamer":["beamer.cls","beamerbaseauxtemplates.sty","beamerbaseboxes.sty","beamerbasecolor.sty","beamerbasecompatibility.sty","beamerbasedecode.sty","beamerbasefont.sty","beamerbaseframe.sty","beamerbaseframecomponents.sty","beamerbaseframesize.sty","beamerbaselocalstructure.sty","beamerbasemisc.sty","beamerbasemodes.sty","beamerbasenavigation.sty","beamerbasenotes.sty","beamerbaseoptions.sty","beamerbaseoverlay.sty","beamerbaserequires.sty","beamerbasesection.sty","beamerbasetemplates.sty","beamerbasethemes.sty","beamerbasetheorems.sty","beamerbasetitle.sty","beamerbasetoc.sty","beamerbasetranslator.sty","beamerbasetwoscreens.sty","beamerbaseverbatim.sty","beamercolorthemedefault.sty","beamercolorthemeorchid.sty","beamercolorthemewhale.sty","beamerfontthemedefault.sty","beamericonarticle.20.pdf","beamericonarticle.pdf","beamericonbook.20.pdf","beamericonbook.pdf","beamericononline.20.pdf","beamericononline.pdf","beamerinnerthemedefault.sty","beamerinnerthemerounded.sty","beamerouterthemedefault.sty","beamerouterthemeinfolines.sty","beamerthemeMadrid.sty","beamerthemedefault.sty"],"tex/latex/cancel":["cancel.sty"],"tex/latex/carlisle":["scalefnt.sty"],"tex/latex/chemgreek":["chemgreek.sty"],"tex/latex/fontawesome5":["fontawesome5-generic-helper.sty","fontawesome5-mapping.def","fontawesome5.sty","ufontawesomebrands0.fd","ufontawesomefree1.fd","ufontawesomefree2.fd"],"tex/latex/marvosym":["marvosym.sty","umvs.fd"],"tex/latex/mhchem":["mhchem.sty"],"tex/latex/mwe":["example-image-a.pdf","example-image.pdf"],"tex/latex/natbib":["natbib.sty"],"tex/latex/sansmathaccent":["sansmathaccent.sty"],"tex/latex/soul":["soul.sty"],"tex/latex/tcolorbox":["tcolorbox.sty"],"tex/latex/todonotes":["todonotes.sty"],"tex/latex/translator":["translator-basic-dictionary-English.dict","translator-bibliography-dictionary-English.dict","translator-environment-dictionary-English.dict","translator-months-dictionary-English.dict","translator-numbers-dictionary-English.dict","translator-theorem-dictionary-English.dict","translator.sty"],"tex/latex/xkeyval":["xkeyval.sty"]}), Object.fromEntries(["11pt.ldf","a4paper.ldf","bblopts.cfg","catalan.cfg","cleveref.cfg","english.cfg","fa5brands0.vf","fa5free1solid.vf","fa5free2solid.vf","feymr10.vf","geometry.cfg","gettitlestring.cfg","hyperref.cfg","italian.cfg","line10.vf","lstlang0.sty","lstlocal.cfg","lstmisc0.sty","mt-cmm.cfg","mt-cmsy.cfg","mt-lme.cfg","mt-lmex.cfg","mt-lmm.cfg","mt-lmr.cfg","mt-lmsy.cfg","natbib.cfg","ngerman.cfg","pd1enc.dfu","portuguese.cfg","portuguese.ldf","pzdr.vf","rerunfilecheck.cfg","siunitx.cfg","soul.cfg","spanish.cfg","tikzlibraryarrows.meta.code.tex","tikzlibrarypgfplots.surfshading.code.tex","umvs.vf"].map(n => [n, ''])));
+    const LX_PREFER_MIRROR = lxDirMap({"tex/latex/soul":["soul.sty"],"tex/generic/soulutf8":["soulutf8.sty"],"tex/generic/babel-french":["acadian.ldf","canadien.ldf","french.ldf","frenchb.ldf"],"tex/latex/datatool":["databar.sty","databib.sty","datagidx.sty","datapie.sty","dataplot.sty","datatool-base.sty","datatool-fp.sty","datatool-pgfmath.sty","datatool.sty","person.sty"],"tex/latex/eso-pic":["showframe.sty"],"tex/latex/tracklang":["tracklang.sty"],"tex/generic/tracklang":["tracklang.tex"],"tex/latex/l3packages/xfp":["xfp.sty"],"tex/latex/l3packages/xfrac":["xfrac.sty"],"tex/latex/l3packages/xtemplate":["xtemplate.sty"]});
+
+    async function lxFetchBytes(url, onBytes) {
+      const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+      if (!res.body || !res.body.getReader) {
+        const b = new Uint8Array(await res.arrayBuffer()); onBytes && onBytes(b.length); return b;
+      }
+      const reader = res.body.getReader(), chunks = []; let n = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value); n += value.length; onBytes && onBytes(n);
+      }
+      const out = new Uint8Array(n); let o = 0;
+      for (const c of chunks) { out.set(c, o); o += c.length; }
+      return out;
+    }
+
+    function lxLooksLikeHtml(b) {
+      const head = new TextDecoder().decode(b.subarray(0, Math.min(100, b.length))).toLowerCase();
+      return head.includes('<!doctype') || head.includes('<html');
+    }
+
+    // ---- code that runs inside the worker (stringified; uses the engine's globals)
+    function lxWorkerSide() {
+      var LX = self.__LX;
+      self.texlive_endpoint = LX.texlyre;
+      var hit = Object.create(null), miss = Object.create(null);
+      var bundle = null, lsr = null, lsrTried = false, fmtBytes = LX.fmt ? new Uint8Array(LX.fmt) : null;
+      LX.fmt = null;
+      var EXTS = ['', '.tfm', '.pfb', '.vf', '.sty', '.cls', '.fd', '.def', '.cfg', '.clo', '.tex', '.ltx', '.map', '.enc', '.dfu', '.ldf'];
+      var SKIP = /^(doc|source|scripts)(\/|$)|^tex\/(latex-dev|lualatex|luatex|xelatex|xetex)(\/|$)/;
+      var fetched = [], missed = [], netMs = 0, netCount = 0;
+      // the TeX Live mirror is reachable through more than one CDN: stick to the first that works
+      var mirrors = LX.mirrors || [], mirrorIdx = 0;
+      function getMirror(path, text) {
+        for (var k = 0; k < mirrors.length; k++) {
+          var i = (mirrorIdx + k) % mirrors.length;
+          var d = get(mirrors[i] + path, text);
+          if (d) { mirrorIdx = i; return d; }
+        }
+        return null;
+      }
+      function get(url, text) {
+        var x = new XMLHttpRequest(), t0 = Date.now();
+        x.open('GET', url, false);
+        x.responseType = text ? 'text' : 'arraybuffer';
+        try { x.send(); } catch (e) { return null; }
+        netMs += Date.now() - t0; netCount++;
+        if (x.status !== 200) return null;
+        return text ? x.response : new Uint8Array(x.response);
+      }
+      function looksValid(b, name) {
+        if (!b || !b.length) return false;
+        if (b.length > 15) {
+          var head = new TextDecoder().decode(b.subarray(0, 100)).toLowerCase();
+          if (head.indexOf('<!doctype') >= 0 || head.indexOf('<html') >= 0) return false;
+        }
+        var ext = name.slice(name.lastIndexOf('.')).toLowerCase();
+        if (ext === '.tfm') { var w = (b[0] << 8) | b[1]; return w > 6 && w * 4 <= b.length; }
+        if (ext === '.vf') return b.length > 2 && b[0] === 0xf7 && b[1] === 0xca;
+        if (ext === '.pfb') return b.length > 2 && b[0] === 0x80 && b[1] === 0x01;
+        return true;
+      }
+      function loadBundle() {
+        if (bundle) return bundle;
+        bundle = new Set();
+        ['texlive/cache-manifest-text.txt', 'texlive/cache-manifest-binary.txt'].forEach(function (f) {
+          var t = get(LX.base + f, true);
+          if (t) t.split('\n').forEach(function (l) { l = l.trim(); if (l) bundle.add(l); });
+        });
+        return bundle;
+      }
+      function loadLsr() {
+        if (lsrTried) return lsr;
+        lsrTried = true;
+        self.__lsrBy = self.__curReq;
+        self.postMessage({ cmd: 'lxstatus', text: 'Loading the TeX Live package index (first time only)…' });
+        var t = getMirror('ls-R', true);
+        if (!t) return null;
+        var m = new Map(), dir = null, lines = t.split('\n');
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          if (!line || line.charCodeAt(0) === 37) continue;
+          if (line.charCodeAt(line.length - 1) === 58) {
+            dir = line.slice(0, -1).replace(/^\.\/?/, '');
+            if (!dir || SKIP.test(dir)) dir = null;
+            continue;
+          }
+          if (dir !== null && !m.has(line)) m.set(line, dir);
+        }
+        lsr = m;
+        return m;
+      }
+      function save(name, bytes, how) {
+        var p = TEXCACHEROOT + '/' + name;
+        FS.writeFile(p, bytes);
+        if (how) fetched.push(how);
+        return p;
+      }
+      // the document's own auxiliary files never come from TeX Live
+      var LOCAL_ONLY = /\.(aux|toc|lof|lot|out|bbl|blg|nav|snm|vrb|idx|ind|ilg|glo|gls|glg|loa|lol|bcf|xdv|fls|tdo|acn|acr|alg|ist|brf|mtc\d*|maf|ptc|synctex|run\.xml|pyg|thm|soc|loc|log)$/i;
+      // name -> directory in the mirror ('' = not in TeX Live); shipped
+      // defaults plus what earlier sessions learned from the full index
+      var known = LX.known || {};
+      // file name candidates in kpathsea's order for the requested format
+      // (3 tfm, 10 fmt, 11 map, 26 tex, 32 type1, 33 vf, 44 enc)
+      var FMT_EXT = { 3: '.tfm', 6: '.bib', 7: '.bst', 10: '.fmt', 11: '.map', 26: '.tex', 32: '.pfb', 33: '.vf', 44: '.enc' };
+      function candidates(name, format) {
+        var e = FMT_EXT[format];
+        if (e === undefined) return EXTS.map(function (x) { return name + x; });
+        if (format === 26) {
+          if (/\.(sty|cls|cfg|def|clo|fd|ldf|dfu|tex|ltx|dict|bbx|cbx|lbx|ini|pdf|png|jpe?g|mkii|aux|toc|lof|lot|out|bbl|nav|snm|vrb)$/i.test(name)) return [name];
+          return name.indexOf('.') >= 0 ? [name, name + '.tex'] : [name + '.tex', name];
+        }
+        if (name.slice(-e.length).toLowerCase() === e) return [name];
+        return [name + e, name];
+      }
+      var FAILED = 1, ABSENT = 2, RULE_ABSENT = 3;   // resolveRemote results besides a path
+      function fromMirror(dir, n) {
+        self.postMessage({ cmd: 'lxstatus', text: 'Downloading ' + n });
+        var d = getMirror(encodeURI(dir + '/' + n));
+        return d && looksValid(d, n) ? save(n, d, 'm:' + dir + '/' + n) : FAILED;
+      }
+      function resolveRemote(reqname, format) {
+        if (LOCAL_ONLY.test(reqname)) return RULE_ABSENT;
+        var i, n, d, r, b = loadBundle(), cands = candidates(reqname, format);
+        // the bundle was recorded from real compiles: a font whose metrics are
+        // bundled but whose virtual font is not has no virtual font at all
+        if (format === 33 && (b.has(reqname.replace(/\.vf$/i, '') + '.tfm') && !b.has(cands[0]) || /[+-]\d+(\.vf)?$/i.test(reqname))) return RULE_ABSENT;
+        // a few bundled files are newer than the 2020 format: take the
+        // TeX Live 2020 copy of those from the mirror instead
+        var pm = LX.preferMirror || {};
+        for (i = 0; i < cands.length; i++) if (pm[cands[i]]) { r = fromMirror(pm[cands[i]], cands[i]); if (r !== FAILED) return r; }
+        for (i = 0; i < cands.length; i++) {
+          n = cands[i];
+          if (b.has(n)) {
+            self.postMessage({ cmd: 'lxstatus', text: 'Downloading ' + n });
+            d = get(LX.base + 'texlive/cache/' + encodeURIComponent(n));
+            if (d && looksValid(d, n)) return save(n, d, 'b:' + n);
+          }
+        }
+        // names learned earlier (or shipped): skip the big index
+        var allAbsent = true;
+        for (i = 0; i < cands.length; i++) {
+          var k = known[cands[i]];
+          if (k) { r = fromMirror(k, cands[i]); if (r !== FAILED) return r; allAbsent = false; }
+          else if (k !== '') allAbsent = false;
+        }
+        if (allAbsent) return ABSENT;
+        var m = loadLsr();
+        if (!m) return FAILED;
+        var failed = false;
+        for (i = 0; i < cands.length; i++) {
+          var dir = m.get(cands[i]);
+          if (dir) { r = fromMirror(dir, cands[i]); if (r !== FAILED) return r; failed = true; }
+        }
+        return failed ? FAILED : ABSENT;
+      }
+      self.kpse_find_file_impl = function (nameptr, format, mustexist) {
+        var reqname = UTF8ToString(nameptr);
+        if (LX.debug) (self.__reqs = self.__reqs || []).push(format + ':' + reqname);
+        self.__curReq = format + ':' + reqname;
+        if (reqname.indexOf('/') >= 0) return 0;
+        var key = format + '/' + reqname;
+        if (key in miss) return 0;
+        var p = hit[key];
+        if (!p) {
+          var cands = candidates(reqname, format);
+          for (var i = 0; i < cands.length && !p; i++) {
+            try { FS.stat(TEXCACHEROOT + '/' + cands[i]); p = TEXCACHEROOT + '/' + cands[i]; } catch (e) { /* not there */ }
+          }
+        }
+        if (!p && format === 10 && fmtBytes) { p = save(reqname, fmtBytes); fmtBytes = null; }
+        var r = p ? p : resolveRemote(reqname, format);
+        if (r === FAILED && lsrTried && !lsr && LX.texlyre) {
+          // mirror index unreachable: ask the TeX Live server by name
+          var d = get(LX.texlyre + 'pdftex/' + key);
+          if (d && looksValid(d, reqname)) r = save(reqname, d, null);
+        }
+        if (r === RULE_ABSENT) { miss[key] = 1; return 0; }
+        if (r === ABSENT) { miss[key] = 1; if (lsr) Array.prototype.push.apply(missed, candidates(reqname, format)); return 0; }
+        if (r === FAILED || !r) return 0;   // network trouble: try again next run
+        hit[key] = r;
+        return allocate(intArrayFromString(r), 'i8', ALLOC_NORMAL);
+      };
+      function mkdirs(path) {
+        var parts = path.split('/'), cur = WORKROOT;
+        for (var i = 0; i < parts.length - 1; i++) {
+          if (!parts[i]) continue;
+          cur += '/' + parts[i];
+          try { FS.mkdir(cur); } catch (e) { /* exists */ }
+        }
+      }
+      function prefetch(list) {
+        // warm start: fetch files the last sessions needed, in parallel
+        var queue = list.slice(), active = 0, done = 0;
+        return new Promise(function (resolve) {
+          function next() {
+            if (!queue.length) { if (!active) resolve(done); return; }
+            var item = queue.shift(), kind = item.slice(0, 2), rest = item.slice(2);
+            var name = rest.slice(rest.lastIndexOf('/') + 1);
+            try { FS.stat(TEXCACHEROOT + '/' + name); next(); return; } catch (e) { /* fetch it */ }
+            if (kind !== 'b:' && kind !== 'm:') { next(); return; }
+            active++;
+            var load = kind === 'b:' ? fetch(LX.base + 'texlive/cache/' + encodeURIComponent(rest)).then(function (r) { return r.ok ? r.arrayBuffer() : null; })
+              : (function tryMirror(k) {
+                  var i = (mirrorIdx + k) % mirrors.length;
+                  return fetch(mirrors[i] + encodeURI(rest)).then(function (r) { if (r.ok) { mirrorIdx = i; return r.arrayBuffer(); } throw new Error('miss'); })
+                    .catch(function () { return k + 1 < mirrors.length ? tryMirror(k + 1) : null; });
+                })(0);
+            load.then(function (buf) {
+              if (buf) {
+                var b = new Uint8Array(buf);
+                try { FS.stat(TEXCACHEROOT + '/' + name); } catch (e) { if (looksValid(b, name)) { FS.writeFile(TEXCACHEROOT + '/' + name, b); done++; } }
+              }
+            }).catch(function () {}).then(function () { active--; next(); });
+          }
+          for (var k = 0; k < 16; k++) next();
+          if (!queue.length && !active) resolve(0);
+        });
+      }
+      function compile(d) {
+        var t0 = Date.now(); fetched = []; missed = []; netMs = 0; netCount = 0;
+        self.mainfile = d.main;
+        var stem = WORKROOT + '/' + d.main.replace(/\.tex$/i, '');
+        try { FS.unlink(stem + '.pdf'); } catch (e) { /* none yet */ }
+        // tables of contents/figures are read one run late: report changes
+        function aux() {
+          var o = '';
+          ['.toc', '.lof', '.lot', '.nav'].forEach(function (x) { try { o += x + FS.readFile(stem + x, { encoding: 'utf8' }); } catch (e) { /* none */ } });
+          return o;
+        }
+        var hadAux = true;
+        try { FS.stat(stem + '.aux'); } catch (e) { hadAux = false; }
+        var before = aux();
+        prepareExecutionContext();
+        var setMain = cwrap('setMainEntry', 'number', ['string']);
+        setMain(self.mainfile);
+        var status = -1;
+        try { status = _compileLaTeX(); } catch (e) { self.memlog += '\n' + e; }
+        var pdf = null, log = '';
+        try { pdf = FS.readFile(stem + '.pdf', { encoding: 'binary' }); } catch (e) { pdf = null; }
+        try { log = FS.readFile(stem + '.log', { encoding: 'utf8' }); } catch (e) { log = ''; }
+        if (!log) log = self.memlog || '';
+        var listsChanged = status === 0 && aux() !== before;
+        // BibTeX (built into the engine): run it when citations or .bib files changed
+        var bibRan = false, bblChanged = false, blg = '';
+        if (status === 0 && d.bibtex !== false) {
+          var auxText = '';
+          try { auxText = FS.readFile(stem + '.aux', { encoding: 'utf8' }); } catch (e) { auxText = ''; }
+          if (auxText.indexOf('\\bibdata') >= 0) {
+            var key = auxText.split('\n').filter(function (l) { return /^\\(citation|bibdata|bibstyle)/.test(l); }).join('\n');
+            try { FS.readdir(WORKROOT).forEach(function (n) { if (/\.bib$/i.test(n)) key += '\n' + n + ':' + FS.readFile(WORKROOT + '/' + n, { encoding: 'utf8' }); }); } catch (e) { /* none */ }
+            if (key !== lastBibKey) {
+              lastBibKey = key;
+              var bblBefore = ''; try { bblBefore = FS.readFile(stem + '.bbl', { encoding: 'utf8' }); } catch (e) { /* none */ }
+              var memBefore = self.memlog;
+              try { _compileBibtex(); bibRan = true; } catch (e) { blg = String(e); }
+              var bblAfter = ''; try { bblAfter = FS.readFile(stem + '.bbl', { encoding: 'utf8' }); } catch (e) { /* none */ }
+              try { blg = FS.readFile(stem + '.blg', { encoding: 'utf8' }); } catch (e) { blg = blg || self.memlog.slice(memBefore.length); }
+              bblChanged = bblAfter !== bblBefore;
+            }
+          }
+        }
+        var msg = { cmd: 'lxdone', status: status, hadAux: hadAux, listsChanged: listsChanged, bibRan: bibRan, bblChanged: bblChanged, blg: blg, log: log, ms: Date.now() - t0, netMs: netMs, netCount: netCount, fetched: fetched, missed: missed, lsr: lsrTried ? (lsr ? 'ok' : 'failed') : 'unused', reqs: self.__reqs || null, lsrBy: self.__lsrBy || null };
+        self.__reqs = null;
+        if (pdf && pdf.length) { msg.pdf = pdf.buffer; self.postMessage(msg, [pdf.buffer]); }
+        else self.postMessage(msg);
+      }
+      var prefetching = Promise.resolve();
+      var lastBibKey = null;
+      var engineHandler = self.onmessage;
+      self.onmessage = function (ev) {
+        var d = ev.data || {};
+        if (d.cmd === 'lxsync') {
+          try {
+            (d.remove || []).forEach(function (p) { try { FS.unlink(WORKROOT + '/' + p); } catch (e) { /* gone */ } });
+            (d.files || []).forEach(function (f) {
+              mkdirs(f.path);
+              FS.writeFile(WORKROOT + '/' + f.path, typeof f.data === 'string' ? f.data : new Uint8Array(f.data));
+            });
+            self.postMessage({ cmd: 'lxsynced', ok: true });
+          } catch (e) { self.postMessage({ cmd: 'lxsynced', ok: false, error: String(e) }); }
+        } else if (d.cmd === 'lxcompile') {
+          // let a running warm-up prefetch finish first (parallel beats sequential)
+          prefetching.then(function () { compile(d); });
+        } else if (d.cmd === 'lxprefetch') {
+          var job = prefetch(d.list || []).then(function (n) { self.postMessage({ cmd: 'lxprefetched', count: n }); });
+          var cap = new Promise(function (r) { setTimeout(r, 8000); });
+          prefetching = Promise.all([prefetching, Promise.race([job, cap])]);
+        } else if (d.cmd === 'lxrmaux') {
+          // stale auxiliary files (e.g. after removing a package) can break the next run
+          var keep = {}; (d.keep || []).forEach(function (k) { keep[WORKROOT + '/' + k] = 1; });
+          var removed = 0;
+          (function walk(dir) {
+            var items; try { items = FS.readdir(dir); } catch (e) { return; }
+            items.forEach(function (n) {
+              if (n === '.' || n === '..') return;
+              var pth = dir + '/' + n, st;
+              try { st = FS.stat(pth); } catch (e) { return; }
+              if (FS.isDir(st.mode)) walk(pth);
+              else if (/\.(aux|toc|lof|lot|out|nav|snm|vrb|bbl|blg)$/i.test(n) && !keep[pth]) { try { FS.unlink(pth); removed++; } catch (e) { /* ignore */ } }
+            });
+          })(WORKROOT);
+          lastBibKey = null;
+          self.postMessage({ cmd: 'lxrmauxed', removed: removed });
+        } else if (d.cmd === 'lxclean') {
+          try { cleanDir(WORKROOT); } catch (e) { /* ignore */ }
+          lastBibKey = null;
+          self.postMessage({ cmd: 'lxcleaned' });
+        } else engineHandler(ev);
+      };
+    }
+
+    const LX_BOOT = `self.onmessage = function (e) {
+  var d = e.data || {};
+  if (d.cmd !== 'lxinit') return;
+  self.__LX = d;
+  try { importScripts(d.engineUrl); }
+  catch (err) { self.postMessage({ cmd: 'lxbootfail', error: String(err && err.message || err) }); }
+};`;
+
+    class LxEngine {
+      constructor() {
+        this.assets = null; this.assetsPromise = null;
+        this.worker = null; this.readyPromise = null;
+        this.pending = null; this.chain = Promise.resolve();
+        this.synced = new Map();      // path -> version key written to the worker
+        this.onStatus = null;         // (text) => void
+        this.onProgress = null;       // (fraction 0..1, label) => void
+      }
+      warmList() {
+        if (this.noDefaults) return [];
+        let list = [];
+        try { list = JSON.parse(localStorage.getItem(LX_CONF.warmKey) || '[]'); } catch (e) { list = []; }
+        return Array.from(new Set([...(Array.isArray(list) ? list : []), ...LX_WARM_DEFAULT]));
+      }
+      rememberWarm(items) {
+        if (!items || !items.length) return;
+        try {
+          const cur = JSON.parse(localStorage.getItem(LX_CONF.warmKey) || '[]');
+          const set = new Set(Array.isArray(cur) ? cur : []);
+          let changed = false;
+          for (const i of items) if (!set.has(i)) { set.add(i); changed = true; }
+          if (changed) localStorage.setItem(LX_CONF.warmKey, JSON.stringify(Array.from(set).slice(-600)));
+        } catch (e) { /* storage unavailable */ }
+      }
+      prefetch(list) {
+        if (!list || !list.length) return;
+        if (this.worker && this.readyResolved) this.worker.postMessage({ cmd: 'lxprefetch', list });
+        else this.pendingPrefetch = (this.pendingPrefetch || []).concat(list);
+      }
+      knownMap() {
+        let learned = {};
+        try { learned = JSON.parse(localStorage.getItem(LX_CONF.knownKey) || '{}') || {}; } catch (e) { learned = {}; }
+        return Object.assign({}, this.noDefaults ? {} : LX_KNOWN_DEFAULT, learned);
+      }
+      rememberKnown(fetched, missed) {
+        try {
+          const cur = JSON.parse(localStorage.getItem(LX_CONF.knownKey) || '{}') || {};
+          let changed = false;
+          for (const f of fetched || []) {
+            if (!f.startsWith('m:')) continue;
+            const path = f.slice(2), cut = path.lastIndexOf('/');
+            const name = path.slice(cut + 1), dir = path.slice(0, cut);
+            if (cur[name] !== dir) { cur[name] = dir; changed = true; }
+          }
+          for (const n of missed || []) if (cur[n] !== '') { cur[n] = ''; changed = true; }
+          if (changed) {
+            const keys = Object.keys(cur);
+            if (keys.length > 3000) for (const k of keys.slice(0, keys.length - 3000)) delete cur[k];
+            localStorage.setItem(LX_CONF.knownKey, JSON.stringify(cur));
+          }
+        } catch (e) { /* storage unavailable */ }
+      }
+      customBase() {
+        try { const b = (localStorage.getItem('pdfstudio.latex.base') || '').trim(); return b ? (b.endsWith('/') ? b : b + '/') : ''; } catch (e) { return ''; }
+      }
+      loadAssets() {
+        if (this.assets) return Promise.resolve(this.assets);
+        if (this.assetsPromise) return this.assetsPromise;
+        this.assetsPromise = (async () => {
+          const bases = [this.customBase(), ...LX_CONF.sources].filter(Boolean);
+          const total = LX_CONF.sizes.js + LX_CONF.sizes.wasm + LX_CONF.sizes.fmt;
+          let lastErr = null;
+          for (const base of bases) {
+            try {
+              const got = { js: 0, wasm: 0, fmt: 0 };
+              const report = () => this.onProgress && this.onProgress(Math.min(1, (got.js + got.wasm + got.fmt) / total), 'Downloading the TeX engine (first time only)…');
+              const [jsBytes, wasm, fmt] = await Promise.all([
+                lxFetchBytes(base + 'swiftlatex/swiftlatexpdftex.js', n => { got.js = n; report(); }),
+                lxFetchBytes(base + 'swiftlatex/swiftlatexpdftex.wasm', n => { got.wasm = n; report(); }),
+                lxFetchBytes(base + 'texlive/pdftex/10/swiftlatexpdftex.fmt', n => { got.fmt = n; report(); }),
+              ]);
+              const js = new TextDecoder().decode(jsBytes);
+              if (!js.includes('var Module={};') || !js.includes('kpse_find_file_impl')) throw new Error('unexpected engine script');
+              if (lxLooksLikeHtml(fmt) || fmt.length < 1e6) throw new Error('bad format file');
+              this.onProgress && this.onProgress(1, 'Starting the TeX engine…');
+              const mod = await WebAssembly.compile(wasm);
+              this.assets = { base, js, mod, fmt };
+              return this.assets;
+            } catch (e) { lastErr = e; console.warn('LaTeX engine source failed:', base, e); }
+          }
+          throw new Error('Could not download the LaTeX engine. Check your internet connection and try again.' + (lastErr ? ` (${lastErr.message})` : ''));
+        })().catch(e => { this.assetsPromise = null; throw e; });
+        return this.assetsPromise;
+      }
+      start() {
+        if (this.readyPromise) return this.readyPromise;
+        this.readyPromise = (async () => {
+          const a = await this.loadAssets();
+          const patch = 'var Module={instantiateWasm:function(imports,cb){WebAssembly.instantiate(self.__LX.mod,imports).then(function(inst){cb(inst,self.__LX.mod)},function(e){self.postMessage({cmd:"lxbootfail",error:String(e)})});return{}}};';
+          const src = a.js.replace('var Module={};', patch) + `\n;(${lxWorkerSide.toString()})();\n`;
+          const engineUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+          const bootUrl = URL.createObjectURL(new Blob([LX_BOOT], { type: 'text/javascript' }));
+          const w = new Worker(bootUrl);
+          this.worker = w; this.synced = new Map();
+          await new Promise((resolve, reject) => {
+            const to = setTimeout(() => reject(new Error('The TeX engine did not start.')), 60000);
+            w.onmessage = (ev) => {
+              const d = ev.data || {};
+              if (d.result === 'ok' && !d.cmd) { clearTimeout(to); resolve(); }
+              else if (d.cmd === 'lxbootfail' || d.result === 'failed') { clearTimeout(to); reject(new Error('The TeX engine failed to start: ' + (d.error || d.log || ''))); }
+            };
+            w.onerror = (e) => { clearTimeout(to); reject(new Error('The TeX engine failed to start: ' + (e.message || 'worker error'))); };
+            w.postMessage({ cmd: 'lxinit', engineUrl, mod: a.mod, fmt: a.fmt.slice().buffer, base: a.base, mirrors: LX_CONF.mirrors, texlyre: LX_CONF.texlyre, debug: !!this.debug, known: this.knownMap(), preferMirror: Object.assign({}, LX_PREFER_MIRROR, this.extraPreferMirror || {}) });
+          });
+          URL.revokeObjectURL(bootUrl);
+          w.onmessage = (ev) => this._onMessage(ev.data || {});
+          w.onerror = (e) => { console.error('LaTeX worker error', e); this._fail(new Error(e.message || 'The TeX engine crashed.')); };
+          const warm = Array.from(new Set([...this.warmList(), ...(this.pendingPrefetch || [])]));
+          this.pendingPrefetch = null;
+          if (warm.length) w.postMessage({ cmd: 'lxprefetch', list: warm });
+          this.readyResolved = true;
+          return true;
+        })().catch(e => { this.readyPromise = null; if (this.worker) { this.worker.terminate(); this.worker = null; } throw e; });
+        return this.readyPromise;
+      }
+      _onMessage(d) {
+        if (d.cmd === 'lxstatus') { this.onStatus && this.onStatus(d.text); return; }
+        if (d.cmd === 'lxprefetched') return;
+        if (d.result === 'failed' && d.cmd === 'compile') {      // engine abort
+          this._fail(new Error('The TeX engine crashed. It will restart for the next compile.'), d);
+          return;
+        }
+        const p = this.pending;
+        if (!p) return;
+        if (p.expect === d.cmd) { this.pending = null; clearTimeout(p.timer); p.resolve(d); }
+      }
+      _fail(err, data) {
+        const p = this.pending; this.pending = null;
+        this.kill();
+        if (p) { clearTimeout(p.timer); p.reject(Object.assign(err, { data })); }
+      }
+      kill() {
+        if (this.worker) { try { this.worker.terminate(); } catch (e) { /* gone */ } }
+        this.worker = null; this.readyPromise = null; this.readyResolved = false; this.synced = new Map();
+      }
+      _call(msg, expect, timeoutMs, transfer) {
+        return new Promise((resolve, reject) => {
+          const timer = timeoutMs ? setTimeout(() => this._fail(new Error('Compilation took too long and was stopped. Check for an endless loop or a missing package.')), timeoutMs) : 0;
+          this.pending = { expect, resolve, reject, timer };
+          this.worker.postMessage(msg, transfer || []);
+        });
+      }
+      resetWork() {
+        const run = this.chain.then(async () => {
+          if (!this.worker) return;
+          await this._call({ cmd: 'lxclean' }, 'lxcleaned', 10000);
+          this.synced = new Map();
+        });
+        this.chain = run.catch(() => {});
+        return run;
+      }
+      cleanAux() {
+        const run = this.chain.then(async () => {
+          if (!this.worker) return 0;
+          const r = await this._call({ cmd: 'lxrmaux', keep: Array.from(this.synced.keys()) }, 'lxrmauxed', 10000);
+          return r.removed;
+        });
+        this.chain = run.catch(() => {});
+        return run;
+      }
+      // files: [{ path, data: string|Uint8Array, ver }]; returns the compile result
+      compile(files, main, { timeoutMs = 120000 } = {}) {
+        const run = this.chain.then(async () => {
+          await this.start();
+          const want = new Map(files.map(f => [f.path, f]));
+          const remove = [];
+          for (const p of this.synced.keys()) if (!want.has(p)) remove.push(p);
+          const changed = [], transfer = [];
+          for (const f of files) {
+            if (this.synced.get(f.path) === f.ver) continue;
+            if (typeof f.data === 'string') changed.push({ path: f.path, data: f.data });
+            else { const copy = f.data.slice(); changed.push({ path: f.path, data: copy.buffer }); transfer.push(copy.buffer); }
+          }
+          if (changed.length || remove.length) {
+            const r = await this._call({ cmd: 'lxsync', files: changed, remove }, 'lxsynced', 30000, transfer);
+            if (!r.ok) throw new Error('Could not prepare the files: ' + r.error);
+            for (const p of remove) this.synced.delete(p);
+            for (const f of files) this.synced.set(f.path, f.ver);
+          }
+          const res = await this._call({ cmd: 'lxcompile', main }, 'lxdone', timeoutMs);
+          if (res.fetched && res.fetched.length) this.rememberWarm(res.fetched);
+          if ((res.fetched && res.fetched.length) || (res.missed && res.missed.length)) this.rememberKnown(res.fetched, res.missed);
+          return res;
+        });
+        this.chain = run.catch(() => {});
+        return run;
+      }
+    }
+
+    // ===================================================================
+    // LaTeX editor: view, editor, live preview, problems, projects
+    // ===================================================================
+    const LXS = {
+      open: false, engine: null, cm: null, ed: null, project: null, current: null,
+      docs: new Map(), auto: true, compiling: false, queued: false, timer: null, stopRequested: false,
+      pdf: null, lastOkAt: 0, problems: [], lastLog: '', saveTimer: null, dirty: false,
+      zoom: 'fit', pane: 'code', marks: [], lastFailed: false,
+    };
+    const LXP = { doc: null, gen: 0, sizes: [], scale: 1, holders: [], busy: new Set(), textCache: new Map(), raf: 0 };
+    const LX_TEXT_EXT = ['.tex', '.sty', '.cls', '.bib', '.bst', '.txt', '.cfg', '.def', '.clo', '.ltx', '.md', '.csv', '.dat', '.dtx', '.ins', '.bbl', '.tikz', '.pgf', '.lua', '.json', '.xml', '.fd'];
+    const LX_IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.pdf', '.gif', '.svg', '.eps', '.webp'];
+    const lxPref = {
+      get(k, d) { try { const v = localStorage.getItem('pdfstudio.latex.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+      set(k, v) { try { localStorage.setItem('pdfstudio.latex.' + k, JSON.stringify(v)); } catch (e) { /* unavailable */ } },
+    };
+    let LX_VER = 0;
+    function lxBump(f) { f.ver = ++LX_VER; return f; }
+    function lxIsText(path) { const e = extOf(path); return LX_TEXT_EXT.includes(e) || !e; }
+
+    // ------------------------------------------------------------ DOM
+    function lxEnsureDom() {
+      const root = $('view-latex');
+      if (root.dataset.ready) return;
+      root.dataset.ready = '1';
+      root.innerHTML = `
+        <div class="lx-top">
+          <button id="lx-back" class="lx-tb" title="Back to all tools"><i data-lucide="arrow-left"></i><span class="lx-desk-only">Tools</span></button>
+          <button id="lx-files-btn" class="lx-tb" title="Show or hide the files"><i data-lucide="panel-left"></i></button>
+          <button id="lx-projects-btn" class="lx-tb" title="Templates and your projects"><i data-lucide="folder-open"></i><span class="lx-desk-only">Projects</span></button>
+          <input id="lx-name" class="lx-name" aria-label="Project name" spellcheck="false">
+          <span id="lx-saved" class="text-[11px] text-slate-400 lx-desk-only"></span>
+          <div class="flex-1"></div>
+          <span id="lx-status" class="lx-status"><i data-lucide="circle-dashed"></i><span>Starting…</span></span>
+          <label class="lx-auto lx-desk-only" title="Recompile automatically a moment after you stop typing"><input type="checkbox" id="lx-auto">Auto</label>
+          <button id="lx-compile" class="lx-ghost" title="Compile now (Ctrl+Enter)"><i data-lucide="play"></i><span class="lx-desk-only">Compile</span></button>
+          <button id="lx-pane-btn" class="lx-tb lx-mobile-only" title="Switch between code and preview"><i data-lucide="eye"></i></button>
+          <div class="lx-split-btn">
+            <button id="lx-download" class="lx-primary" title="Download the PDF"><i data-lucide="download"></i><span>PDF</span></button>
+            <button id="lx-download-more" class="lx-primary" title="More download options"><i data-lucide="chevron-down"></i></button>
+          </div>
+          <button id="lx-more" class="lx-tb" title="More"><i data-lucide="ellipsis-vertical"></i></button>
+        </div>
+        <div class="lx-body" id="lx-body">
+          <aside class="lx-files" id="lx-files">
+            <div class="lx-files-head"><span class="flex-1">Files</span>
+              <button class="lx-ib" id="lx-file-new" title="New file"><i data-lucide="file-plus"></i></button>
+              <button class="lx-ib" id="lx-file-upload" title="Upload images or files"><i data-lucide="upload"></i></button>
+            </div>
+            <div class="lx-files-list" id="lx-files-list"></div>
+            <div class="lx-files-foot">Drop images, .tex, .bib or an Overleaf .zip anywhere to add them.</div>
+          </aside>
+          <section class="lx-edit" id="lx-edit">
+            <div class="lx-insert" id="lx-insert">
+              <button data-ins="bold" title="Bold (Ctrl+B)"><i data-lucide="bold"></i></button>
+              <button data-ins="italic" title="Italic (Ctrl+I)"><i data-lucide="italic"></i></button>
+              <span class="sep"></span>
+              <button data-ins="section" title="Section"><i data-lucide="heading"></i></button>
+              <button data-ins="itemize" title="Bullet list"><i data-lucide="list"></i></button>
+              <button data-ins="enumerate" title="Numbered list"><i data-lucide="list-ordered"></i></button>
+              <span class="sep"></span>
+              <button data-ins="math" title="Inline maths $…$">$x$</button>
+              <button data-ins="equation" title="Numbered equation"><i data-lucide="sigma"></i></button>
+              <button data-ins="table" title="Table"><i data-lucide="table"></i></button>
+              <button data-ins="figure" title="Picture (upload an image)"><i data-lucide="image"></i></button>
+              <button data-ins="link" title="Link"><i data-lucide="link"></i></button>
+              <span class="sep"></span>
+              <button data-ins="comment" title="Comment / uncomment lines (Ctrl+/)">%</button>
+              <button data-ins="find" title="Find and replace (Ctrl+F)"><i data-lucide="text-cursor-input"></i></button>
+            </div>
+            <div class="lx-editor-host" id="lx-editor-host"></div>
+            <div class="lx-problems collapsed" id="lx-problems">
+              <div class="lx-problems-head" id="lx-problems-head">
+                <i data-lucide="chevron-down" id="lx-problems-chev"></i>
+                <span id="lx-problems-sum">No problems</span>
+                <div class="flex-1"></div>
+                <button class="lx-tb" style="height:26px;font-size:12px" id="lx-rawlog-btn" title="Show the full compiler log">Raw log</button>
+              </div>
+              <div class="lx-problems-list" id="lx-problems-list"></div>
+            </div>
+          </section>
+          <div class="lx-divider" id="lx-divider" title="Drag to resize"></div>
+          <section class="lx-preview" id="lx-preview">
+            <div class="lx-ptool">
+              <span class="lx-pinfo" id="lx-pinfo">—</span>
+              <div class="flex-1"></div>
+              <button id="lx-zoom-out" title="Zoom out"><i data-lucide="zoom-out"></i></button>
+              <button id="lx-zoom-label" title="Zoom options" style="min-width:52px">Fit</button>
+              <button id="lx-zoom-in" title="Zoom in"><i data-lucide="zoom-in"></i></button>
+              <button id="lx-zoom-fit" title="Fit to width"><i data-lucide="move-horizontal"></i></button>
+            </div>
+            <div class="lx-pbar" id="lx-pbar"></div>
+            <div class="lx-banner hidden" id="lx-banner"><i data-lucide="triangle-alert"></i><span id="lx-banner-text"></span></div>
+            <div class="lx-pages" id="lx-pages"><div class="lx-pages-inner" id="lx-pages-inner"></div></div>
+            <div class="lx-empty" id="lx-empty"><div class="lx-card" id="lx-card"></div></div>
+          </section>
+          <div class="lx-drop-overlay">Drop to add to the project</div>
+        </div>
+        <div class="lx-menu hidden" id="lx-menu"></div>
+        <div class="lx-modal hidden" id="lx-modal"><div class="lx-modal-card" id="lx-modal-card"></div></div>
+        <input type="file" id="lx-upload-input" class="hidden" multiple>
+        <input type="file" id="lx-open-input" class="hidden" accept=".tex,.zip,.ltx,application/zip">
+      `;
+      lucide.createIcons();
+      LXS.auto = !!lxPref.get('auto', true);
+      LXS.spell = !!lxPref.get('spell', false);
+      $('lx-auto').checked = LXS.auto;
+      $('lx-auto').addEventListener('change', (e) => { LXS.auto = e.target.checked; lxPref.set('auto', LXS.auto); if (LXS.auto) lxScheduleCompile(50); });
+      $('lx-back').addEventListener('click', () => lxClose());
+      $('lx-files-btn').addEventListener('click', () => { const f = $('lx-files'); f.classList.toggle('collapsed'); lxPref.set('filesHidden', f.classList.contains('collapsed')); lxRelayoutSoon(); });
+      if (lxPref.get('filesHidden', window.innerWidth < 1100)) $('lx-files').classList.add('collapsed');
+      $('lx-projects-btn').addEventListener('click', () => lxShowProjects());
+      $('lx-name').addEventListener('input', () => { if (LXS.project) { LXS.project.name = $('lx-name').value.trim() || 'Untitled'; lxSaveSoon(); } });
+      $('lx-compile').addEventListener('click', () => { if (LXS.compiling) lxStop(); else lxCompileNow(); });
+      $('lx-status').addEventListener('click', () => { if (LXS.problems.some(p => p.sev === 'err')) lxToggleProblems(true); });
+      $('lx-download').addEventListener('click', () => lxDownloadPdf());
+      $('lx-download-more').addEventListener('click', (e) => lxMenu(e.currentTarget, [
+        { icon: 'download', label: 'PDF', run: lxDownloadPdf },
+        { icon: 'file-code', label: 'Main .tex file', run: lxDownloadTex },
+        { icon: 'file-archive', label: 'Whole project (.zip)', run: lxDownloadZip },
+        { sep: true },
+        { icon: 'external-link', label: 'Open the PDF in a new tab', run: lxOpenPdfTab },
+      ]));
+      $('lx-more').addEventListener('click', (e) => lxMenu(e.currentTarget, [
+        { icon: 'folder-open', label: 'Open .tex or .zip…', run: () => $('lx-open-input').click() },
+        { icon: 'file-code', label: 'Download main .tex', run: lxDownloadTex },
+        { icon: 'file-archive', label: 'Download project (.zip)', run: lxDownloadZip },
+        { icon: 'external-link', label: 'Open the PDF in a new tab', run: lxOpenPdfTab },
+        { icon: 'whole-word', label: 'Word count', run: lxWordCount },
+        { icon: 'spell-check', label: LXS.spell ? 'Turn spell check off' : 'Turn spell check on', run: lxToggleSpell },
+        { icon: 'scroll-text', label: 'Show the full log', run: () => { lxToggleProblems(true); lxShowRawLog(true); } },
+        { icon: 'rotate-ccw', label: 'Restart the TeX engine', run: lxRestartEngine },
+        { sep: true },
+        { icon: 'keyboard', label: 'Keyboard shortcuts', run: lxShowShortcuts },
+        { icon: 'info', label: 'About the engine', run: () => lxShowProjects('about') },
+      ]));
+      $('lx-pane-btn').addEventListener('click', () => lxSetPane(LXS.pane === 'code' ? 'preview' : 'code'));
+      $('lx-file-new').addEventListener('click', () => lxNewFilePrompt());
+      $('lx-file-upload').addEventListener('click', () => { LXS._insertAfterUpload = false; $('lx-upload-input').click(); });
+      $('lx-upload-input').addEventListener('change', async (e) => { const fs = Array.from(e.target.files || []); e.target.value = ''; await lxAddFiles(fs, { insert: LXS._insertAfterUpload }); });
+      $('lx-open-input').addEventListener('change', async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) await lxOpenFileAsProject(f); });
+      $('lx-problems-head').addEventListener('click', (e) => { if (e.target.closest('#lx-rawlog-btn')) return; lxToggleProblems(); });
+      $('lx-rawlog-btn').addEventListener('click', () => lxShowRawLog());
+      $('lx-insert').addEventListener('mousedown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
+      $('lx-insert').addEventListener('click', (e) => { const b = e.target.closest('button[data-ins]'); if (b) lxInsert(b.dataset.ins); });
+      $('lx-zoom-in').addEventListener('click', () => lxZoomStep(1));
+      $('lx-zoom-out').addEventListener('click', () => lxZoomStep(-1));
+      $('lx-zoom-fit').addEventListener('click', () => lxSetZoom('fit'));
+      $('lx-zoom-label').addEventListener('click', (e) => lxMenu(e.currentTarget, [
+        { icon: 'move-horizontal', label: 'Fit width', run: () => lxSetZoom('fit') },
+        { icon: 'scan', label: 'Whole page', run: () => lxSetZoom('page') },
+        { sep: true },
+        ...[0.5, 0.75, 1, 1.25, 1.5, 2].map(z => ({ icon: 'zoom-in', label: Math.round(z * 100) + '%', run: () => lxSetZoom(z) })),
+      ]));
+      $('lx-banner').addEventListener('click', () => { const p = LXS.problems.find(x => x.sev === 'err'); if (p) lxGotoProblem(p); });
+      const pages = $('lx-pages');
+      pages.addEventListener('scroll', () => lxOnPreviewScroll(), { passive: true });
+      pages.addEventListener('dblclick', (e) => lxPreviewDblClick(e));
+      pages.addEventListener('wheel', (e) => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); lxZoomStep(e.deltaY < 0 ? 1 : -1); } }, { passive: false });
+      if (window.ResizeObserver) new ResizeObserver(() => lxRelayoutSoon()).observe(pages);
+      lxSetupDivider();
+      lxSetupDrop();
+      document.addEventListener('keydown', lxKeydown, true);
+      document.addEventListener('mousedown', (e) => { if (!e.target.closest('#lx-menu') && !e.target.closest('#lx-download-more') && !e.target.closest('#lx-more')) $('lx-menu').classList.add('hidden'); });
+      $('lx-modal').addEventListener('mousedown', (e) => { if (e.target.id === 'lx-modal' && LXS.project) lxHideModal(); });
+      lxSetPane('code');
+      const ratio = lxPref.get('split', 0.5);
+      lxApplySplit(ratio);
+      const z = lxPref.get('zoom', 'fit');
+      LXS.zoom = (z === 'fit' || z === 'page' || (typeof z === 'number' && z > 0.1 && z < 5)) ? z : 'fit';
+    }
+
+    // ------------------------------------------------------------ open / close
+    function lxEnsureEngine() {
+      if (!LXS.engine) {
+        LXS.engine = new LxEngine();
+        LXS.engine.onStatus = (t) => { if (LXS.compiling) lxSetStatus('busy', t); };
+        LXS.engine.onProgress = (f, label) => { if (LXS.open) lxEngineProgress(f, label); };
+      }
+      return LXS.engine;
+    }
+    function lxPrewarm() {
+      if (LXS._prewarmed) return;
+      LXS._prewarmed = true;
+      lxEnsureEngine().loadAssets().catch(() => { LXS._prewarmed = false; });
+      lxLoadCodeMirror().catch(() => {});
+    }
+    async function lxOpen(opts = {}) {
+      lxEnsureDom();
+      if (opts.pickImport) $('lx-open-input').click();   // while the click still counts as a user gesture
+      if (typeof DS !== 'undefined' && DS.open) dsClose({ fromHash: true });
+      state.currentTool = null;
+      LXS.open = true;
+      $('view-latex').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      if (!opts.noHash && location.hash !== '#latex') history.pushState(null, '', '#latex');
+      lxEnsureEngine();
+      // start downloading the engine right away; the editor loads meanwhile
+      LXS.engine.start().then(() => { if (!LXS.pdf && !LXS.compiling) lxCompileNow(); }).catch(e => lxEngineFailed(e));
+      await lxInitEditor();
+      if (opts.importFiles && opts.importFiles.length) {
+        const f = opts.importFiles[0];
+        await lxOpenFileAsProject(f);
+      } else if (!LXS.project) {
+        const last = lxPref.get('last', null);
+        let p = null;
+        if (last) { try { p = await lxDbGet(last); } catch (e) { p = null; } }
+        if (!p) { try { const all = await lxDbAll(); p = all.sort((a, b) => b.updated - a.updated)[0] || null; } catch (e) { p = null; } }
+        if (p) lxLoadProject(p);
+        else await lxNewFromTemplate('article', { silent: true });
+      } else {
+        lxRefreshEditor();
+        lxRelayoutSoon();
+      }
+      if (opts.template) await lxNewFromTemplate(opts.template);
+      lxCompileNow();
+    }
+    function lxClose({ fromHash = false } = {}) {
+      if (!LXS.open) return;
+      lxSaveNow().catch(() => {});
+      LXS.open = false;
+      lxHideModal();
+      $('lx-menu').classList.add('hidden');
+      $('view-latex').classList.add('hidden');
+      document.body.style.overflow = '';
+      if (!fromHash) navigateToDashboard();
+    }
+
+    // ------------------------------------------------------------ editor
+    let lxCMPromise = null;
+    function lxLoadCodeMirror() {
+      if (!lxCMPromise) lxCMPromise = lxLoadCodeMirrorOnce().then(ok => { if (!ok) lxCMPromise = null; return ok; });
+      return lxCMPromise;
+    }
+    async function lxLoadCodeMirrorOnce() {
+      if (window.CodeMirror && CodeMirror.modes && CodeMirror.modes.stex) return true;
+      const files = ['lib/codemirror', 'mode/stex/stex', 'addon/edit/matchbrackets', 'addon/edit/closebrackets', 'addon/selection/active-line', 'addon/search/searchcursor', 'addon/search/search', 'addon/dialog/dialog'];
+      const ok = () => window.CodeMirror && CodeMirror.modes && CodeMirror.modes.stex;
+      try { await injectScript('https://cdn.jsdelivr.net/combine/' + files.map(f => `npm/codemirror@5.65.18/${f}.min.js`).join(',')); if (ok()) return true; } catch (e) { /* try the next CDN */ }
+      try {
+        for (const f of files) await injectScript(`https://unpkg.com/codemirror@5.65.18/${f}.js`);
+        if (ok()) return true;
+      } catch (e) { /* fall back to a plain text area */ }
+      return false;
+    }
+    async function lxInitEditor() {
+      if (LXS.ed) return;
+      const host = $('lx-editor-host');
+      const hasCM = await lxLoadCodeMirror();
+      if (LXS.ed) return;
+      if (hasCM) {
+        const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd' : 'Ctrl';
+        const keys = {
+          Tab: (cm) => cm.somethingSelected() ? cm.indentSelection('add') : cm.replaceSelection('  ', 'end'),
+          'Shift-Tab': (cm) => cm.indentSelection('subtract'),
+        };
+        keys[mod + '-B'] = () => lxInsert('bold');
+        keys[mod + '-I'] = () => lxInsert('italic');
+        keys[mod + '-/'] = () => lxInsert('comment');
+        const cm = CodeMirror(host, {
+          value: '', mode: 'stex', lineNumbers: true, lineWrapping: true, matchBrackets: true,
+          autoCloseBrackets: { pairs: '()[]{}$$', explode: '[]{}' }, styleActiveLine: true,
+          indentUnit: 2, tabSize: 2, indentWithTabs: false, gutters: ['lx-gutter-mark', 'CodeMirror-linenumbers'],
+          extraKeys: keys, viewportMargin: 30, spellcheck: !!LXS.spell, inputStyle: 'contenteditable',
+        });
+        LXS.cm = cm;
+        cm.on('changes', () => lxOnEdit());
+        LXS.ed = {
+          kind: 'cm',
+          setFile(path, text) {
+            let d = LXS.docs.get(path);
+            if (!d) { d = CodeMirror.Doc(text, 'stex'); LXS.docs.set(path, d); }
+            else if (d.getValue() !== text) d.setValue(text);
+            LXS._swapping = true; cm.swapDoc(d); LXS._swapping = false;
+            cm.getWrapperElement().style.display = '';
+          },
+          hide() { cm.getWrapperElement().style.display = 'none'; },
+          getValue: () => cm.getValue(),
+          focus: () => cm.focus(),
+          refresh: () => cm.refresh(),
+          goto(line, ch = 0, flash = true) {
+            const l = Math.max(0, Math.min(cm.lineCount() - 1, line - 1));
+            cm.setCursor({ line: l, ch });
+            cm.scrollIntoView({ line: l, ch }, Math.round(cm.getScrollInfo().clientHeight / 3));
+            if (flash) { const h = cm.addLineClass(l, 'background', 'lx-line-flash'); setTimeout(() => cm.removeLineClass(h, 'background', 'lx-line-flash'), 1200); }
+            cm.focus();
+          },
+          wrap(before, after, placeholder) {
+            const sel = cm.getSelection();
+            const inner = sel || placeholder || '';
+            cm.replaceSelection(before + inner + after, 'around');
+            const from = cm.getCursor('from');
+            const start = cm.indexFromPos(from) + before.length;
+            cm.setSelection(cm.posFromIndex(start), cm.posFromIndex(start + inner.length));
+            cm.focus();
+          },
+          insertBlock(text, selectText) {
+            const cur = cm.getCursor();
+            const lineText = cm.getLine(cur.line);
+            let prefix = lineText.trim() ? '\n' : '', suffix = '\n';
+            if (/^\s*\\end\{document\}/.test(lineText)) { cm.setCursor({ line: cur.line, ch: 0 }); prefix = ''; }   // never after \end{document}
+            else if (lineText.trim() && cur.ch < lineText.length) cm.setCursor({ line: cur.line, ch: lineText.length });
+            const at = cm.indexFromPos(cm.getCursor()) + prefix.length;
+            cm.replaceSelection(prefix + text + suffix, 'end');
+            if (selectText) {
+              const i = text.indexOf(selectText);
+              if (i >= 0) cm.setSelection(cm.posFromIndex(at + i), cm.posFromIndex(at + i + selectText.length));
+            }
+            cm.focus();
+          },
+          toggleComment() {
+            const from = cm.getCursor('from').line, to = cm.getCursor('to').line;
+            const lines = []; for (let l = from; l <= to; l++) lines.push(cm.getLine(l));
+            const all = lines.filter(t => t.trim()).every(t => /^\s*%/.test(t));
+            cm.operation(() => {
+              for (let l = from; l <= to; l++) {
+                const t = cm.getLine(l);
+                if (all) { const m = /^(\s*)% ?/.exec(t); if (m) cm.replaceRange(m[1], { line: l, ch: 0 }, { line: l, ch: m[0].length }); }
+                else if (t.trim()) cm.replaceRange('% ', { line: l, ch: (/^\s*/.exec(t) || [''])[0].length });
+              }
+            });
+            cm.focus();
+          },
+          find() { cm.focus(); cm.execCommand('find'); },
+          marks(list) {
+            for (const m of LXS.marks) { try { cm.removeLineClass(m, 'background'); } catch (e) { /* stale */ } }
+            LXS.marks = [];
+            cm.clearGutter('lx-gutter-mark');
+            for (const p of list) {
+              const l = p.line - 1;
+              if (l < 0 || l >= cm.lineCount()) continue;
+              LXS.marks.push(cm.addLineClass(l, 'background', p.sev === 'err' ? 'lx-line-err' : 'lx-line-warn'));
+              const dot = document.createElement('span'); dot.className = 'lx-gm ' + (p.sev === 'err' ? 'err' : 'warn'); dot.title = p.msg;
+              cm.setGutterMarker(l, 'lx-gutter-mark', dot);
+            }
+          },
+          wordAt() { const c = cm.getCursor(); return { line: c.line + 1, ch: c.ch }; },
+        };
+      } else {
+        const ta = document.createElement('textarea');
+        ta.className = 'lx-plain'; ta.spellcheck = false;
+        host.appendChild(ta);
+        ta.addEventListener('input', () => lxOnEdit());
+        ta.addEventListener('keydown', (e) => {
+          if (e.key === 'Tab') { e.preventDefault(); const s = ta.selectionStart; ta.setRangeText('  ', s, ta.selectionEnd, 'end'); lxOnEdit(); }
+        });
+        const lineStart = (line) => { const parts = ta.value.split('\n'); let i = 0; for (let k = 0; k < Math.min(line - 1, parts.length); k++) i += parts[k].length + 1; return i; };
+        LXS.ed = {
+          kind: 'plain',
+          setFile(path, text) { if (ta.value !== text) ta.value = text; ta.style.display = ''; },
+          hide() { ta.style.display = 'none'; },
+          getValue: () => ta.value, focus: () => ta.focus(), refresh() {},
+          goto(line, ch = 0) { const i = lineStart(line) + ch; ta.focus(); ta.setSelectionRange(i, i); const lh = 21; ta.scrollTop = Math.max(0, (line - 4) * lh); },
+          wrap(before, after, placeholder) { const s = ta.selectionStart, e = ta.selectionEnd; const inner = ta.value.slice(s, e) || placeholder || ''; ta.setRangeText(before + inner + after, s, e, 'end'); ta.setSelectionRange(s + before.length, s + before.length + inner.length); ta.focus(); lxOnEdit(); },
+          insertBlock(text) {
+            let s = ta.selectionEnd;
+            const ls = ta.value.lastIndexOf('\n', s - 1) + 1;
+            if (/^\s*\\end\{document\}/.test(ta.value.slice(ls, ta.value.indexOf('\n', ls) < 0 ? undefined : ta.value.indexOf('\n', ls)))) s = ls;
+            const pre = s > 0 && ta.value[s - 1] !== '\n' ? '\n' : '';
+            ta.setRangeText(pre + text + '\n', s, s, 'end'); ta.focus(); lxOnEdit();
+          },
+          toggleComment() { const s = ta.selectionStart; const ls = ta.value.lastIndexOf('\n', s - 1) + 1; if (ta.value.slice(ls, ls + 2) === '% ') ta.setRangeText('', ls, ls + 2, 'preserve'); else ta.setRangeText('% ', ls, ls, 'preserve'); lxOnEdit(); },
+          find() { showToast('Use your browser\'s find (Ctrl+F).', 'info'); },
+          marks() {}, wordAt() { return { line: ta.value.slice(0, ta.selectionStart).split('\n').length, ch: 0 }; },
+        };
+      }
+    }
+    function lxCurrentFile() { return LXS.project && LXS.project.files.find(f => f.path === LXS.current); }
+    function lxOnEdit() {
+      if (LXS._swapping || !LXS.project) return;
+      const f = lxCurrentFile();
+      if (!f || f.bytes) return;
+      const v = LXS.ed.getValue();
+      if (v === f.text) return;
+      f.text = v; lxBump(f);
+      lxSaveSoon();
+      if (LXS.auto) lxScheduleCompile();
+    }
+    function lxRefreshEditor() {
+      if (!LXS.ed || !LXS.project) return;
+      const f = lxCurrentFile();
+      const host = $('lx-editor-host');
+      const bin = host.querySelector('.lx-binary');
+      if (bin) bin.remove();
+      if (!f) { LXS.ed.hide(); return; }
+      if (f.bytes) {
+        LXS.ed.hide();
+        const box = document.createElement('div');
+        box.className = 'lx-binary';
+        const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(f.path);
+        box.innerHTML = `${isImg ? '<img alt="">' : '<i data-lucide="file"></i>'}
+          <div><b>${esc(f.path)}</b> · ${fmtBytes(f.bytes.length)}</div>
+          ${/\.(png|jpe?g|pdf)$/i.test(f.path) ? `<button class="lx-ghost" data-act="insert"><i data-lucide="image"></i>Insert into ${esc(LXS.project.main)}</button>` : ''}
+          ${/\.(eps|gif|svg|webp)$/i.test(f.path) ? '<div class="text-amber-700 text-xs">pdfLaTeX can only include PNG, JPG and PDF images.</div>' : ''}`;
+        host.appendChild(box);
+        if (isImg) { const url = URL.createObjectURL(new Blob([f.bytes], { type: f.path.endsWith('.svg') ? 'image/svg+xml' : '' })); const img = box.querySelector('img'); img.onload = () => URL.revokeObjectURL(url); img.src = url; }
+        const ib = box.querySelector('[data-act="insert"]');
+        if (ib) ib.addEventListener('click', () => { const p = f.path; lxSelectFile(LXS.project.main); lxInsertFigure(p); });
+        lucide.createIcons();
+        return;
+      }
+      LXS.ed.setFile(f.path, f.text || '');
+      lxApplyMarks();
+      requestAnimationFrame(() => LXS.ed.refresh());
+    }
+    function lxSelectFile(path) {
+      if (!LXS.project) return;
+      LXS.current = path;
+      lxRefreshEditor();
+      lxRenderFiles();
+    }
+
+    // ------------------------------------------------------------ insert toolbar
+    function lxEnsurePackage(pkg, opts = '') {
+      const main = LXS.project && LXS.project.files.find(f => f.path === LXS.project.main);
+      if (!main || main.bytes) return;
+      const re = new RegExp('\\\\(usepackage|RequirePackage)(\\[[^\\]]*\\])?\\{[^}]*\\b' + pkg + '\\b[^}]*\\}');
+      if (re.test(main.text) || /\\documentclass(\[[^\]]*\])?\{beamer\}/.test(main.text) && /^(graphicx|hyperref|amsmath|xcolor)$/.test(pkg)) return;
+      const line = `\\usepackage${opts ? '[' + opts + ']' : ''}{${pkg}}\n`;
+      const at = main.text.search(/\\begin\{document\}/);
+      if (at < 0) return;
+      // put it after the last \usepackage line, or right before \begin{document}
+      const before = main.text.slice(0, at);
+      const lastUse = before.lastIndexOf('\\usepackage');
+      let pos = at;
+      if (lastUse >= 0) { const nl = main.text.indexOf('\n', lastUse); if (nl >= 0 && nl < at) pos = nl + 1; }
+      main.text = main.text.slice(0, pos) + line + main.text.slice(pos);
+      lxBump(main);
+      if (LXS.current === main.path) {
+        if (LXS.cm) { const p = LXS.cm.posFromIndex(pos); LXS.cm.replaceRange(line, p); }
+        else LXS.ed.setFile(main.path, main.text);
+      }
+      showToast(`Added \\usepackage{${pkg}} to the preamble.`, 'info', 2600);
+    }
+    function lxInsert(kind) {
+      if (!LXS.ed || !LXS.project) return;
+      const f = lxCurrentFile();
+      if (!f || f.bytes) { lxSelectFile(LXS.project.main); }
+      const ed = LXS.ed;
+      switch (kind) {
+        case 'bold': ed.wrap('\\textbf{', '}', 'bold text'); break;
+        case 'italic': ed.wrap('\\emph{', '}', 'emphasis'); break;
+        case 'section': ed.insertBlock('\\section{Section title}\n', 'Section title'); break;
+        case 'itemize': ed.insertBlock('\\begin{itemize}\n  \\item First point\n  \\item Second point\n\\end{itemize}', 'First point'); break;
+        case 'enumerate': ed.insertBlock('\\begin{enumerate}\n  \\item First step\n  \\item Second step\n\\end{enumerate}', 'First step'); break;
+        case 'math': ed.wrap('$', '$', 'x^2'); break;
+        case 'equation': lxEnsurePackage('amsmath'); ed.insertBlock('\\begin{equation}\n  E = mc^2 \\label{eq:name}\n\\end{equation}', 'E = mc^2'); break;
+        case 'table': ed.insertBlock('\\begin{table}[ht]\n  \\centering\n  \\begin{tabular}{|l|c|r|}\n    \\hline\n    Left & Centre & Right \\\\\n    \\hline\n    a & b & c \\\\\n    d & e & f \\\\\n    \\hline\n  \\end{tabular}\n  \\caption{Table caption}\n  \\label{tab:name}\n\\end{table}', 'Left'); break;
+        case 'figure': {
+          const imgs = LXS.project.files.filter(x => /\.(png|jpe?g|pdf)$/i.test(x.path));
+          if (imgs.length) {
+            lxMenu($('lx-insert').querySelector('[data-ins="figure"]'), [
+              ...imgs.slice(0, 12).map(x => ({ icon: 'image', label: x.path, run: () => lxInsertFigure(x.path) })),
+              { sep: true },
+              { icon: 'upload', label: 'Upload a new image…', run: () => { LXS._insertAfterUpload = true; $('lx-upload-input').accept = 'image/png,image/jpeg,application/pdf'; $('lx-upload-input').click(); setTimeout(() => { $('lx-upload-input').accept = ''; }, 1000); } },
+            ]);
+          } else { LXS._insertAfterUpload = true; $('lx-upload-input').accept = 'image/png,image/jpeg,application/pdf'; $('lx-upload-input').click(); setTimeout(() => { $('lx-upload-input').accept = ''; }, 1000); }
+          break;
+        }
+        case 'link': lxEnsurePackage('hyperref'); ed.wrap('\\href{https://example.com}{', '}', 'link text'); break;
+        case 'comment': ed.toggleComment(); break;
+        case 'find': ed.find(); break;
+      }
+    }
+    function lxInsertFigure(path) {
+      lxEnsurePackage('graphicx');
+      const label = baseName(path.split('/').pop()).replace(/[^A-Za-z0-9]+/g, '-').toLowerCase() || 'figure';
+      LXS.ed.insertBlock(`\\begin{figure}[ht]\n  \\centering\n  \\includegraphics[width=0.7\\linewidth]{${path}}\n  \\caption{Caption}\n  \\label{fig:${label}}\n\\end{figure}`, 'Caption');
+    }
+
+    // ------------------------------------------------------------ files panel
+    function lxRenderFiles() {
+      const list = $('lx-files-list');
+      if (!list || !LXS.project) return;
+      const files = LXS.project.files.slice().sort((a, b) => (a.path === LXS.project.main ? -1 : b.path === LXS.project.main ? 1 : a.path.localeCompare(b.path)));
+      list.innerHTML = files.map(f => {
+        const icon = f.bytes ? (/\.(png|jpe?g|gif|webp|svg|pdf|eps)$/i.test(f.path) ? 'file-image' : 'file') : (/\.tex$/i.test(f.path) ? 'file-text' : 'file-code');
+        const isMain = f.path === LXS.project.main;
+        return `<div class="lx-file${f.path === LXS.current ? ' active' : ''}" data-path="${esc(f.path)}" title="${esc(f.path)}">
+          <i data-lucide="${icon}"></i><span class="nm">${esc(f.path)}</span>${isMain ? '<span class="main-badge" title="Main file: this is the file that gets compiled">MAIN</span>' : ''}
+          <span class="acts">
+            ${!isMain && /\.tex$/i.test(f.path) ? '<button data-act="main" title="Compile this file (make it the main file)"><i data-lucide="star"></i></button>' : ''}
+            <button data-act="rename" title="Rename"><i data-lucide="pencil"></i></button>
+            ${!isMain ? '<button data-act="delete" class="danger" title="Delete"><i data-lucide="trash"></i></button>' : ''}
+          </span></div>`;
+      }).join('') + (LXS.project.files.length < 3 ? '<div class="lx-drop-hint">Add images with the upload button, then insert them with the picture button above the code.</div>' : '');
+      list.querySelectorAll('.lx-file').forEach(row => {
+        row.addEventListener('click', (e) => {
+          const path = row.dataset.path;
+          const act = e.target.closest('button') && e.target.closest('button').dataset.act;
+          if (act === 'main') { LXS.project.main = path; lxSaveSoon(); lxRenderFiles(); lxCompileNow(); return; }
+          if (act === 'rename') { lxRenameFilePrompt(row, path); return; }
+          if (act === 'delete') { lxConfirmDelete(row, path); return; }
+          if (act === 'yes') { lxDeleteFile(path); return; }
+          if (act === 'no') { lxRenderFiles(); return; }
+          if (!e.target.closest('input')) lxSelectFile(path);
+          if (window.innerWidth <= 860) $('lx-files').classList.add('collapsed');
+        });
+      });
+      lucide.createIcons();
+    }
+    function lxConfirmDelete(row, path) {
+      row.classList.add('confirm');
+      row.querySelector('.acts').innerHTML = '<button data-act="yes" class="danger" title="Delete"><i data-lucide="check"></i></button><button data-act="no" title="Keep"><i data-lucide="x"></i></button>';
+      row.querySelector('.nm').textContent = 'Delete ' + path + '?';
+      lucide.createIcons();
+    }
+    function lxDeleteFile(path) {
+      const p = LXS.project;
+      p.files = p.files.filter(f => f.path !== path);
+      LXS.docs.delete(path);
+      if (LXS.current === path) LXS.current = p.main;
+      lxSaveSoon(); lxRenderFiles(); lxRefreshEditor(); lxScheduleCompile(50);
+    }
+    function lxCleanPath(name) {
+      return String(name || '').replace(/\\/g, '/').replace(/^\/+/, '').split('/').filter(s => s && s !== '.' && s !== '..').join('/').replace(/[^\w.\-/ +]/g, '_').trim();
+    }
+    function lxUniquePath(path) {
+      const p = LXS.project;
+      if (!p.files.some(f => f.path === path)) return path;
+      const dot = path.lastIndexOf('.'), stem = dot > 0 ? path.slice(0, dot) : path, ext = dot > 0 ? path.slice(dot) : '';
+      for (let i = 2; ; i++) { const c = `${stem}-${i}${ext}`; if (!p.files.some(f => f.path === c)) return c; }
+    }
+    function lxInlineInput(row, value, onDone) {
+      const nm = row.querySelector('.nm');
+      const inp = document.createElement('input');
+      inp.value = value;
+      nm.replaceWith(inp);
+      inp.focus();
+      const dot = value.lastIndexOf('.'); inp.setSelectionRange(0, dot > 0 ? dot : value.length);
+      let done = false;
+      const finish = (ok) => { if (done) return; done = true; const v = inp.value.trim(); if (ok && v && v !== value) onDone(v); else lxRenderFiles(); };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(true); else if (e.key === 'Escape') finish(false); e.stopPropagation(); });
+      inp.addEventListener('blur', () => finish(true));
+    }
+    function lxRenameFilePrompt(row, path) {
+      lxInlineInput(row, path, (v) => {
+        const np = lxCleanPath(v);
+        if (!np || LXS.project.files.some(f => f.path === np)) { showToast('That name is already used.', 'error'); lxRenderFiles(); return; }
+        const f = LXS.project.files.find(x => x.path === path);
+        f.path = np; lxBump(f);
+        const d = LXS.docs.get(path); if (d) { LXS.docs.delete(path); LXS.docs.set(np, d); }
+        if (LXS.project.main === path) LXS.project.main = np;
+        if (LXS.current === path) LXS.current = np;
+        lxSaveSoon(); lxRenderFiles(); lxScheduleCompile(50);
+      });
+    }
+    function lxNewFilePrompt() {
+      if (!LXS.project) return;
+      $('lx-files').classList.remove('collapsed');
+      const path = lxUniquePath('chapter.tex');
+      LXS.project.files.push(lxBump({ path, text: '% Include this file from the main file with \\input{file name without .tex}\n\n' }));
+      lxSaveSoon();
+      lxSelectFile(path);
+      const row = $('lx-files-list').querySelector(`[data-path="${CSS.escape(path)}"]`);
+      if (row) lxRenameFilePrompt(row, path);
+    }
+    async function lxAddFiles(files, { insert = false } = {}) {
+      if (!LXS.project || !files.length) return;
+      if (files.length === 1 && /\.zip$/i.test(files[0].name)) { await lxOpenFileAsProject(files[0]); return; }
+      let lastImage = null, added = 0;
+      for (const file of files) {
+        let name = lxCleanPath(file.name);
+        if (!name) continue;
+        let bytes = new Uint8Array(await file.arrayBuffer());
+        let path = name;
+        if (/\.(webp|gif|bmp|heic|heif|tiff?|avif|svg)$/i.test(name)) {
+          // pdfLaTeX only reads PNG/JPG/PDF: convert on the way in
+          try {
+            const c = await decodeImageFile(file);
+            const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+            bytes = new Uint8Array(await blob.arrayBuffer());
+            path = name.replace(/\.[^.]+$/, '.png');
+          } catch (e) { /* keep the original */ }
+        }
+        const existing = LXS.project.files.find(f => f.path === path);
+        const isText = lxIsText(path);
+        if (existing) {
+          if (isText) { existing.text = new TextDecoder().decode(bytes); delete existing.bytes; LXS.docs.delete(path); }
+          else { existing.bytes = bytes; delete existing.text; }
+          lxBump(existing);
+        } else {
+          LXS.project.files.push(lxBump(isText ? { path, text: new TextDecoder().decode(bytes) } : { path, bytes }));
+        }
+        added++;
+        if (/\.(png|jpe?g|pdf)$/i.test(path)) lastImage = path;
+      }
+      if (!added) return;
+      lxSaveSoon(); lxRenderFiles();
+      if (insert && lastImage) { lxSelectFile(LXS.project.main); lxInsertFigure(lastImage); }
+      else if (!insert) showToast(added === 1 ? 'File added to the project.' : `${added} files added to the project.`, 'success', 2200);
+      lxScheduleCompile(100);
+    }
+
+    // ------------------------------------------------------------ drag & drop, divider, panes
+    function lxSetupDrop() {
+      const root = $('view-latex');
+      let depth = 0;
+      root.addEventListener('dragenter', (e) => { if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return; depth++; root.classList.add('dragover'); e.preventDefault(); });
+      root.addEventListener('dragover', (e) => { if (Array.from((e.dataTransfer && e.dataTransfer.types) || []).includes('Files')) e.preventDefault(); });
+      root.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) root.classList.remove('dragover'); });
+      root.addEventListener('drop', async (e) => {
+        depth = 0; root.classList.remove('dragover');
+        const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+        if (!files.length) return;
+        e.preventDefault(); e.stopPropagation();
+        const overEditor = !!e.target.closest('#lx-editor-host');
+        await lxAddFiles(files, { insert: overEditor && files.some(f => /\.(png|jpe?g|pdf|webp|gif)$/i.test(f.name)) });
+      });
+    }
+    function lxApplySplit(r) {
+      r = clamp(r, 0.2, 0.8);
+      $('lx-edit').style.flex = `${r} 1 0`;
+      $('lx-preview').style.flex = `${1 - r} 1 0`;
+    }
+    function lxSetupDivider() {
+      const div = $('lx-divider');
+      div.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); div.setPointerCapture(e.pointerId); div.classList.add('drag');
+        const body = $('lx-body').getBoundingClientRect();
+        const filesW = $('lx-files').classList.contains('collapsed') ? 0 : $('lx-files').getBoundingClientRect().width;
+        const move = (ev) => { const r = (ev.clientX - body.left - filesW) / (body.width - filesW); LXS._split = clamp(r, 0.2, 0.8); lxApplySplit(LXS._split); };
+        const up = () => { div.classList.remove('drag'); div.removeEventListener('pointermove', move); div.removeEventListener('pointerup', up); if (LXS._split) lxPref.set('split', LXS._split); if (LXS.cm) LXS.cm.refresh(); lxRelayoutSoon(); };
+        div.addEventListener('pointermove', move); div.addEventListener('pointerup', up);
+      });
+      div.addEventListener('dblclick', () => { lxApplySplit(0.5); lxPref.set('split', 0.5); lxRelayoutSoon(); });
+    }
+    function lxSetPane(p) {
+      LXS.pane = p;
+      $('view-latex').dataset.pane = p;
+      const b = $('lx-pane-btn');
+      if (b) { b.innerHTML = `<i data-lucide="${p === 'code' ? 'eye' : 'square-pen'}"></i>`; lucide.createIcons(); }
+      if (p === 'preview') lxRelayoutSoon(); else if (LXS.cm) setTimeout(() => LXS.cm.refresh(), 0);
+    }
+    function lxKeydown(e) {
+      if (!LXS.open) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (e.key === 'Escape') { $('lx-menu').classList.add('hidden'); if (!$('lx-modal').classList.contains('hidden') && LXS.project) lxHideModal(); return; }
+      if (!mod) return;
+      const k = e.key.toLowerCase();
+      if (k === 's') { e.preventDefault(); lxSaveNow(); lxCompileNow(); }
+      else if (k === 'enter') { e.preventDefault(); lxCompileNow(); }
+    }
+
+    // ------------------------------------------------------------ menus & modals
+    function lxMenu(anchor, items) {
+      const m = $('lx-menu');
+      m.innerHTML = items.map((it, i) => it.sep ? '<hr>' : `<button data-i="${i}"><i data-lucide="${it.icon || 'dot'}"></i><span>${esc(it.label)}</span>${it.hint ? `<small>${esc(it.hint)}</small>` : ''}</button>`).join('');
+      m.classList.remove('hidden');
+      lucide.createIcons();
+      const r = anchor.getBoundingClientRect();
+      const w = m.offsetWidth, h = m.offsetHeight;
+      let left = Math.min(r.right - w, window.innerWidth - w - 8); if (left < 8) left = Math.min(r.left, window.innerWidth - w - 8);
+      let top = r.bottom + 6; if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+      m.style.left = Math.max(8, left) + 'px'; m.style.top = top + 'px';
+      m.querySelectorAll('button[data-i]').forEach(b => b.addEventListener('click', () => { m.classList.add('hidden'); items[+b.dataset.i].run(); }));
+    }
+    function lxHideModal() { $('lx-modal').classList.add('hidden'); }
+    function lxShowShortcuts() {
+      const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
+      $('lx-modal-card').innerHTML = `<div class="flex items-center"><h3 class="flex-1">Keyboard shortcuts</h3><button class="lx-tb" data-close><i data-lucide="x"></i></button></div>
+        <table class="mt-3 text-sm w-full"><tbody>
+        ${[['Compile now', mod + ' + Enter'], ['Save and compile', mod + ' + S'], ['Bold / italic', mod + ' + B / ' + mod + ' + I'], ['Comment lines', mod + ' + /'], ['Find / replace', mod + ' + F / ' + mod + ' + Shift + F'], ['Indent / outdent', 'Tab / Shift + Tab'], ['Jump from the PDF to the code', 'Double-click in the preview'], ['Zoom the preview', mod + ' + mouse wheel']].map(([a, b]) => `<tr class="border-b border-slate-100"><td class="py-2">${a}</td><td class="py-2 text-right font-mono text-slate-600">${esc(b)}</td></tr>`).join('')}
+        </tbody></table>`;
+      $('lx-modal').classList.remove('hidden');
+      lucide.createIcons();
+      $('lx-modal-card').querySelector('[data-close]').addEventListener('click', lxHideModal);
+    }
+
+    // ------------------------------------------------------------ compile
+    function lxScheduleCompile(delay = 500) {
+      clearTimeout(LXS.timer);
+      LXS.timer = setTimeout(() => lxCompileNow(), delay);
+    }
+    function lxEngineFiles() {
+      return LXS.project.files.map(f => ({ path: f.path, data: f.bytes ? f.bytes : (f.text || ''), ver: String(f.ver || 0) }));
+    }
+    async function lxCompileNow() {
+      clearTimeout(LXS.timer);
+      if (!LXS.project || !LXS.engine) return;
+      if (LXS.compiling) { LXS.queued = true; return; }
+      const mainFile = LXS.project.files.find(f => f.path === LXS.project.main);
+      if (!mainFile) { lxSetStatus('err', 'No main .tex file'); return; }
+      LXS.compiling = true; LXS.stopRequested = false;
+      lxSetCompileButton(true);
+      $('lx-pbar').classList.add('on');
+      lxSetStatus('busy', LXS.engine.readyPromise && LXS.engine.worker ? 'Compiling…' : 'Starting the engine…');
+      let reruns = 0;
+      try {
+        for (;;) {
+          LXS.queued = false;
+          const projectId = LXS.project.id, main = LXS.project.main;
+          const t0 = performance.now();
+          let res;
+          try {
+            if (LXS.engine.projectId !== projectId) {
+              // another project ran before: start from an empty work folder
+              if (LXS.engine.worker) await LXS.engine.resetWork();
+              LXS.engine.projectId = projectId;
+            }
+            res = await LXS.engine.compile(lxEngineFiles(), main, { timeoutMs: 180000 });
+          } catch (e) {
+            if (LXS.stopRequested) { lxSetStatus('', 'Stopped'); break; }
+            console.warn(e);
+            lxEngineFailed(e, !!LXS.engine.assets);
+            break;
+          }
+          if (!LXS.project || LXS.project.id !== projectId) break;
+          LXS.engineError = null;
+          const ms = performance.now() - t0;
+          LXS.lastLog = res.log || '';
+          LXS.problems = lxParseLog(res.log || '', LXS.project.files.map(f => f.path), main);
+          if (res.bibRan) LXS.bibProblems = lxParseBlg(res.blg || '');
+          if (LXS.bibProblems && LXS.bibProblems.length) LXS.problems.push(...LXS.bibProblems);
+          if (res.pdf) {
+            LXS.pdf = new Uint8Array(res.pdf);
+            LXS.lastFailed = false;
+            lxShowPdf(LXS.pdf);
+          } else {
+            LXS.lastFailed = true;
+            if (!LXS.problems.some(p => p.sev === 'err')) LXS.problems.unshift({ sev: 'err', msg: res.status === 0 ? 'No PDF was produced (is the document empty?).' : 'Compilation failed. See the log for details.', file: null, line: 0 });
+          }
+          // an error while reading last run's .aux/.toc (e.g. a package was
+          // removed): delete those files and run once more
+          const firstErr = LXS.problems.find(p => p.sev === 'err');
+          if (!res.pdf && res.hadAux && !LXS._auxRetried && firstErr && /\.(aux|toc|lof|lot|out|nav|snm)$/i.test(firstErr.inFile || '')) {
+            LXS._auxRetried = true;
+            try { await LXS.engine.cleanAux(); } catch (e) { /* engine restarts anyway */ }
+            continue;
+          }
+          LXS._auxRetried = false;
+          lxRenderProblems();
+          lxUpdatePreviewState();
+          const errs = LXS.problems.filter(p => p.sev === 'err').length;
+          if (res.pdf) lxSetStatus('ok', `Compiled in ${(ms / 1000).toFixed(ms < 10000 ? 2 : 1)} s`);
+          else lxSetStatus('err', errs === 1 ? '1 error' : `${errs} errors`);
+          const needRerun = !!res.pdf && (!res.hadAux || res.listsChanged || res.bblChanged || /Rerun to get|Rerun LaTeX|has changed\.? *Rerun|Please rerun|Please \(re\)run/i.test(res.log || ''));
+          if (LXS.queued) continue;
+          if (needRerun && reruns < 3) { reruns++; lxSetStatus('busy', 'Updating references…'); continue; }
+          break;
+        }
+      } finally {
+        LXS.compiling = false;
+        lxSetCompileButton(false);
+        $('lx-pbar').classList.remove('on');
+        if (LXS.queued) { LXS.queued = false; lxScheduleCompile(10); }
+      }
+    }
+    function lxStop() {
+      LXS.stopRequested = true;
+      if (LXS.engine) LXS.engine._fail(new Error('Stopped'));
+    }
+    function lxRestartEngine() {
+      if (!LXS.engine) return;
+      LXS.engine.kill();
+      showToast('The TeX engine was restarted.', 'info', 2000);
+      lxCompileNow();
+    }
+    function lxSetCompileButton(busy) {
+      const b = $('lx-compile');
+      b.innerHTML = busy ? '<i data-lucide="loader-circle" class="animate-spin"></i><span class="lx-desk-only">Stop</span>' : '<i data-lucide="play"></i><span class="lx-desk-only">Compile</span>';
+      b.title = busy ? 'Stop compiling' : 'Compile now (Ctrl+Enter)';
+      lucide.createIcons();
+    }
+    function lxSetStatus(kind, text) {
+      const s = $('lx-status');
+      if (!s) return;
+      s.className = 'lx-status' + (kind ? ' ' + kind : '');
+      const icon = kind === 'ok' ? 'circle-check' : kind === 'err' ? 'circle-x' : kind === 'busy' ? 'loader-circle' : 'circle-dashed';
+      s.innerHTML = `<i data-lucide="${icon}"${kind === 'busy' ? ' class="animate-spin"' : ''}></i><span>${esc(text)}</span>`;
+      s.title = text;
+      lucide.createIcons();
+    }
+    function lxEngineProgress(f, label) {
+      if (LXS.pdf) return;
+      const card = $('lx-card');
+      $('lx-empty').classList.remove('hidden');
+      card.innerHTML = `<div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3"><i data-lucide="loader-circle" class="animate-spin"></i></div>
+        <h4>${esc(label || 'Preparing the TeX engine…')}</h4>
+        <p>pdfTeX runs right here in your browser. The engine (about 12&nbsp;MB) is downloaded once and then comes from the browser cache.</p>
+        <div class="bar"><div style="width:${Math.round(f * 100)}%"></div></div>`;
+      lucide.createIcons();
+      lxSetStatus('busy', f >= 1 ? 'Starting the engine…' : `Loading engine ${Math.round(f * 100)}%`);
+    }
+    function lxEngineFailed(e, duringCompile) {
+      const msg = (e && e.message) || String(e);
+      LXS.engineError = duringCompile ? null : e;
+      lxSetStatus('err', duringCompile ? 'Engine error' : 'Engine not loaded');
+      if (!LXS.pdf) {
+        $('lx-empty').classList.remove('hidden');
+        $('lx-card').innerHTML = `<div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3"><i data-lucide="circle-x"></i></div>
+          <h4>${duringCompile ? 'The TeX engine stopped' : 'The TeX engine could not be loaded'}</h4>
+          <p>${esc(msg)}</p>
+          <button class="lx-primary mt-4" id="lx-retry"><i data-lucide="rotate-ccw"></i>Try again</button>`;
+        lucide.createIcons();
+        $('lx-retry').addEventListener('click', () => { LXS.engineError = null; LXS.engine.kill(); LXS.engine.start().then(() => lxCompileNow()).catch(err => lxEngineFailed(err)); lxEngineProgress(0); });
+      } else showToast(msg, 'error', 6000);
+    }
+    function lxUpdatePreviewState() {
+      const errs = LXS.problems.filter(p => p.sev === 'err');
+      const banner = $('lx-banner');
+      $('lx-pages').classList.toggle('dim', LXS.lastFailed && !!LXS.pdf);
+      if (LXS.lastFailed && LXS.pdf) {
+        const e = errs[0];
+        $('lx-banner-text').textContent = e ? `${e.file && e.line ? (e.file === LXS.project.main ? 'Line ' + e.line : e.file + ':' + e.line) + ': ' : ''}${e.msg} — showing the last good version` : 'Showing the last good version';
+        banner.classList.remove('hidden');
+      } else banner.classList.add('hidden');
+      if (LXS.pdf) { $('lx-empty').classList.add('hidden'); return; }
+      if (LXS.lastFailed) {
+        $('lx-empty').classList.remove('hidden');
+        const e = errs[0];
+        $('lx-card').innerHTML = `<div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3"><i data-lucide="circle-x"></i></div>
+          <h4>The document has an error</h4>
+          <p>${e ? esc(e.msg) : 'See the problems list below the code.'}</p>
+          ${e && e.hint ? `<p>${esc(e.hint)}</p>` : ''}
+          ${e && e.line ? `<button class="lx-primary mt-4" id="lx-goto-err"><i data-lucide="text-cursor-input"></i>Go to line ${e.line}</button>` : ''}`;
+        lucide.createIcons();
+        const g = $('lx-goto-err'); if (g) g.addEventListener('click', () => lxGotoProblem(e));
+      }
+    }
+
+    // ------------------------------------------------------------ log parsing
+    const LX_HINTS = [
+      [/^Undefined control sequence/, 'Unknown command: check the spelling, or load the package that defines it.'],
+      [/^LaTeX Error: File `([^']+)' not found/, 'The file is not in the project and not in TeX Live 2020. Check the name, or upload the file.'],
+      [/^Missing \$ inserted/, 'A maths symbol (like ^, _ or \\alpha) is used outside maths. Wrap it in $…$.'],
+      [/^LaTeX Error: Environment (\S+) undefined/, 'Unknown environment: check the spelling or load the package that provides it.'],
+      [/^LaTeX Error: \\begin\{(\S+)\} on input line (\d+) ended by \\end\{(\S+)\}/, 'An environment was closed with a different name than it was opened with.'],
+      [/^Misplaced alignment tab character &/, 'An & outside a table. Write \\& for an ampersand in text.'],
+      [/^LaTeX Error: There's no line here to end/, '\\\\ (line break) used where there is no line, e.g. right after a blank line.'],
+      [/^File ended while scanning use of/, 'A { is never closed. Look for a missing }.'],
+      [/^Extra \}, or forgotten/, 'There is a } without a matching {, or an environment is closed too early.'],
+      [/^Missing \} inserted/, 'A { is never closed, or maths mode was left too early.'],
+      [/^Paragraph ended before (\S+) was complete/, 'A command argument contains a blank line, or a } is missing.'],
+      [/^LaTeX Error: Missing \\begin\{document\}/, 'Text was found before \\begin{document}, or the preamble has a typo.'],
+      [/^LaTeX Error: Can be used only in preamble/, 'Move this command above \\begin{document}.'],
+      [/^Emergency stop/, 'TeX stopped. The first error above is usually the cause.'],
+      [/^Double subscript|^Double superscript/, 'Use braces: x_{ab} or x^{2n}.'],
+      [/^Package inputenc Error: Unicode character (.) \(U\+([0-9A-F]+)\)/, 'This character has no definition in pdfLaTeX. Replace it or use a LaTeX command for it.'],
+    ];
+    function lxParseLog(log, projectPaths, main) {
+      const out = [];
+      if (!log) return out;
+      const raw = log.replace(/\r/g, '').split('\n');
+      // undo TeX's 79-column line wrapping
+      const lines = [];
+      for (let i = 0; i < raw.length; i++) {
+        let l = raw[i];
+        while (l.length >= 79 && (l.length % 79 === 0) && i + 1 < raw.length && !/^(!|l\.\d+ |\s*$)/.test(raw[i + 1]) && !/^(LaTeX|Package|Class|Overfull|Underfull)\b/.test(raw[i + 1])) l += raw[++i];
+        lines.push(l);
+      }
+      const proj = new Set(projectPaths);
+      const stack = [];
+      const fileOf = () => {
+        for (let k = stack.length - 1; k >= 0; k--) if (stack[k]) return stack[k];
+        return null;
+      };
+      const projFile = () => { const f = fileOf(); return f && proj.has(f) ? f : (f ? null : main); };
+      const fileRe = /^\(((?:\.\/)?[^\s(){}<>"']+?\.(?:tex|sty|cls|cfg|def|clo|fd|ldf|aux|toc|lof|lot|out|bbl|ltx|dict|mkii|nav|snm|vrb|ind|code\.tex|lbx|cbx|bbx))(?=[\s)]|$)/;
+      const scanParens = (l) => {
+        for (let i = 0; i < l.length; i++) {
+          const ch = l[i];
+          if (ch === '(') {
+            const m = fileRe.exec(l.slice(i));
+            if (m) { stack.push(m[1].replace(/^\.\//, '')); i += m[0].length - 1; }
+            else stack.push(null);
+          } else if (ch === ')') stack.pop();
+        }
+      };
+      const seen = new Set();
+      const add = (p) => { const key = p.sev + '|' + p.msg + '|' + p.file + '|' + p.line; if (seen.has(key)) return; seen.add(key); out.push(p); };
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i];
+        if (l.startsWith('! ')) {
+          let msg = l.slice(2).trim();
+          const ctx = [];
+          let line = 0;
+          for (let j = i + 1; j < Math.min(lines.length, i + 30); j++) {
+            const t = lines[j];
+            const m = /^l\.(\d+) (.*)$/.exec(t);
+            if (m) { line = +m[1]; ctx.push(m[2] + (lines[j + 1] ? '⏎' + lines[j + 1].trim() : '')); break; }
+            if (j === i + 1 && /^\(\w+\)\s{2,}/.test(t)) msg += ' ' + t.replace(/^\(\w+\)\s+/, '').trim();
+            if (/^<(argument|inserted text|to be read again|recently read|template|output|write|everypar|\*)>/.test(t)) ctx.push(t.trim());
+          }
+          if (/^==> Fatal error occurred/.test(msg)) continue;
+          if (/^Undefined control sequence/.test(msg) && ctx.length) {
+            const cs = /(\\[A-Za-z@]+|\\.)\s*⏎/.exec(ctx[ctx.length - 1]) || /(\\[A-Za-z@]+)\s*$/.exec(ctx[ctx.length - 1].split('⏎')[0]);
+            if (cs) msg = 'Undefined control sequence ' + cs[1];
+          }
+          let hint = '';
+          for (const [re, h] of LX_HINTS) if (re.test(msg)) { hint = h; break; }
+          add({ sev: 'err', msg, file: line ? projFile() : null, line, ctx: ctx.join('\n'), hint, inFile: fileOf() || '' });
+          continue;
+        }
+        let m = /^(?:(LaTeX|Package (\S+)|Class (\S+)) (Font )?Warning: )(.*)$/.exec(l);
+        if (m) {
+          let msg = m[5];
+          for (let j = i + 1; j < Math.min(lines.length, i + 6); j++) {
+            const t = lines[j];
+            if (/^\((\S+)\)\s+/.test(t) && !fileRe.test(t)) msg += ' ' + t.replace(/^\(\S+\)\s+/, '').trim(); else break;
+          }
+          const lm = /on input line (\d+)\.?/.exec(msg);
+          const font = !!m[4] || /^Font shape/.test(msg);
+          const sev = font || /^Unused global option|^Size substitutions|^You have requested package|^There were undefined references|^Label\(s\) may have changed|^There were multiply-defined labels/.test(msg) ? 'info' : 'warn';
+          const pkg = m[2] || m[3] || '';
+          if (/^Rerun to get|^Label\(s\) may have changed|^There were undefined references|Please rerun/i.test(msg)) { scanParens(l); continue; }
+          add({ sev, msg: (pkg ? pkg + ': ' : '') + msg.replace(/\s*on input line \d+\.?/, '').trim(), file: lm ? projFile() : null, line: lm ? +lm[1] : 0, ctx: '' });
+          scanParens(l);
+          continue;
+        }
+        m = /^(Overfull|Underfull) \\([hv])box \(([^)]*)\).*?(?:at lines? (\d+)(?:--(\d+))?)?$/.exec(l);
+        if (m) {
+          add({ sev: 'info', msg: `${m[1]} \\${m[2]}box (${m[3]})`, file: m[4] ? projFile() : null, line: m[4] ? +m[4] : 0, ctx: '' });
+          scanParens(l.replace(/\([^)]*\)/, ''));
+          continue;
+        }
+        scanParens(l);
+      }
+      const order = { err: 0, warn: 1, info: 2 };
+      out.sort((a, b) => order[a.sev] - order[b.sev]);
+      return out;
+    }
+    // BibTeX's own log: missing entries, unreadable .bib files, syntax errors
+    function lxParseBlg(blg) {
+      const out = [];
+      const lines = blg.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i];
+        let m = /^Warning--(.*)$/.exec(l);
+        if (m) { out.push({ sev: 'warn', msg: 'BibTeX: ' + m[1].trim(), file: null, line: 0, ctx: '' }); continue; }
+        m = /^(.*)---line (\d+) of file (.+)$/.exec(l);
+        if (m) {
+          const prev = /^(I was expecting|You're missing|I'm skipping|Illegal|Repeated entry|I couldn't)/.test(lines[i - 1] || '') ? lines[i - 1].trim() + ' ' : '';
+          out.push({ sev: 'warn', msg: 'BibTeX: ' + (prev + m[1]).trim(), file: m[3].trim(), line: +m[2], ctx: '' });
+          continue;
+        }
+        if (/^I couldn't open (database|style) file|^I found no \\(citation|bibdata|bibstyle)/.test(l)) out.push({ sev: 'warn', msg: 'BibTeX: ' + l.replace(/---.*$/, '').trim(), file: null, line: 0, ctx: '' });
+      }
+      return out;
+    }
+    function lxRenderProblems() {
+      const errs = LXS.problems.filter(p => p.sev === 'err').length;
+      const warns = LXS.problems.filter(p => p.sev === 'warn').length;
+      const infos = LXS.problems.filter(p => p.sev === 'info').length;
+      const parts = [];
+      if (errs) parts.push(`<span class="cnt err"><i data-lucide="circle-x"></i>${errs} error${errs > 1 ? 's' : ''}</span>`);
+      if (warns) parts.push(`<span class="cnt warn"><i data-lucide="triangle-alert"></i>${warns} warning${warns > 1 ? 's' : ''}</span>`);
+      if (infos) parts.push(`<span class="cnt info"><i data-lucide="info"></i>${infos} note${infos > 1 ? 's' : ''}</span>`);
+      $('lx-problems-sum').innerHTML = parts.length ? parts.join('') : '<span class="cnt" style="color:#047857"><i data-lucide="circle-check"></i>No problems</span>';
+      const list = $('lx-problems-list');
+      list.innerHTML = LXS.problems.slice(0, 200).map((p, i) => `<div class="lx-prob ${p.sev}" data-i="${i}">
+          <i class="ic" data-lucide="${p.sev === 'err' ? 'circle-x' : p.sev === 'warn' ? 'triangle-alert' : 'info'}"></i>
+          <div class="msg">${esc(p.msg)}${p.hint ? `<small style="font-family:inherit">${esc(p.hint)}</small>` : ''}${p.ctx ? `<small>${esc(p.ctx)}</small>` : ''}</div>
+          ${p.line ? `<span class="loc">${esc(p.file && p.file !== LXS.project.main ? p.file + ':' : 'line ')}${p.line}</span>` : ''}</div>`).join('');
+      list.querySelectorAll('.lx-prob').forEach(r => r.addEventListener('click', () => lxGotoProblem(LXS.problems[+r.dataset.i])));
+      if (errs) { if ($('lx-problems').classList.contains('collapsed')) LXS._autoOpened = true; lxToggleProblems(true); }
+      else if (LXS._autoOpened) { LXS._autoOpened = false; lxToggleProblems(false); }
+      lxApplyMarks();
+      lucide.createIcons();
+    }
+    function lxApplyMarks() {
+      if (!LXS.ed || !LXS.project) return;
+      const f = lxCurrentFile();
+      if (!f || f.bytes) return;
+      LXS.ed.marks(LXS.problems.filter(p => p.line && p.sev !== 'info' && (p.file || LXS.project.main) === f.path));
+    }
+    function lxToggleProblems(force) {
+      const p = $('lx-problems');
+      const open = force === undefined ? p.classList.contains('collapsed') : force;
+      if (force === undefined) LXS._autoOpened = false;
+      p.classList.toggle('collapsed', !open);
+      $('lx-problems-chev').style.transform = open ? '' : 'rotate(-90deg)';
+      if (LXS.cm) setTimeout(() => LXS.cm.refresh(), 0);
+    }
+    function lxShowRawLog(force) {
+      const list = $('lx-problems-list');
+      const pre = list.querySelector('.lx-rawlog');
+      if (pre && force !== true) { pre.remove(); return; }
+      if (pre) { pre.textContent = LXS.lastLog || 'No log yet.'; return; }
+      const el = document.createElement('pre'); el.className = 'lx-rawlog'; el.textContent = LXS.lastLog || 'No log yet.';
+      list.prepend(el);
+      el.scrollTop = el.scrollHeight;
+    }
+    function lxGotoProblem(p) {
+      if (!p || !LXS.project) return;
+      const file = p.file || LXS.project.main;
+      if (!LXS.project.files.some(f => f.path === file)) return;
+      if (LXS.current !== file) lxSelectFile(file);
+      if (window.innerWidth <= 860) lxSetPane('code');
+      if (p.line) LXS.ed.goto(p.line);
+    }
+
+    // ------------------------------------------------------------ preview
+    async function lxShowPdf(bytes) {
+      const gen = ++LXP.gen;
+      let doc;
+      try { doc = await pdfjsLib.getDocument({ data: bytes.slice(), isEvalSupported: false }).promise; }
+      catch (e) { console.warn('Preview failed', e); return; }
+      if (gen !== LXP.gen) { doc.destroy(); return; }
+      const sizes = [];
+      for (let i = 1; i <= doc.numPages; i++) {
+        const pg = await doc.getPage(i);
+        const vp = pg.getViewport({ scale: 1 });
+        sizes.push({ w: vp.width, h: vp.height });
+      }
+      if (gen !== LXP.gen) { doc.destroy(); return; }
+      const old = LXP.doc;
+      LXP.doc = doc; LXP.sizes = sizes; LXP.textCache = new Map();
+      $('lx-empty').classList.add('hidden');
+      lxLayoutPages();
+      await lxRenderVisible();
+      if (old) setTimeout(() => { try { old.destroy(); } catch (e) { /* gone */ } }, 2000);
+    }
+    function lxComputeScale() {
+      if (!LXP.sizes.length) return 1;
+      if (typeof LXS.zoom === 'number') return LXS.zoom;
+      const el = $('lx-pages');
+      const maxW = Math.max(...LXP.sizes.map(s => s.w)), maxH = Math.max(...LXP.sizes.map(s => s.h));
+      const availW = Math.max(120, el.clientWidth - 34), availH = Math.max(120, el.clientHeight - 32);
+      return clamp(LXS.zoom === 'page' ? Math.min(availW / maxW, availH / maxH) : availW / maxW, 0.15, 4);
+    }
+    function lxLayoutPages() {
+      const inner = $('lx-pages-inner');
+      const scale = lxComputeScale();
+      const changed = Math.abs(scale - LXP.scale) > 1e-6;
+      LXP.scale = scale;
+      while (LXP.holders.length < LXP.sizes.length) {
+        const d = document.createElement('div'); d.className = 'lx-page stale'; d.dataset.page = String(LXP.holders.length + 1);
+        inner.appendChild(d); LXP.holders.push(d);
+      }
+      while (LXP.holders.length > LXP.sizes.length) LXP.holders.pop().remove();
+      LXP.sizes.forEach((s, i) => {
+        const d = LXP.holders[i];
+        d.style.width = Math.round(s.w * scale) + 'px'; d.style.height = Math.round(s.h * scale) + 'px';
+        d.dataset.key = '';
+        if (changed) d.classList.add('stale');
+      });
+      $('lx-zoom-label').textContent = LXS.zoom === 'fit' ? 'Fit' : LXS.zoom === 'page' ? 'Page' : Math.round(scale * 100) + '%';
+      lxUpdatePageInfo();
+    }
+    function lxVisiblePages() {
+      const el = $('lx-pages');
+      const top = el.scrollTop, bottom = top + el.clientHeight;
+      const vis = [];
+      LXP.holders.forEach((d, i) => {
+        const a = d.offsetTop, b = a + d.offsetHeight;
+        if (b >= top - el.clientHeight * 0.5 && a <= bottom + el.clientHeight * 0.5) vis.push({ i, dist: Math.abs((a + b) / 2 - (top + bottom) / 2) });
+      });
+      return vis.sort((x, y) => x.dist - y.dist).map(v => v.i);
+    }
+    async function lxRenderVisible() {
+      const doc = LXP.doc, gen = LXP.gen;
+      if (!doc) return;
+      for (const i of lxVisiblePages()) {
+        if (gen !== LXP.gen) return;
+        await lxRenderPage(i, doc, gen);
+      }
+    }
+    async function lxRenderPage(i, doc, gen) {
+      const holder = LXP.holders[i];
+      if (!holder) return;
+      const scale = LXP.scale;
+      const key = `${gen}:${scale.toFixed(4)}`;
+      if (holder.dataset.key === key || LXP.busy.has(i + '|' + key)) return;
+      LXP.busy.add(i + '|' + key);
+      try {
+        const pg = await doc.getPage(i + 1);
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const base = pg.getViewport({ scale });
+        if (base.width * base.height * dpr * dpr > 14e6) dpr = Math.max(0.5, Math.sqrt(14e6 / (base.width * base.height)));
+        const vp = pg.getViewport({ scale: scale * dpr });
+        const c = document.createElement('canvas');
+        c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+        await pg.render({ canvasContext: c.getContext('2d', { alpha: false }), viewport: vp }).promise;
+        if (gen !== LXP.gen || scale !== LXP.scale) return;
+        const old = holder.querySelector('canvas');
+        if (old) old.replaceWith(c); else holder.appendChild(c);
+        holder.dataset.key = key;
+        holder.classList.remove('stale');
+      } catch (e) {
+        if (!/cancel|destroy/i.test(String(e && e.message))) console.warn('Page render failed', e);
+      } finally { LXP.busy.delete(i + '|' + key); }
+    }
+    function lxOnPreviewScroll() {
+      if (LXP.raf) return;
+      LXP.raf = requestAnimationFrame(() => { LXP.raf = 0; lxUpdatePageInfo(); lxRenderVisible(); });
+    }
+    function lxUpdatePageInfo() {
+      const el = $('lx-pages');
+      const n = LXP.holders.length;
+      if (!n) { $('lx-pinfo').textContent = '—'; return; }
+      const mid = el.scrollTop + el.clientHeight / 3;
+      let cur = 1;
+      LXP.holders.forEach((d, i) => { if (d.offsetTop <= mid) cur = i + 1; });
+      $('lx-pinfo').textContent = `Page ${cur} / ${n}`;
+    }
+    function lxRelayoutSoon() {
+      clearTimeout(LXP.relayoutTimer);
+      LXP.relayoutTimer = setTimeout(() => {
+        if (!LXS.open || !LXP.doc) return;
+        const el = $('lx-pages');
+        const ratio = el.scrollHeight ? el.scrollTop / el.scrollHeight : 0;
+        lxLayoutPages();
+        el.scrollTop = ratio * el.scrollHeight;
+        lxRenderVisible();
+      }, 120);
+    }
+    const LX_ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+    function lxSetZoom(z) {
+      LXS.zoom = z;
+      lxPref.set('zoom', z);
+      const el = $('lx-pages');
+      const ratio = el.scrollHeight ? el.scrollTop / el.scrollHeight : 0;
+      lxLayoutPages();
+      el.scrollTop = ratio * el.scrollHeight;
+      lxRenderVisible();
+    }
+    function lxZoomStep(dir) {
+      const cur = LXP.scale || 1;
+      let next = dir > 0 ? LX_ZOOMS.find(z => z > cur + 0.01) : [...LX_ZOOMS].reverse().find(z => z < cur - 0.01);
+      if (!next) next = dir > 0 ? LX_ZOOMS[LX_ZOOMS.length - 1] : LX_ZOOMS[0];
+      lxSetZoom(next);
+    }
+    async function lxPageText(i) {
+      if (!LXP.doc) return null;
+      if (!LXP.textCache.has(i)) LXP.textCache.set(i, LXP.doc.getPage(i + 1).then(pg => pg.getTextContent().then(tc => ({ tc, vp: pg.getViewport({ scale: 1 }) }))));
+      return LXP.textCache.get(i);
+    }
+    // double-click in the PDF: find the clicked words in the source
+    async function lxPreviewDblClick(e) {
+      const holder = e.target.closest('.lx-page');
+      if (!holder || !LXS.project) return;
+      const i = LXP.holders.indexOf(holder);
+      const r = holder.getBoundingClientRect();
+      const x = (e.clientX - r.left) / LXP.scale, y = (e.clientY - r.top) / LXP.scale;
+      const data = await lxPageText(i);
+      if (!data) return;
+      let best = null, bestD = Infinity;
+      for (const it of data.tc.items) {
+        if (!it.str || !it.str.trim()) continue;
+        const [vx, vy] = data.vp.convertToViewportPoint(it.transform[4], it.transform[5]);
+        const fs = Math.hypot(it.transform[2], it.transform[3]) || 10;
+        const w = it.width || fs * it.str.length * 0.5;
+        const dx = x < vx ? vx - x : x > vx + w ? x - (vx + w) : 0;
+        const dy = y < vy - fs ? vy - fs - y : y > vy + fs * 0.3 ? y - (vy + fs * 0.3) : 0;
+        const d = dx + dy * 2;
+        if (d < bestD) { bestD = d; best = { it, vx, w }; }
+      }
+      if (!best || bestD > 30) return;
+      const str = best.it.str;
+      const pos = clamp(Math.round((x - best.vx) / best.w * str.length), 0, str.length);
+      const words = str.split(/\s+/).filter(Boolean);
+      let acc = 0, wi = 0;
+      for (let k = 0; k < words.length; k++) { const at = str.indexOf(words[k], acc); if (at <= pos) wi = k; acc = at + words[k].length; }
+      const clean = (w) => w.replace(/[^\p{L}\p{N}]+/gu, '');
+      const target = clean(words[wi] || '');
+      const neighbours = words.slice(Math.max(0, wi - 3), wi + 4).map(clean).filter(w => w.length > 2);
+      let hit = null, hitScore = 0;
+      for (const f of LXS.project.files) {
+        if (f.bytes || !/\.tex$/i.test(f.path)) continue;
+        const lines = (f.text || '').split('\n');
+        lines.forEach((ln, li) => {
+          if (/^\s*%/.test(ln)) return;
+          let score = 0;
+          if (target.length > 1 && ln.includes(target)) score += 3;
+          for (const w of neighbours) if (ln.includes(w)) score += 1;
+          if (score > hitScore) { hitScore = score; hit = { path: f.path, line: li + 1, ch: Math.max(0, ln.indexOf(target)) }; }
+        });
+      }
+      if (!hit || hitScore < 2) { showToast('Could not find that text in the source.', 'info', 1800); return; }
+      if (LXS.current !== hit.path) lxSelectFile(hit.path);
+      if (window.innerWidth <= 860) lxSetPane('code');
+      LXS.ed.goto(hit.line, hit.ch);
+    }
+
+    // ------------------------------------------------------------ downloads
+    function lxFileName(ext) { return (LXS.project && LXS.project.name || 'document').replace(/[\\/:*?"<>|]+/g, '_').trim() + ext; }
+    function lxDownloadPdf() {
+      if (!LXS.pdf) { showToast(LXS.compiling ? 'Still compiling — one moment.' : 'There is no PDF yet. Fix the errors and compile first.', 'info'); return; }
+      if (LXS.lastFailed) showToast('The latest changes have an error: this is the last version that compiled.', 'info', 4000);
+      triggerDownload(new Blob([LXS.pdf], { type: 'application/pdf' }), lxFileName('.pdf'));
+    }
+    function lxDownloadTex() {
+      const f = LXS.project && LXS.project.files.find(x => x.path === LXS.project.main);
+      if (!f) return;
+      triggerDownload(new Blob([f.text || ''], { type: 'text/x-tex' }), LXS.project.files.length > 1 ? f.path.split('/').pop() : lxFileName('.tex'));
+    }
+    async function lxDownloadZip() {
+      if (!LXS.project) return;
+      const zip = new JSZip();
+      for (const f of LXS.project.files) zip.file(f.path, f.bytes ? f.bytes : (f.text || ''));
+      if (LXS.pdf && !LXS.lastFailed) zip.file(LXS.project.main.replace(/\.tex$/i, '') + '.pdf', LXS.pdf);
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+      triggerDownload(blob, lxFileName('.zip'));
+    }
+
+    // ------------------------------------------------------------ projects (IndexedDB)
+    const LX_DB = { name: 'pdfstudio-latex', store: 'projects' };
+    function lxDb() {
+      return new Promise((res, rej) => {
+        let req;
+        try { req = indexedDB.open(LX_DB.name, 1); } catch (e) { rej(e); return; }
+        req.onupgradeneeded = () => req.result.createObjectStore(LX_DB.store, { keyPath: 'id' });
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+      });
+    }
+    async function lxDbOp(mode, fn) {
+      const db = await lxDb();
+      return new Promise((res, rej) => {
+        const tx = db.transaction(LX_DB.store, mode), st = tx.objectStore(LX_DB.store);
+        const r = fn(st);
+        tx.oncomplete = () => { res(r && 'result' in r ? r.result : undefined); db.close(); };
+        tx.onerror = () => { rej(tx.error); db.close(); };
+      });
+    }
+    const lxDbGet = (id) => lxDbOp('readonly', st => st.get(id));
+    const lxDbAll = () => lxDbOp('readonly', st => st.getAll());
+    const lxDbPut = (p) => lxDbOp('readwrite', st => st.put(p));
+    const lxDbDelete = (id) => lxDbOp('readwrite', st => st.delete(id));
+    function lxSaveSoon() {
+      LXS.dirty = true;
+      $('lx-saved').textContent = 'Saving…';
+      clearTimeout(LXS.saveTimer);
+      LXS.saveTimer = setTimeout(() => lxSaveNow().catch(e => console.warn('Autosave failed', e)), 700);
+    }
+    async function lxSaveNow() {
+      clearTimeout(LXS.saveTimer);
+      const p = LXS.project;
+      if (!p) return;
+      p.updated = Date.now();
+      const rec = { id: p.id, name: p.name, main: p.main, created: p.created, updated: p.updated, files: p.files.map(f => f.bytes ? { path: f.path, bytes: f.bytes } : { path: f.path, text: f.text || '' }) };
+      try {
+        await lxDbPut(rec);
+        LXS.dirty = false;
+        lxPref.set('last', p.id);
+        const el = $('lx-saved'); if (el) el.textContent = 'Saved';
+      } catch (e) {
+        const el = $('lx-saved'); if (el) el.textContent = 'Not saved';
+        throw e;
+      }
+    }
+    function lxLoadProject(rec) {
+      LXS.project = { id: rec.id, name: rec.name || 'Untitled', main: rec.main || 'main.tex', created: rec.created || Date.now(), updated: rec.updated || Date.now(), files: (rec.files || []).map(f => lxBump(f.bytes ? { path: f.path, bytes: f.bytes instanceof Uint8Array ? f.bytes : new Uint8Array(f.bytes) } : { path: f.path, text: f.text || '' })) };
+      if (!LXS.project.files.some(f => f.path === LXS.project.main)) {
+        const tex = LXS.project.files.find(f => /\.tex$/i.test(f.path) && /\\documentclass/.test(f.text || '')) || LXS.project.files.find(f => /\.tex$/i.test(f.path));
+        if (tex) LXS.project.main = tex.path;
+      }
+      LXS.docs = new Map();
+      LXS.current = LXS.project.main;
+      LXS.pdf = null; LXS.problems = []; LXS.bibProblems = []; LXS.lastFailed = false; LXS.lastLog = '';
+      LXP.gen++; LXP.doc = null; LXP.sizes = []; LXP.holders.forEach(h => h.remove()); LXP.holders = [];
+      $('lx-pinfo').textContent = '—';
+      $('lx-name').value = LXS.project.name;
+      $('lx-saved').textContent = '';
+      $('lx-banner').classList.add('hidden');
+      $('lx-pages').classList.remove('dim');
+      lxRenderProblems(); lxToggleProblems(false);
+      lxRenderFiles();
+      lxRefreshEditor();
+      lxPref.set('last', LXS.project.id);
+      if (LXS.engine && LXS.engine.worker) lxSetStatus('', 'Ready');
+      $('lx-empty').classList.remove('hidden');
+      if (LXS.engineError && !(LXS.engine && LXS.engine.assets)) { lxEngineFailed(LXS.engineError, false); return; }
+      $('lx-card').innerHTML = `<div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3"><i data-lucide="loader-circle" class="animate-spin"></i></div><h4>Compiling…</h4><p>The preview appears here in a moment.</p>`;
+      lucide.createIcons();
+    }
+    function lxNewId() { return 'lx-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+    async function lxNewFromTemplate(id, { silent = false } = {}) {
+      if (LXS.project && LXS.dirty) await lxSaveNow().catch(() => {});
+      const t = LX_TEMPLATES.find(x => x.id === id) || LX_TEMPLATES[0];
+      const files = [{ path: 'main.tex', text: t.main }];
+      if (t.image) { try { files.push({ path: t.image, bytes: await lxExampleImage() }); } catch (e) { /* no canvas */ } }
+      for (const f of t.files || []) files.push({ ...f });
+      const now = Date.now();
+      lxLoadProject({ id: lxNewId(), name: t.id === 'blank' ? 'Untitled document' : t.name, main: 'main.tex', created: now, updated: now, files });
+      lxHideModal();
+      await lxSaveNow().catch(() => {});
+      if (LXS.engine && LX_WARM_TPL[t.id]) LXS.engine.prefetch(LX_WARM_TPL[t.id]);
+      if (!silent) lxCompileNow();
+    }
+    async function lxOpenFileAsProject(file) {
+      try {
+        let files = [], name = baseName(file.name);
+        if (/\.zip$/i.test(file.name)) {
+          const zip = await JSZip.loadAsync(await file.arrayBuffer());
+          const entries = Object.values(zip.files).filter(z => !z.dir && !/(^|\/)(__MACOSX|\.DS_Store|\.git)(\/|$)/.test(z.name));
+          // strip a common top folder (zips of a folder)
+          const tops = new Set(entries.map(z => z.name.split('/')[0]));
+          const strip = tops.size === 1 && entries.every(z => z.name.includes('/')) ? [...tops][0] + '/' : '';
+          for (const z of entries) {
+            const path = lxCleanPath(z.name.slice(strip.length));
+            if (!path) continue;
+            if (lxIsText(path)) files.push({ path, text: await z.async('string') });
+            else files.push({ path, bytes: await z.async('uint8array') });
+          }
+          if (strip) name = strip.slice(0, -1);
+        } else {
+          files.push({ path: 'main.tex', text: await file.text() });
+        }
+        const texs = files.filter(f => /\.tex$/i.test(f.path));
+        if (!texs.length) throw new Error('No .tex file found in ' + file.name);
+        const main = texs.find(f => /^main\.tex$/i.test(f.path) && /\\documentclass/.test(f.text)) || texs.find(f => /\\documentclass/.test(f.text) && !f.path.includes('/')) || texs.find(f => /\\documentclass/.test(f.text)) || texs[0];
+        const now = Date.now();
+        if (LXS.project && LXS.dirty) await lxSaveNow().catch(() => {});
+        lxLoadProject({ id: lxNewId(), name, main: main.path, created: now, updated: now, files });
+        lxHideModal();
+        await lxSaveNow().catch(() => {});
+        showToast(`Opened ${file.name}.`, 'success', 2000);
+        lxCompileNow();
+      } catch (e) { showToast(e.message || 'Could not open that file.', 'error'); }
+    }
+    async function lxShowProjects(section) {
+      let all = [];
+      try { all = (await lxDbAll()).sort((a, b) => b.updated - a.updated); } catch (e) { all = []; }
+      const when = (t) => { const d = new Date(t); const same = new Date().toDateString() === d.toDateString(); return same ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(); };
+      $('lx-modal-card').innerHTML = `
+        <div class="flex items-center gap-2"><h3 class="flex-1">LaTeX projects</h3>
+          <button class="lx-ghost" id="lx-m-open"><i data-lucide="folder-open"></i>Open .tex / .zip</button>
+          ${LXS.project ? '<button class="lx-tb" data-close title="Close"><i data-lucide="x"></i></button>' : ''}</div>
+        <h5>New from a template</h5>
+        <div class="lx-tpls">${LX_TEMPLATES.map(t => `<button class="lx-tpl" data-tpl="${t.id}"><span class="ic"><i data-lucide="${t.icon}"></i></span><b>${esc(t.name)}</b><span>${esc(t.desc)}</span></button>`).join('')}</div>
+        <h5>Your projects</h5>
+        <div class="lx-recent">${all.length ? all.map(p => `<div class="lx-recent-row${LXS.project && p.id === LXS.project.id ? ' cur' : ''}" data-id="${esc(p.id)}"><i data-lucide="file-text"></i><span class="nm">${esc(p.name || 'Untitled')}</span><small>${(p.files || []).length} file${(p.files || []).length === 1 ? '' : 's'} · ${when(p.updated)}</small><button data-del title="Delete project"><i data-lucide="trash"></i></button></div>`).join('') : '<div class="text-sm text-slate-500 px-2 py-3">No saved projects yet.</div>'}</div>
+        <p class="text-xs text-slate-500 mt-2">Projects are saved automatically in this browser only.</p>
+        <div class="lx-credit" id="lx-about">Compiled with pdfTeX 1.40.21 (TeX Live 2020) running as WebAssembly in your browser: the
+          <a href="https://github.com/SwiftLaTeX/SwiftLaTeX" target="_blank" rel="noopener">SwiftLaTeX</a> engine (EPL-2.0 / GPL-2.0),
+          engine and format files vendored by <a href="https://github.com/swimmingbrain/texbrain" target="_blank" rel="noopener">TeXbrain</a> (MIT),
+          packages fetched on demand from a TeX Live mirror via jsDelivr. Only package file names are requested; your documents never leave the browser.
+          pdfLaTeX with BibTeX (natbib, plain and other .bst styles). Not available: XeLaTeX/LuaLaTeX (fontspec) and Biber.</div>`;
+      $('lx-modal').classList.remove('hidden');
+      lucide.createIcons();
+      const card = $('lx-modal-card');
+      const c = card.querySelector('[data-close]'); if (c) c.addEventListener('click', lxHideModal);
+      $('lx-m-open').addEventListener('click', () => $('lx-open-input').click());
+      card.querySelectorAll('[data-tpl]').forEach(b => b.addEventListener('click', () => lxNewFromTemplate(b.dataset.tpl)));
+      card.querySelectorAll('.lx-recent-row').forEach(row => row.addEventListener('click', async (e) => {
+        const id = row.dataset.id;
+        if (e.target.closest('[data-del]')) {
+          e.stopPropagation();
+          if (LXS.project && LXS.project.id === id) { showToast('This project is open. Open another one first to delete it.', 'info'); return; }
+          await lxDbDelete(id).catch(() => {});
+          row.remove();
+          return;
+        }
+        if (LXS.project && LXS.project.id === id) { lxHideModal(); return; }
+        if (LXS.dirty) await lxSaveNow().catch(() => {});
+        const rec = await lxDbGet(id).catch(() => null);
+        if (rec) { lxLoadProject(rec); lxHideModal(); lxCompileNow(); }
+      }));
+      if (section === 'about') $('lx-about').scrollIntoView({ block: 'center' });
+    }
+
+    // ------------------------------------------------------------ .tex → PDF for the batch converter
+    async function latexFileToPdfBytes(file) {
+      const eng = lxEnsureEngine();
+      const before = eng.onProgress;
+      eng.onProgress = (f, label) => { try { progress.set(f * 0.8, label); } catch (e) { /* no modal */ } if (before) before(f, label); };
+      try {
+        const text = await file.text();
+        if (eng.worker) await eng.resetWork();
+        eng.projectId = '__batch:' + file.name;
+        const files = [{ path: 'main.tex', data: text, ver: 'batch:' + (++LX_VER) }];
+        let res = null;
+        for (let run = 0; run < 4; run++) {
+          res = await eng.compile(files, 'main.tex', { timeoutMs: 180000 });
+          if (!res.pdf || !(!res.hadAux || res.listsChanged || res.bblChanged || /Rerun to get|Rerun LaTeX|Please rerun/i.test(res.log || ''))) break;
+        }
+        if (!res.pdf) {
+          const p = lxParseLog(res.log || '', ['main.tex'], 'main.tex').find(x => x.sev === 'err');
+          throw new Error(`${file.name}: ${p ? p.msg + (p.line ? ` (line ${p.line})` : '') : 'LaTeX compilation failed'}`);
+        }
+        return new Uint8Array(res.pdf);
+      } finally { eng.onProgress = before; }
+    }
+
+    function lxOpenPdfTab() {
+      if (!LXS.pdf) { showToast('There is no PDF yet.', 'info'); return; }
+      const url = URL.createObjectURL(new Blob([LXS.pdf], { type: 'application/pdf' }));
+      const w = window.open(url, '_blank', 'noopener');
+      if (!w) showToast('The browser blocked the new tab. Use Download instead.', 'info');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+    function lxToggleSpell() {
+      LXS.spell = !LXS.spell;
+      lxPref.set('spell', LXS.spell);
+      if (LXS.cm) LXS.cm.setOption('spellcheck', LXS.spell);
+      else { const ta = $('lx-editor-host').querySelector('textarea'); if (ta) ta.spellcheck = LXS.spell; }
+      showToast(LXS.spell ? 'Spell check is on (uses your browser\'s dictionary).' : 'Spell check is off.', 'info', 2200);
+    }
+    async function lxWordCount() {
+      if (!LXP.doc) { showToast('Compile the document first.', 'info'); return; }
+      let words = 0, chars = 0;
+      const perPage = [];
+      for (let i = 0; i < LXP.doc.numPages; i++) {
+        const data = await lxPageText(i);
+        const text = data.tc.items.map(it => it.str + (it.hasEOL ? '\n' : '')).join(' ');
+        const w = (text.match(/[\p{L}\p{N}][\p{L}\p{N}'’\-]*/gu) || []).length;
+        words += w; chars += text.replace(/\s+/g, '').length;
+        perPage.push(w);
+      }
+      $('lx-modal-card').innerHTML = `<div class="flex items-center"><h3 class="flex-1">Word count</h3><button class="lx-tb" data-close><i data-lucide="x"></i></button></div>
+        <div class="grid grid-cols-3 gap-3 mt-4 text-center">
+          <div class="rounded-xl bg-slate-50 p-4"><div class="text-2xl font-bold">${words.toLocaleString()}</div><div class="text-xs text-slate-500 mt-1">words</div></div>
+          <div class="rounded-xl bg-slate-50 p-4"><div class="text-2xl font-bold">${chars.toLocaleString()}</div><div class="text-xs text-slate-500 mt-1">characters (no spaces)</div></div>
+          <div class="rounded-xl bg-slate-50 p-4"><div class="text-2xl font-bold">${LXP.doc.numPages}</div><div class="text-xs text-slate-500 mt-1">pages</div></div>
+        </div>
+        <p class="text-xs text-slate-500 mt-3">Counted from the compiled PDF, so headings, captions, page numbers and references are included.</p>`;
+      $('lx-modal').classList.remove('hidden');
+      lucide.createIcons();
+      $('lx-modal-card').querySelector('[data-close]').addEventListener('click', lxHideModal);
+    }
+
+    // ===================================================================
+    // LaTeX editor: templates
+    // ===================================================================
+    const LX_TEMPLATES = [
+      {
+        id: 'article', name: 'Article', icon: 'file-text', desc: 'Sections, maths, a table and a figure',
+        image: 'example.png',
+        main: String.raw`\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[colorlinks=true,linkcolor=NavyBlue,urlcolor=NavyBlue,citecolor=NavyBlue]{hyperref}
+
+\title{A Short Article Title}
+\author{Your Name\\\small Your University}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Write a two- or three-sentence summary here. The preview on the right
+updates a moment after you stop typing.
+\end{abstract}
+
+\section{Introduction}
+\LaTeX{} takes care of numbering, cross-references and layout.
+Section~\ref{sec:results} shows a table and Figure~\ref{fig:example}
+a picture from the project files.
+
+\begin{itemize}
+  \item Use \textbf{bold} and \emph{emphasis} sparingly.
+  \item Inline maths such as $a^2 + b^2 = c^2$ sits in the text.
+\end{itemize}
+
+\section{Method}
+Numbered equations can be referenced, see~\eqref{eq:gauss}:
+\begin{equation}
+  \int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi} \label{eq:gauss}
+\end{equation}
+
+\section{Results}\label{sec:results}
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{lrr}
+    \toprule
+    Method & Accuracy (\%) & Time (s) \\
+    \midrule
+    Baseline & 81.2 & 0.8 \\
+    Ours     & \textbf{89.7} & 1.1 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Results on the test set.}
+  \label{tab:results}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.55\linewidth]{example.png}
+  \caption{An image from the project files.}
+  \label{fig:example}
+\end{figure}
+
+\section{Conclusion}
+Replace this text with your own and download the PDF when you are happy
+with it.
+
+\end{document}
+`,
+      },
+      {
+        id: 'paper', name: 'Paper with references', icon: 'library', desc: 'Citations with BibTeX and a .bib file',
+        files: [{ path: 'references.bib', text: String.raw`@book{knuth1984,
+  author    = {Donald E. Knuth},
+  title     = {The {\TeX}book},
+  publisher = {Addison-Wesley},
+  year      = {1984}
+}
+
+@book{lamport1994,
+  author    = {Leslie Lamport},
+  title     = {{\LaTeX}: A Document Preparation System},
+  publisher = {Addison-Wesley},
+  edition   = {2},
+  year      = {1994}
+}
+
+@article{shannon1948,
+  author  = {Claude E. Shannon},
+  title   = {A Mathematical Theory of Communication},
+  journal = {Bell System Technical Journal},
+  volume  = {27},
+  number  = {3},
+  pages   = {379--423},
+  year    = {1948}
+}
+` }],
+        main: String.raw`\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,citecolor=blue,linkcolor=blue,urlcolor=blue]{hyperref}
+
+\title{A Paper with References}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Typesetting with \TeX{} is described by \citet{knuth1984}, and \LaTeX{}
+by \citet{lamport1994}. Information theory goes back to
+\citet{shannon1948}. Several sources at once: \citep{knuth1984,lamport1994}.
+
+Add entries to \texttt{references.bib} and cite them with
+\verb|\cite{key}|; the bibliography updates automatically.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
+`,
+      },
+      {
+        id: 'report-es', name: 'Informe (español)', icon: 'book-open-text', desc: 'Portada, índice, tablas de requisitos',
+        main: String.raw`\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx}
+\usepackage[table,dvipsnames]{xcolor}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=NavyBlue,urlcolor=NavyBlue]{hyperref}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Especificación de requisitos}
+\rhead{Sistema de gestión de biblioteca}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\Huge\bfseries Especificación de Requisitos de Software\par}
+  \vspace{1cm}
+  {\Large Sistema de gestión de biblioteca\par}
+  \vfill
+  {\large Equipo de desarrollo\par}
+  {\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introducción}
+\subsection{Propósito}
+Este documento describe los requisitos funcionales y no funcionales del
+sistema. Los requisitos se priorizan con el método MoSCoW
+(véase el cuadro~\ref{tab:rf}).
+
+\subsection{Alcance}
+\begin{itemize}[noitemsep]
+  \item Préstamo y devolución de libros.
+  \item Búsqueda en el catálogo.
+  \item Avisos por correo electrónico.
+\end{itemize}
+
+\section{Requisitos funcionales}
+\begin{table}[ht]
+  \centering
+  \rowcolors{2}{gray!10}{white}
+  \begin{tabularx}{\textwidth}{@{}lXl@{}}
+    \toprule
+    \textbf{ID} & \textbf{Descripción} & \textbf{Prioridad} \\
+    \midrule
+    RF-01 & El usuario podrá buscar libros por título o autor. & Must \\
+    RF-02 & El sistema registrará préstamos y devoluciones. & Must \\
+    RF-03 & El sistema enviará un aviso antes del vencimiento. & Should \\
+    RF-04 & El usuario podrá valorar los libros leídos. & Could \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Requisitos funcionales}
+  \label{tab:rf}
+\end{table}
+
+\section{Matriz de trazabilidad}
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{lcccc}
+    \toprule
+    & \textbf{CU-01} & \textbf{CU-02} & \textbf{CU-03} & \textbf{CU-04} \\
+    \midrule
+    RF-01 & $\checkmark$ & & & \\
+    RF-02 & & $\checkmark$ & $\checkmark$ & \\
+    RF-03 & & & $\checkmark$ & \\
+    RF-04 & & & & $\checkmark$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Requisitos frente a casos de uso}
+\end{table}
+
+\section{Requisitos no funcionales}
+\begin{enumerate}[label=RNF-0\arabic*]
+  \item La búsqueda responderá en menos de 2\,s.
+  \item La aplicación funcionará en los navegadores actuales.
+\end{enumerate}
+
+\end{document}
+`,
+      },
+      {
+        id: 'homework', name: 'Homework', icon: 'sigma', desc: 'Problem set with maths and solutions',
+        main: String.raw`\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Your Name}
+\chead{Course 101 -- Problem Set 1}
+\rhead{\today}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newtheorem*{lemma}{Lemma}
+\newenvironment{solution}{\begin{proof}[Solution]}{\end{proof}}
+
+\begin{document}
+
+\section*{Problem 1}
+Show that $\displaystyle\sum_{k=1}^{n} k = \frac{n(n+1)}{2}$ for every $n \in \N$.
+
+\begin{solution}
+By induction on $n$. For $n = 1$ both sides equal $1$. Assume the formula
+holds for $n$. Then
+\begin{align*}
+  \sum_{k=1}^{n+1} k &= \frac{n(n+1)}{2} + (n+1) \\
+                     &= \frac{(n+1)(n+2)}{2},
+\end{align*}
+which is the formula for $n+1$.
+\end{solution}
+
+\section*{Problem 2}
+Let $f\colon \R \to \R$, $f(x) = x^3 - 3x$.
+\begin{enumerate}[label=(\alph*)]
+  \item Find the critical points of $f$.
+  \item Decide which of them are local maxima or minima.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+  \item $f'(x) = 3x^2 - 3 = 0 \iff x = \pm 1$.
+  \item $f''(x) = 6x$, so $x = -1$ is a local maximum and $x = 1$ a local minimum.
+\end{enumerate}
+\end{solution}
+
+\begin{lemma}
+If $A$ is a $2\times 2$ matrix, then
+$\det\begin{pmatrix} a & b \\ c & d \end{pmatrix} = ad - bc$.
+\end{lemma}
+
+\end{document}
+`,
+      },
+      {
+        id: 'cv', name: 'CV / Résumé', icon: 'id-card', desc: 'One page with contact icons and colour',
+        main: String.raw`\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[margin=1.7cm,top=1.4cm]{geometry}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{fontawesome5}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{accent}{HTML}{1D4ED8}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\titleformat{\section}{\large\bfseries\color{accent}}{}{0pt}{}[\vspace{-6pt}\color{accent!30}\rule{\linewidth}{0.8pt}]
+\titlespacing{\section}{0pt}{12pt}{6pt}
+\setlist{leftmargin=1.2em, itemsep=1pt, topsep=2pt}
+
+% \entry{Title}{Dates}{Place}{Description}
+\newcommand{\entry}[4]{%
+  \begin{tabularx}{\linewidth}{@{}X r@{}}
+    \textbf{#1} & \color{gray}#2 \\
+    \textit{#3} & \\
+  \end{tabularx}\par\vspace{1pt}
+  #4\par\vspace{6pt}}
+
+\begin{document}
+
+{\fontsize{26}{30}\selectfont\bfseries Your Name}\par\vspace{2pt}
+{\large\color{accent} Software Developer}\par\vspace{8pt}
+{\small
+\faPhone\ +00 600 000 000 \quad
+\faEnvelope\ \href{mailto:you@example.com}{you@example.com} \quad
+\faGlobe\ \href{https://example.com}{example.com} \quad
+\faLinkedin\ your-name \quad
+\faMapMarker*\ Your City}
+
+\section{Profile}
+Developer who enjoys turning messy requirements into clear, tested
+software. Experienced with web applications, databases and teamwork in
+small agile teams.
+
+\section{Experience}
+\entry{Junior Developer}{2024 -- present}{Company Name, City}{%
+\begin{itemize}
+  \item Built and maintained web features used by thousands of customers.
+  \item Reduced page load time by 40\,\% by caching database queries.
+\end{itemize}}
+\entry{Intern}{2023}{Another Company, City}{%
+\begin{itemize}
+  \item Wrote automated tests and improved the internal documentation.
+\end{itemize}}
+
+\section{Education}
+\entry{BSc Computer Science}{2020 -- 2024}{University Name}{Final project: a library management system.}
+
+\section{Skills}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+  \textbf{Languages} & Python, Java, JavaScript, SQL \\
+  \textbf{Tools} & Git, Docker, Linux, \LaTeX \\
+  \textbf{Spoken} & English (fluent), Spanish (native) \\
+\end{tabularx}
+
+\end{document}
+`,
+      },
+      {
+        id: 'beamer', name: 'Presentation', icon: 'presentation', desc: 'Beamer slides (16:9)',
+        main: String.raw`\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+
+\title{Presentation Title}
+\subtitle{A short subtitle}
+\author{Your Name}
+\institute{Your University}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Motivation}
+\begin{frame}{Why this matters}
+  \begin{itemize}
+    \item<1-> First point appears straight away
+    \item<2-> Second point on the next click
+    \item<3-> Third point last
+  \end{itemize}
+\end{frame}
+
+\section{Results}
+\begin{frame}{Two columns}
+  \begin{columns}
+    \column{0.5\textwidth}
+      \begin{block}{Key formula}
+        \[ e^{i\pi} + 1 = 0 \]
+      \end{block}
+    \column{0.5\textwidth}
+      \begin{tabular}{lr}
+        \toprule
+        Item & Value \\
+        \midrule
+        A & 12 \\
+        B & 30 \\
+        \bottomrule
+      \end{tabular}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Thank you}
+  \centering \Large Questions?
+\end{frame}
+
+\end{document}
+`,
+      },
+      {
+        id: 'letter', name: 'Letter', icon: 'mail', desc: 'Formal letter',
+        main: String.raw`\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.8em}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{flushright}
+Your Name\\
+Street 1\\
+12345 City\\
+you@example.com
+\end{flushright}
+
+Recipient Name\\
+Company Name\\
+Street 2\\
+54321 City
+
+\begin{flushright}
+City, \today
+\end{flushright}
+
+\textbf{Subject: Application for the position of \ldots}
+
+Dear Ms.\ Example,
+
+Write the first paragraph here. Explain why you are writing and what you
+would like the reader to do.
+
+Use a second paragraph for details. Keep the letter to one page.
+
+Yours sincerely,
+
+\vspace{1.5cm}
+Your Name
+
+\end{document}
+`,
+      },
+      {
+        id: 'blank', name: 'Blank', icon: 'file', desc: 'Empty article',
+        main: String.raw`\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\begin{document}
+
+Start writing here.
+
+\end{document}
+`,
+      },
+    ];
+
+    // A placeholder picture for the article template (drawn, so it adds no bytes)
+    async function lxExampleImage() {
+      const c = document.createElement('canvas'); c.width = 800; c.height = 450;
+      const g = c.getContext('2d');
+      const grad = g.createLinearGradient(0, 0, 800, 450);
+      grad.addColorStop(0, '#dbeafe'); grad.addColorStop(1, '#ede9fe');
+      g.fillStyle = grad; g.fillRect(0, 0, 800, 450);
+      const bars = [120, 210, 160, 300, 250, 340];
+      const cols = ['#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af'];
+      bars.forEach((h, i) => { g.fillStyle = cols[i]; g.beginPath(); g.roundRect ? g.roundRect(90 + i * 110, 390 - h, 70, h, 8) : g.rect(90 + i * 110, 390 - h, 70, h); g.fill(); });
+      g.strokeStyle = '#475569'; g.lineWidth = 3; g.beginPath(); g.moveTo(60, 30); g.lineTo(60, 392); g.lineTo(760, 392); g.stroke();
+      g.fillStyle = '#334155'; g.font = '600 26px system-ui, sans-serif'; g.fillText('example.png', 90, 62);
+      const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+      return new Uint8Array(await blob.arrayBuffer());
     }
 
   </script>
