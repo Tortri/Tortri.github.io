@@ -17,6 +17,32 @@
   /* ===================================================================== */
   T.push({
     id: 'conjunto', group: 'general', title: 'Las cuatro técnicas de un vistazo', short: 'Visión de conjunto y formulario',
+    sheet: R`
+# Las cuatro técnicas
+| | Señal | Analito | Calibrado |
+|---|---|---|---|
+| P1 HPLC-UV | área del pico ($t_R$ identifica) | cafeína en agua | externo, 10–40 mg/L |
+| P2 ATR-FTIR | espectro IR (cm⁻¹) | plásticos | biblioteca de referencias |
+| P3 UV-Vis | $A$ a ≈ 460 nm | Cl⁻ (complejo rojo) | externo, 10–50 mg/L |
+| P4 Fluorescencia | $F$ a 90° (λex 350 / λem 450) | quinina | 50–1000 µg/L + adición estándar |
+- Solo **FTIR** es cualitativa (identifica; el índice de carbonilo es semicuantitativo)
+- Preparación: SPE 50 → 10 mL · ninguna (ATR) · dilución 5 → 25 mL · dilución 10 → 50 mL
+# De la señal a la concentración
+- **Blanco**: todo menos el analito
+- Recta $y=a+bx$ · $R^2>0{,}99$ · la pendiente $b$ es la **sensibilidad**
+- Patrones externos: $x=\frac{y-a}{b}$ · adición estándar: $C=\lvert a/b\rvert\cdot$factor
+- Si diluyes, multiplicas (×5) · si preconcentras, divides (SPE ×10/50)
+- $LD=\frac{3s_\text{blanco}}{b}$ · $LC=\frac{10s_\text{blanco}}{b}$
+- Recuperación $R(\%)=\frac{C_\text{medida}}{C_\text{añadida}}\cdot100$ · resultado: media ± s
+? Detectar = 3, cuantificar = 10
+# Formulario
+- $C_1V_1=C_2V_2$ · $M=\frac{m}{PM\cdot V}$ · ppm = mg/L, ppb = µg/L, ppt = ng/L
+- Ácido comercial: $C=\frac{\rho\cdot1000\cdot\%/100}{PM}$ (mol/L)
+- $T=\frac P{P_0}$ · $A=-\log T$ · $A=\varepsilon bc$
+- $\tilde\nu\,(\text{cm}^{-1})=\frac{10^4}{\lambda(\mu\text m)}=\frac{10^7}{\lambda(\text{nm})}$ · $E(\text{eV})\approx\frac{1240}{\lambda(\text{nm})}$
+- FTIR: $\delta=2x$ · $f=2v\tilde\nu$ · $\Delta\tilde\nu\approx1/\delta_{\max}$
+- $IC=\frac{A_{1715}}{A_{1465}}$ · $CV(\%)=\frac s{\bar x}\cdot100$
+`,
     src: 'Síntesis de las prácticas 1–4 y del Tema 1',
     intro: R`Las cuatro prácticas siguen la misma idea: medir una <strong>señal</strong> que depende de la concentración y convertirla en <strong>concentración</strong> con una recta de calibrado. Aquí tienes lo común, lo que las diferencia, todas las fórmulas y una calculadora de calibrado.`,
     theory: [
@@ -118,6 +144,45 @@
   /* ===================================================================== */
   T.push({
     id: 'intro', group: 'teoria', title: 'Tema 1 · Química analítica y proceso analítico', short: 'Tema 1 · Introducción',
+    sheet: R`
+# Qué es
+- **Química analítica**: desarrolla, optimiza y aplica procesos de medida para obtener información (bio)química de calidad
+- Problema analítico → proceso de medida → información (para decidir)
+- **Especiación**: en qué forma está un elemento ($\mathrm{S^{2-}/SO_4^{2-}}$, $\mathrm{NH_3/NO_2^-/NO_3^-}$)
+# Vocabulario
+Muestra :: parte representativa de la materia
+Alícuota :: porción de la muestra
+Analito :: especie que se determina
+Matriz :: lo que acompaña al analito
+Técnica → método → procedimiento :: de lo general (principio, instrumento) a las instrucciones paso a paso
+? La muestra se **analiza**; el analito se **determina**
+# Clasificaciones
+- Cualitativo (¿qué hay?) · cuantitativo (¿cuánto?)
+- Volumétrico (composición global) · resuelto espacialmente (además, dónde)
+- Macro > 1 % · micro 0,01–1 % · trazas < 0,01 % · ultratrazas (ppt)
+- Clásicos (volumetría, gravimetría) · instrumentales · de separación
+? 1 % = 10 000 ppm · en agua: ppm = mg/L, ppb = µg/L, ppt = ng/L
+# Disoluciones
+- Desde un sólido: $m=M\cdot V\cdot PM$ (NaCl 1 M, 2 L → 117 g)
+- Por dilución: $C_1V_1=C_2V_2$
+- Ácido comercial: $C=\frac{\rho\cdot1000\cdot\%/100}{PM}$ (H₂SO₄ 96 %, 1,84 g/mL → ≈ 18 M)
+# Proceso analítico
+1. Planificación
+2. Toma de muestra: **representatividad** (planes intuitivo, estadístico, dirigido y de protocolo)
+3. Preparación: la etapa más larga y crítica (diluir o preconcentrar, quitar interferencias, no perder analito)
+4. Medida: señal analítica
+5. Tratamiento y evaluación: calidad e informe
+? «Pla-Mu-Pre-Me-Eva» · la mayoría de los errores, en el muestreo y la preparación
+# Calibración y calidad
+- Métodos: absoluto (gravimetría) · con estándares (volumetría) · relativo (recta de calibrado)
+- Patrón **primario**: puro y estable, se pesa · **secundario**: se estandariza frente a un primario
+- Calibrar: patrones externos (interpolar) · adición estándar (extrapolar) · patrón interno (cociente de señales)
+- Validación: linealidad ($R^2>0{,}99$), selectividad, robustez, precisión ($CV$), LD y LC
+| Supremas | Básicas | Complementarias |
+|---|---|---|
+| exactitud, representatividad | precisión, sensibilidad, selectividad, buen muestreo | rapidez, coste, factores personales |
+? Diana: exacto = en el centro · preciso = agrupado
+`,
     src: 'Diapositivas «Intro» (J. M. Vadillo, Departamento de Química Analítica, 2026-27)',
     intro: R`Qué es la química analítica, su vocabulario (muestra, analito, matriz…), cómo se clasifican los análisis, cómo se expresan y preparan las concentraciones y las cinco etapas del proceso analítico, hasta la calibración y la calidad de los resultados.`,
     theory: [
@@ -356,6 +421,33 @@
   /* ===================================================================== */
   T.push({
     id: 'hplc', group: 'practicas', title: 'Práctica 1 · HPLC y extracción en fase sólida', short: 'P1 · HPLC (cafeína)',
+    sheet: R`
+# Contaminantes emergentes
+- Detectados hace poco gracias a mejores técnicas, **poco o nada regulados**, efectos aún mal conocidos
+- **F**ármacos · **H**ormonas y disruptores · **C**uidado personal · **A**ditivos · **P**esticidas y consumo masivo
+? «Fui Hoy Con Ana al Parque» · de ng/L a µg/L, exposición continua y a mezclas
+- Directiva (UE) 2024/3019: tratamiento cuaternario en EDAR ≥ 150 000 h-e hasta 2045, ≥ 80 % eliminado, el productor paga ≥ 80 %
+- **Cafeína**: frecuente y de origen exclusivamente humano → marcador de aguas residuales
+# SPE (cartucho C18)
+- Reparto muestra ↔ sorbente; en C18, retención **hidrofóbica**; sales y polares pasan de largo
+1. **A**condicionar: MeOH (activa) + H₂O (equilibra), sin secar entre ambos
+2. **C**argar: 50 mL despacio (2–3 gotas/s), anotando el volumen
+3. **L**avar: H₂O (fuera sales) y secar con vacío
+4. **E**luir: ACN, enrasar a 10 mL
+? «Ayer Comí Lentejas Estofadas»
+# HPLC en fase inversa
+- Fase estacionaria **apolar** (C18) y móvil polar: lo **más apolar sale después**
+- $t_R$ identifica · el **área** cuantifica
+- ACN 100 %, 0,75 mL/min, UV a **272 nm**, bucle de 20 µL (LOAD → INJECT)
+- Orden: patrones de menor a mayor → blanco → fortificada → extractos
+- UV llega a µg/L; para ng/L o sin cromóforo, LC-MS/MS
+# Cálculos
+$$C_\text{extracto}=\frac{A-a}{b}\qquad C_\text{agua}=C_\text{extracto}\cdot\frac{V_\text{final}}{V_\text{muestra}}=C_\text{extracto}\cdot\frac{10}{50}$$
+- Patrones de 10–40 mg/L desde una intermedia de 100 ppm
+- **Blanco de procedimiento** (agua desionizada): sin señal = sin contaminación
+- **Fortificada**: $R(\%)=\frac{C_\text{medida}}{C_\text{añadida}}\cdot100$
+- Muestra: vidrio ámbar lleno, a 4 °C y a oscuras
+`,
     src: 'Guion «Cromatografía líquida» (práctica 1)',
     intro: R`Determinación de <strong>cafeína</strong> —contaminante emergente y marcador de aguas residuales urbanas— en agua: se <strong>preconcentra</strong> por extracción en fase sólida (SPE, cartucho C18) y se cuantifica por <strong>HPLC en fase inversa</strong> con detector UV a 272 nm y calibrado externo.`,
     theory: [
@@ -552,6 +644,44 @@
   /* ===================================================================== */
   T.push({
     id: 'ftir', group: 'practicas', title: 'Práctica 2 · Espectroscopía IR (ATR-FTIR)', short: 'P2 · ATR-FTIR (plásticos)',
+    sheet: R`
+# Plásticos
+- Microplástico: < 5 mm
+- 1 PET · 2 HDPE · 3 PVC · 4 LDPE · 5 PP · 6 PS · 7 otros (nailon)
+? «Para Hacer Pizza Ligera, Pon Poco Orégano»
+# Fundamento IR
+- La radiación IR hace **vibrar** los enlaces (tensión y flexión)
+- Absorbe si coincide la frecuencia y **cambia el momento dipolar**
+- $\tilde\nu=\frac{10^4}{\lambda(\mu\text m)}$ · IR medio 4000–400 cm⁻¹ · $\tilde\nu=\frac1{2\pi c}\sqrt{k/\mu}$
+- Grupos funcionales 4000–1500 · **huella dactilar** 1500–400 cm⁻¹
+- C–H 3100–2800 · O–H y N–H 3500–3200 · C=O 1800–1650
+# FTIR
+- Interferómetro de Michelson: divisor (KBr con Ge), espejo fijo y espejo móvil
+- $\delta=2x$ · señal a $f=2v\tilde\nu$ · interferograma con **centerburst** en $\delta=0$
+- Transformada de Fourier: interferograma → espectro
+- Láser He-Ne (632,8 nm): posición del espejo y escala de $\tilde\nu$
+- Resolución $\Delta\tilde\nu\approx1/\delta_{\max}$ (4 cm⁻¹ → 0,25 cm)
+- Haz simple → primero el **fondo** (CO₂, vapor de agua)
+- Ventajas: **F**ellgett (multiplex) · **J**acquinot (sin rendijas) · **C**onnes (láser)
+# ATR
+- Reflexión total interna en un cristal de $n$ alto (diamante, ZnSe, Ge); la onda evanescente penetra 0,5–5 µm
+- Solo la **superficie** · buen contacto (pisón) · penetra más a λ largas
+$$d_p=\frac{\lambda}{2\pi n_1\sqrt{\sin^2\theta-(n_2/n_1)^2}}$$
+# Identificar
+| Polímero | Bandas clave (cm⁻¹) |
+|---|---|
+| PE | 2915, 2848, 1470, 720 |
+| PP | las del PE + **1375** (CH₃) |
+| PET | **1715** (C=O), 1240, 1095, 723 |
+| PS | 3025, 1601, 1492, **757 y 697** |
+| PVC | 1425, 1250, C–Cl 700–600 |
+| Nailon | 3300 (N–H), 1635, 1540 |
+| Algodón | 3300 ancha, **1030** |
+# Degradación
+- Fotooxidación → banda C=O nueva a 1715 en PE y PP
+$$IC=\frac{A_{1715}}{A_{1465}}$$
+- Mayor índice = más degradado · medida: 4000–600 cm⁻¹, 4 cm⁻¹, 16 barridos
+`,
     src: 'Guion «Espectroscopía de absorción IR» (práctica 2)',
     intro: R`Identificación de plásticos y <strong>microplásticos</strong> (fragmentos &lt; 5 mm) por sus bandas de absorción infrarroja con un espectrómetro <strong>ATR-FTIR</strong>, sin preparar la muestra, y evaluación de su degradación con el <strong>índice de carbonilo</strong>.`,
     theory: [
@@ -760,6 +890,35 @@
   /* ===================================================================== */
   T.push({
     id: 'uvvis', group: 'practicas', title: 'Práctica 3 · Espectrofotometría UV-Vis', short: 'P3 · UV-Vis (cloruros)',
+    sheet: R`
+# Absorción UV-Vis
+- UV ≈ 200–400 nm · visible ≈ 400–780 nm · transiciones **electrónicas**
+- Cromóforos: $\pi\to\pi^*$, $n\to\pi^*$; en complejos, d–d y transferencia de carga
+- Se ve el color **complementario**: Fe(SCN)²⁺ absorbe azul-verde → rojo
+# Lambert-Beer
+$$T=\frac{P}{P_0}\qquad A=-\log T\qquad A=\varepsilon\,b\,c$$
+? «A, él bebe café» · $\varepsilon$ en L·mol⁻¹·cm⁻¹, $b$ = 1 cm
+> Menor error con $0{,}1<A<1$
+- Se mide a $\lambda_{\max}$: máxima sensibilidad y espectro plano
+- Blanco: todo menos el analito → referencia $A=0$
+| Limitación | Remedio |
+|---|---|
+| Concentración (> 0,01 M) | diluir |
+| Químicas (equilibrios) | exceso de reactivo y pH controlado |
+| Instrumentales (no monocromática, luz parásita) | $A\le1$, buen monocromador |
+# Instrumento
+- Fuentes: D₂ (UV) + wolframio-halógeno (visible); el Cary usa destellos de Xe
+- Monocromador de red (Czerny-Turner) · detector: fotodiodo o fotomultiplicador
+- Cubeta de **cuarzo** en el UV (el vidrio absorbe por debajo de 350 nm)
+# Cloruros (método indirecto)
+$$\mathrm{Hg(SCN)_2+2Cl^-\to HgCl_2+2SCN^-}\qquad\mathrm{Fe^{3+}+SCN^-\rightleftharpoons Fe(SCN)^{2+}}$$
+- HNO₃: evita la hidrólisis del Fe³⁺ · metanol: más estabilidad y sensibilidad
+- Interfieren Br⁻, I⁻, CN⁻ y tiosulfato
+- Patrones 10–50 mg/L (0,25–1,25 mL de 1000 mg/L + 2 mL de R, a 25 mL)
+- Muestra: 5 → 25 mL (**×5**), 10 min · $\lambda_{\max}\approx460$ nm
+$$c=\frac{A-a}{b}\cdot5$$
+! Lleva mercurio: residuos al recipiente indicado · valor paramétrico del cloruro: 250 mg/L
+`,
     src: 'Guion «Espectrofotometría de absorción UV-Vis» (práctica 3) y su diagrama de bloques',
     intro: R`Determinación del <strong>ion cloruro</strong> en aguas: el cloruro no absorbe, así que se le hace liberar tiocianato, que forma con el hierro(III) un complejo <strong>rojo</strong>, $\mathrm{Fe(SCN)^{2+}}$, cuya absorbancia a ≈ 460 nm es proporcional a la concentración de cloruro.`,
     theory: [
@@ -923,6 +1082,32 @@
   /* ===================================================================== */
   T.push({
     id: 'fluor', group: 'practicas', title: 'Práctica 4 · Fluorescencia molecular', short: 'P4 · Fluorescencia (quinina)',
+    sheet: R`
+# Fluorescencia
+- Absorbe → relajación vibracional → **emite** a λ mayor (**Stokes**), en ns
+- Aromáticas conjugadas y rígidas · rendimiento cuántico $\Phi$
+- $F\propto c$ solo muy diluido ($A<0{,}05$); si no, **filtro interno**
+# Frente a la absorción
+- Mide la luz **emitida**, a 90° y sobre fondo oscuro → LD 1–3 órdenes menores
+- Más selectiva: dos λ (excitación y emisión) y pocas sustancias fluorescen
+? Vela encendida en una habitación oscura frente a vela que falta en un estadio
+- Fuente → monocromador de excitación → cubeta → (90°) monocromador de emisión → detector
+# Factores
+- **p**H: la quinina fluoresce como catión → en H₂SO₄ 0,05 M
+- **Q**uenching: Cl⁻, Br⁻, I⁻ y O₂ → nunca acidificar con HCl
+- **S**olapamiento espectral · **T**emperatura y fotodegradación
+? «Para Que Salga Todo»
+# Procedimiento
+- Madre 100 mg/L (0,0302 g a 250 mL) → intermedia 10 mg/L
+- λex ≈ 350 nm (y 250) · λem ≈ 450 nm
+- Patrones 50–1000 µg/L + blanco (≥ 5 lecturas) · $LD=\frac{3s_b}{b}$, $LC=\frac{10s_b}{b}$
+- Arroyo: 10 → 50 mL (**×5**), tres réplicas
+# Adición estándar (muestra salobre)
+- Su Cl⁻ baja la pendiente (**efecto matriz**) → se calibra en la propia muestra
+- +0, 200, 400 y 600 µg/L; $F$ frente a lo añadido; extrapolar
+$$C=\left|\frac ab\right|\cdot5$$
+- Efecto del cloruro: comparar $F_0/F$
+`,
     src: 'Guion «Espectroscopía de fluorescencia molecular» (práctica 4) y su diagrama de bloques',
     intro: R`Determinación de <strong>quinina</strong> (simula un contaminante orgánico fluorescente de origen industrial) en agua de un arroyo: espectros de excitación y emisión, calibrado externo con límites de detección y cuantificación, <strong>adición estándar</strong> en una muestra salobre y efecto del cloruro.`,
     theory: [

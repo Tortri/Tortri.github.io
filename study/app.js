@@ -1,15 +1,18 @@
 /* =========================================================================
-   Cuaderno de Ambientales · motor común
+   Study · motor común  (jacobperezwibe.site/study)
    -------------------------------------------------------------------------
-   index.html         estilos y arranque
-   app.js             este motor: rutas, tarjetas, tests, ejercicios, mapas
-                      mentales, gráficas y calculadoras
-   subjects/<id>.js   contenido de cada asignatura (llama a Cuaderno.register)
-   vendor/katex.*     fórmulas: $...$ en línea y $$...$$ en bloque
+   index.html               estilos y arranque
+   md.js                    mini-markdown para chuletas y apuntes (StudyMD.md)
+   app.js                   este motor: rutas, chuletas, tarjetas, tests, ejercicios,
+                            mapas mentales, gráficas, calculadoras y soluciones protegidas
+   subjects/<id>.js         contenido de cada asignatura (llama a Cuaderno.register)
+   subjects/<id>.vault.js   (opcional) soluciones cifradas; ver README.md
+   vendor/katex.*           fórmulas: $...$ en línea y $$...$$ en bloque
 
    Añadir una asignatura: nueva entrada en SUBJECTS + subjects/<id>.js
    Añadir un tema: nuevo objeto en topics[] del archivo de la asignatura.
-   Esquema de un tema: ver el comentario al principio de subjects/mates.js.
+   Cada tema lleva SIEMPRE su chuleta (campo `sheet`): lo imprescindible del tema.
+   Esquema de un tema: ver el comentario al principio de subjects/mates.js y README.md.
    El progreso se guarda en localStorage (solo en este navegador).
    ========================================================================= */
 (function () {
@@ -28,10 +31,14 @@
     { id: 'micro', title: 'Microbiología', file: 'subjects/micro.js',
       outline: ['Tema 1 · Historia, diversidad y taxonomía', 'Tema 2 · Microorganismos y ambiente; extremófilos', 'Tema 3 · La célula procariota: superficie, pared, membrana y citoplasma'],
       blurb: 'De Pasteur y Koch a los extremófilos y la célula bacteriana por dentro, con esquemas, tarjetas y preguntas al azar.' },
+    { id: 'rmds', title: 'Redes Móviles Definidas por Software', file: 'subjects/rmds.js',
+      outline: ['Tema 0 · Repaso de TCP/IP', 'Tema 1 · SDN y OpenFlow · Mininet, iPerf y netem', 'Tema 2 · El controlador Ryu', 'Prácticas 1, 2.1 y 2.2 con los controladores comentados'],
+      blurb: 'De la pila TCP/IP a programar switches con OpenFlow y Ryu: mensajes, reglas de flujo, controladores línea a línea y las prácticas.' },
   ];
 
   const TABS = [
     ['teoria', 'Teoría', t => t.theory && t.theory.length],
+    ['chuleta', 'Chuleta', t => !!t.sheet],
     ['mapa', 'Mapa', t => !!t.map],
     ['memoriza', 'Memoriza', t => (t.cards && t.cards.length) || (t.match && t.match.length) || (t.order && t.order.length)],
     ['test', 'Test', t => t.quiz && t.quiz.length],
@@ -128,6 +135,7 @@
 
   /* ---------- registro y carga de asignaturas ---------- */
   const loaded = {}; const waiting = {};
+  const vaults = {}; const vaultWait = {}; // soluciones cifradas (subjects/<id>.vault.js)
   const U = {
     gcd: (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; },
     int: (a, b) => a + Math.floor(Math.random() * (b - a + 1)),
@@ -164,6 +172,8 @@
       prep(subj); loaded[subj.id] = subj;
       (waiting[subj.id] || []).forEach(f => f(subj)); waiting[subj.id] = [];
     },
+    vault(id, data) { vaults[id] = data; (vaultWait[id] || []).forEach(f => f(data)); vaultWait[id] = []; },
+    md: (str, opt) => window.StudyMD.md(str, opt),
     util: U,
     _dbg: { loaded: loaded, rich: rich, needKatex: needKatex, macros: MACROS }, // para pruebas automáticas
   };
@@ -208,30 +218,24 @@
     const app = $('#app');
     if (!loaded[sid]) app.innerHTML = '<p class="loading">Cargando…</p>';
     loadSubject(sid).then(subj => renderSubject(subj, tid, tab)).catch(err => {
-      app.innerHTML = ''; app.append(h('div', { class: 'wrap' }, h('p', { class: 'err' }, 'No se pudo abrir la asignatura (' + err.message + '). Recarga la página.'), h('a', { href: '#' }, '← Volver al cuaderno')));
+      app.innerHTML = ''; app.append(h('div', { class: 'wrap' }, h('p', { class: 'err' }, 'No se pudo abrir la asignatura (' + err.message + '). Recarga la página.'), h('a', { href: '#' }, '← Volver a Study')));
     });
   }
   function setAccent(id) { document.documentElement.dataset.subject = id || ''; }
 
   /* ---------- portada ---------- */
   function renderHub() {
-    document.title = 'Cuaderno de Ambientales';
+    document.title = 'Study';
     setAccent(null);
     const app = $('#app'); app.innerHTML = '';
     const last = store.last && SUBJECTS.find(x => x.id === store.last.s);
     const wrap = h('div', { class: 'wrap hub' },
       h('header', { class: 'hub-head' },
-        h('p', { class: 'eyebrow' }, 'Grado en Ciencias Ambientales · curso 2026-27'),
-        h('h1', null, 'Cuaderno de Ambientales'),
-        h('p', { class: 'lede' }, 'Teoría con mapas mentales, tarjetas para memorizar, tests y ejercicios resueltos paso a paso. Elige una asignatura.')),
+        h('h1', null, 'Study'),
+        h('p', { class: 'lede' }, 'Teoría, chuletas, mapas mentales, tarjetas para memorizar, tests y ejercicios resueltos paso a paso. Elige una asignatura.')),
       last ? h('a', { class: 'resume', href: '#' + [store.last.s, store.last.t, store.last.tab].filter(Boolean).join('.') },
         h('span', { class: 'resume-k' }, 'Seguir donde lo dejaste'), h('span', null, last.title + (store.last.tl ? ' › ' + store.last.tl : ''))) : null,
-      h('div', { class: 'subjects' }, SUBJECTS.map(subjCard)),
-      h('details', { class: 'howto' },
-        h('summary', null, 'Cómo añadir temas nuevos'),
-        h('div', { class: 'prose', html:
-          '<p>Abre un chat con Claude, adjunta los PDFs del tema nuevo y pide: <em>«Añade estos temas a mi Cuaderno de Ambientales»</em>. Claude lee esta web, añade el tema con su teoría, mapa, tarjetas, test y ejercicios, y la vuelve a publicar en el mismo enlace.</p>' +
-          '<p>Tu progreso (tarjetas sabidas, ejercicios hechos) se guarda en este navegador y no se pierde al actualizar la web.</p>' })));
+      h('div', { class: 'subjects' }, SUBJECTS.map(subjCard)));
     app.append(wrap);
     window.scrollTo(0, 0);
   }
@@ -249,6 +253,7 @@
       stat,
       h('div', { class: 'sc-actions' },
         h('a', { class: 'btn primary', href: '#' + m.id }, 'Abrir'),
+        h('a', { class: 'btn', href: '#' + m.id + '.chuletas' }, 'Chuletas'),
         h('a', { class: 'btn', href: '#' + m.id + '.repaso' }, 'Repasar tarjetas')));
   }
   function bar(label, v, tot) {
@@ -260,7 +265,7 @@
   /* ---------- página de asignatura ---------- */
   function renderSubject(subj, tid, tab) {
     setAccent(subj.id);
-    const special = tid === 'repaso' || tid === 'examen';
+    const special = tid === 'repaso' || tid === 'examen' || tid === 'chuletas';
     const topic = special ? null : (subj.topics.find(t => t.id === tid) || subj.topics.find(t => !t.pending));
     const realTid = special ? tid : topic.id;
     if (cur.sid === subj.id && cur.tid === realTid && !special && $('#topic-main')) { switchTab(subj, topic, tab); return; }
@@ -274,7 +279,8 @@
     const order = groups.length ? groups : [''];
     const tools = h('div', { class: 'toc-tools' },
       h('a', { class: 'toc-tool' + (realTid === 'repaso' ? ' on' : ''), href: '#' + subj.id + '.repaso' }, 'Repaso de tarjetas', sum.due ? h('span', { class: 'pill' }, sum.due) : null),
-      h('a', { class: 'toc-tool' + (realTid === 'examen' ? ' on' : ''), href: '#' + subj.id + '.examen' }, 'Examen de prueba'));
+      h('a', { class: 'toc-tool' + (realTid === 'examen' ? ' on' : ''), href: '#' + subj.id + '.examen' }, 'Examen de prueba'),
+      h('a', { class: 'toc-tool' + (realTid === 'chuletas' ? ' on' : ''), href: '#' + subj.id + '.chuletas' }, 'Todas las chuletas'));
     toc.append(tools);
     for (const g of order) {
       const ts = topicsBy(g); if (!ts.length) continue;
@@ -288,13 +294,14 @@
     const main = h('main', { class: 'topic', id: 'topic-main' });
     app.append(h('div', { class: 'subject' },
       h('header', { class: 'subj-head' },
-        h('a', { class: 'back', href: '#' }, '← Cuaderno'),
+        h('a', { class: 'back', href: '#' }, '← Study'),
         h('p', { class: 'subj-title' }, subj.title)),
       h('div', { class: 'layout' }, toc, main)));
     if (realTid === 'repaso') renderReview(main, subj);
     else if (realTid === 'examen') renderExam(main, subj);
+    else if (realTid === 'chuletas') renderSheets(main, subj);
     else renderTopic(main, subj, topic, tab);
-    store.last = { s: subj.id, t: realTid, tab: special ? null : tab, tl: topic ? topic.title : (realTid === 'repaso' ? 'Repaso' : 'Examen') }; save();
+    store.last = { s: subj.id, t: realTid, tab: special ? null : tab, tl: topic ? topic.title : ({ repaso: 'Repaso', examen: 'Examen', chuletas: 'Chuletas' })[realTid] }; save();
     window.scrollTo(0, 0);
     const on = $('.toc-t.on', toc); if (on && toc.scrollWidth > toc.clientWidth) on.scrollIntoView({ block: 'nearest', inline: 'center' });
   }
@@ -335,7 +342,7 @@
     $$('.tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     const p = $('#panel'); if (!p) return;
     p.innerHTML = '';
-    ({ teoria: tabTeoria, mapa: tabMapa, memoriza: tabMemoriza, test: tabTest, ejercicios: tabEjercicios, practica: tabPractica, enlaces: tabEnlaces })[tab](p, subj, t);
+    ({ teoria: tabTeoria, chuleta: tabChuleta, mapa: tabMapa, memoriza: tabMemoriza, test: tabTest, ejercicios: tabEjercicios, practica: tabPractica, enlaces: tabEnlaces })[tab](p, subj, t);
     typeset(p);
     if (store.last) { store.last.tab = tab; save(); }
     const tabs = $('.tabs');
@@ -351,6 +358,33 @@
     t.theory.forEach((sec, i) => p.append(h('section', { class: 'sec', id: 'sec-' + i },
       h('h2', null, sec.t), h('div', { class: 'prose', html: rich(sec.h) }))));
     hydrate(p, subj, t);
+    highlight(p);
+  }
+  /* chuleta: lo imprescindible del tema (campo `sheet`, en mini-markdown o HTML) */
+  function sheetHtml(t) {
+    if (t._sheet == null) t._sheet = /^\s*</.test(t.sheet) ? t.sheet : window.StudyMD.md(t.sheet, { sheet: true });
+    return t._sheet;
+  }
+  function tabChuleta(p, subj, t) {
+    p.append(h('div', { class: 'sheet-tools' },
+      h('p', { class: 'hint' }, 'Lo imprescindible del tema en una hoja. ', h('a', { href: '#' + subj.id + '.chuletas' }, 'Ver todas las chuletas de la asignatura')),
+      h('button', { type: 'button', class: 'btn ghost', onclick: () => window.print() }, 'Imprimir')));
+    p.append(h('div', { class: 'sheet', html: rich(sheetHtml(t)) }));
+    highlight(p);
+  }
+  function renderSheets(main, subj) {
+    const ts = subj.topics.filter(t => t.sheet && !t.pending);
+    main.append(h('div', { class: 'topic-head' },
+      h('p', { class: 'eyebrow' }, subj.title),
+      h('h1', null, 'Chuletas'),
+      h('p', { class: 'intro' }, 'Todas las chuletas de la asignatura, tema a tema. Para estudiar de un vistazo o imprimir (también sirve «Guardar como PDF»).'),
+      h('div', { class: 'row sheet-tools' }, h('button', { type: 'button', class: 'btn primary', onclick: () => window.print() }, 'Imprimir / guardar PDF'),
+        ts.length > 1 ? h('nav', { class: 'chips', 'aria-label': 'Temas' }, ts.map((t, k) => h('button', { type: 'button', class: 'chip', onclick: () => { const el = $('#sh-' + k); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, t.short || t.title))) : null)));
+    if (!ts.length) main.append(h('p', { class: 'hint' }, 'Esta asignatura aún no tiene chuletas.'));
+    ts.forEach((t, k) => main.append(h('section', { class: 'sheet-topic', id: 'sh-' + k },
+      h('h2', { class: 'h-sec' }, h('a', { href: '#' + subj.id + '.' + t.id + '.chuleta' }, t.title)),
+      h('div', { class: 'sheet', html: rich(sheetHtml(t)) }))));
+    typeset(main); highlight(main);
   }
   function tabMapa(p, subj, t) {
     p.append(h('p', { class: 'hint' }, 'Toca un nodo para abrirlo o cerrarlo y ver su nota. En el móvil, desliza el mapa hacia los lados.'));
@@ -598,7 +632,7 @@
         lastSet = e.set;
         out.append(exCard(e));
       });
-      typeset(out);
+      typeset(out); highlight(out);
     }
     function exCard(e) {
       const st = store.ex[e._k];
@@ -606,7 +640,8 @@
       let shown = 0;
       const art = h('article', { class: 'ex' + (st === 'ok' ? ' is-ok' : st === 'rev' ? ' is-rev' : '') });
       const stepsEl = h('ol', { class: 'ex-steps' });
-      const ansEl = h('div', { class: 'ex-ans', hidden: true }, h('span', { class: 'lbl' }, 'Resultado'), h('div', { html: rich(e.a) }));
+      const ansEl = h('div', { class: 'ex-ans', hidden: true }, e.a ? [h('span', { class: 'lbl' }, 'Resultado'), h('div', { html: rich(e.a) })] : null);
+      if (e.lock) ansEl.append(h('div', { 'data-w': 'locked', 'data-id': e.lock, 'data-t': e.lockT || 'Solución completa' }));
       const plotEl = h('div', { class: 'ex-plot', hidden: true });
       const hintEl = h('div', { class: 'ex-hint', hidden: true, html: rich([].concat(e.hint || []).map(x => '<p>' + x + '</p>').join('')) });
       const bNext = h('button', { type: 'button', class: 'btn', onclick: () => reveal(1) }, 'Siguiente paso');
@@ -617,11 +652,12 @@
         for (; shown < to; shown++) stepsEl.append(h('li', { html: rich(steps[shown]) }));
         if (shown >= steps.length) {
           ansEl.hidden = false; bNext.hidden = true; bAll.hidden = true;
+          if (e.lock && !ansEl._hyd) { ansEl._hyd = true; hydrate(ansEl, subj, t); }
           if (e.plot && plotEl.hidden) { plotEl.hidden = false; plot(plotEl, e.plot); }
         }
-        typeset(art);
+        typeset(art); highlight(art);
       }
-      if (!steps.length) { bNext.hidden = true; bAll.textContent = 'Ver resultado'; }
+      if (!steps.length) { bNext.hidden = true; bAll.textContent = e.lock ? 'Ver solución' : 'Ver resultado'; }
       const mark = (v) => { store.ex[e._k] = store.ex[e._k] === v ? undefined : v; if (!store.ex[e._k]) delete store.ex[e._k]; save(); summarize(subj); art.classList.toggle('is-ok', store.ex[e._k] === 'ok'); art.classList.toggle('is-rev', store.ex[e._k] === 'rev'); drawBar(); syncMarks(); };
       const mOk = h('button', { type: 'button', class: 'mk ok', onclick: () => mark('ok') }, '✓ Me salió');
       const mRev = h('button', { type: 'button', class: 'mk rev', onclick: () => mark('rev') }, '↻ Repasar');
@@ -939,6 +975,142 @@
     render();
   }
 
+  /* ---------- bloques de código: <pre class="code" data-lang="py|sh|txt"> ---------- */
+  const PY_KW = new Set('False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield self'.split(' '));
+  const PY_BI = new Set('print len range enumerate list dict set tuple str int float bool super isinstance getattr setattr hasattr min max sum sorted zip map filter any all'.split(' '));
+  function hlPy(src) {
+    const re = /(#[^\n]*)|("""[\s\S]*?"""|'''[\s\S]*?'''|[rbfRBF]?"(?:\\.|[^"\\\n])*"|[rbfRBF]?'(?:\\.|[^'\\\n])*')|(@[\w.]+)|\b(0x[0-9a-fA-F]+|\d+(?:\.\d+)?)\b|\b([A-Za-z_]\w*)\b(\s*\()?/g;
+    let out = '', last = 0, m, prevDef = false;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index)); last = re.lastIndex;
+      if (m[5]) {
+        const w = m[5], call = m[6] || '';
+        if (PY_KW.has(w)) out += '<span class="k">' + w + '</span>';
+        else if (prevDef) out += '<span class="f">' + w + '</span>';
+        else if (call && PY_BI.has(w)) out += '<span class="b">' + w + '</span>';
+        else out += esc(w);
+        out += esc(call);
+        prevDef = w === 'def' || w === 'class';
+        continue;
+      }
+      prevDef = false;
+      const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'd' : 'n';
+      out += '<span class="' + cls + '">' + esc(m[0]) + '</span>';
+    }
+    return out + esc(src.slice(last));
+  }
+  const SH_PROMPT = /^(\s*(?:\$|mininet>|h\d+\s*\$|[\w.-]+@[\w.-]+:[^$\n]*\$)\s)/;
+  function hlSh(src) {
+    return src.split('\n').map(line => {
+      let pre = '', rest = line;
+      const m = line.match(SH_PROMPT);
+      if (m) { pre = '<span class="p">' + esc(m[1]) + '</span>'; rest = line.slice(m[1].length); }
+      if (/^\s*#/.test(rest)) return pre + '<span class="c">' + esc(rest) + '</span>';
+      let com = '';
+      const ci = rest.search(/\s#\s/);
+      if (ci >= 0) { com = '<span class="c">' + esc(rest.slice(ci)) + '</span>'; rest = rest.slice(0, ci); }
+      return pre + esc(rest).replace(/(^|\s)(--?[A-Za-z][\w-]*)/g, '$1<span class="o">$2</span>') + com;
+    }).join('\n');
+  }
+  function highlight(root) {
+    $$('pre.code:not(.hl)', root).forEach(pre => {
+      const lang = pre.dataset.lang || 'txt';
+      const src = pre.textContent.replace(/\n$/, '');
+      pre.classList.add('hl');
+      pre.innerHTML = '';
+      pre.append(h('code', { html: lang === 'py' ? hlPy(src) : lang === 'sh' ? hlSh(src) : esc(src) }));
+      const text = lang === 'sh' ? src.split('\n').map(l => l.replace(SH_PROMPT, '')).join('\n') : src;
+      const copy = h('button', { type: 'button', class: 'copy', onclick: () => {
+        const done = () => { copy.textContent = 'Copiado'; setTimeout(() => { copy.textContent = 'Copiar'; }, 1400); };
+        if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => {});
+      } }, 'Copiar');
+      const box = h('div', { class: 'code-box lang-' + lang });
+      pre.replaceWith(box); box.append(copy, pre);
+    });
+  }
+
+  /* ---------- soluciones protegidas ----------
+     subjects/<id>.vault.js llama a Cuaderno.vault(id, { it, salt, iv, ct }): un JSON { clave: markdown o html } cifrado con
+     AES-256-GCM; la clave se deriva de la contraseña con PBKDF2-SHA256. Sin la contraseña solo se ve el texto cifrado.
+     En la teoría o en un ejercicio: <div data-w="locked" data-id="clave" data-t="Título"></div>  (o ex.lock = 'clave'). */
+  const unlocked = {}, opening = {};
+  const VKEY = id => 'study-vault-' + id;
+  const b64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+  function loadVault(id) {
+    if (vaults[id]) return Promise.resolve(vaults[id]);
+    return new Promise((res, rej) => {
+      (vaultWait[id] = vaultWait[id] || []).push(res);
+      if (!$('script[data-vault="' + id + '"]')) {
+        const sc = h('script', { src: 'subjects/' + id + '.vault.js', 'data-vault': id });
+        sc.onerror = () => { sc.remove(); rej(new Error('no se pudo descargar')); };
+        document.head.append(sc);
+      }
+    });
+  }
+  async function decryptVault(id, pass) {
+    if (!(window.crypto && crypto.subtle)) throw new Error('el navegador no permite descifrar aquí (abre la web por https)');
+    const v = await loadVault(id);
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(v.salt), iterations: v.it, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(v.iv) }, key, b64(v.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+  function unlock(id, pass) {
+    const k = id + '\u0000' + pass;
+    if (!opening[k]) opening[k] = decryptVault(id, pass).then(d => { unlocked[id] = d; return d; }, e => { delete opening[k]; throw e; });
+    return opening[k];
+  }
+  function redrawLocks(sid) { $$('.lock').forEach(x => { if (x.dataset.sid === sid && x._draw) x._draw(); }); }
+  function lockedBox(el, sid, key, title) {
+    el.classList.add('lock'); el.dataset.sid = sid;
+    const draw = () => {
+      el.innerHTML = '';
+      const data = unlocked[sid];
+      if (data) {
+        el.classList.add('open');
+        el.append(h('div', { class: 'lock-head' }, h('span', { class: 'lock-t' }, title || 'Solución'),
+          h('button', { type: 'button', class: 'btn ghost', onclick: () => {
+            delete unlocked[sid];
+            Object.keys(opening).forEach(k => { if (k.indexOf(sid + '\u0000') === 0) delete opening[k]; });
+            try { localStorage.removeItem(VKEY(sid)); } catch (e) { /* nada */ }
+            redrawLocks(sid);
+          } }, 'Bloquear')));
+        const src = data[key];
+        const body = src == null ? '<p>No hay solución guardada para este apartado.</p>' : (/^\s*</.test(src) ? src : window.StudyMD.md(src));
+        el.append(h('div', { class: 'prose lock-body', html: rich(body) }));
+        highlight(el); typeset(el);
+        return;
+      }
+      el.classList.remove('open');
+      const inp = h('input', { type: 'password', autocomplete: 'current-password', placeholder: 'Contraseña', 'aria-label': 'Contraseña de las soluciones' });
+      const rem = h('input', { type: 'checkbox', checked: true });
+      const msg = h('p', { class: 'lock-msg', role: 'status' });
+      const btn = h('button', { type: 'submit', class: 'btn primary' }, 'Desbloquear');
+      const form = h('form', { class: 'lock-form', onsubmit: ev => {
+        ev.preventDefault();
+        const pass = inp.value;
+        if (!pass) { msg.textContent = 'Escribe la contraseña.'; return; }
+        btn.disabled = true; msg.className = 'lock-msg'; msg.textContent = 'Descifrando…';
+        unlock(sid, pass).then(() => {
+          if (rem.checked) { try { localStorage.setItem(VKEY(sid), pass); } catch (e) { /* sin almacenamiento */ } }
+          redrawLocks(sid);
+        }, e => {
+          btn.disabled = false; msg.className = 'lock-msg bad';
+          msg.textContent = e && e.name === 'OperationError' ? 'Contraseña incorrecta.' : 'No se pudo abrir: ' + ((e && e.message) || e) + '.';
+        });
+      } }, inp, btn, h('label', { class: 'lock-rem' }, rem, ' Recordar en este navegador'));
+      el.append(h('div', { class: 'lock-head' }, h('span', { class: 'lock-t' }, title || 'Solución completa'), h('span', { class: 'lock-tag' }, 'Protegida')),
+        h('p', { class: 'hint' }, 'Escribe la contraseña para ver la solución. Se descifra en tu navegador: en la web pública solo está cifrada.'), form, msg);
+    };
+    el._draw = draw;
+    draw();
+    if (!unlocked[sid]) {
+      let saved = null;
+      try { saved = localStorage.getItem(VKEY(sid)); } catch (e) { /* nada */ }
+      if (saved) unlock(sid, saved).then(() => redrawLocks(sid), () => { try { localStorage.removeItem(VKEY(sid)); } catch (e) { /* nada */ } });
+    }
+  }
+
   /* ---------- widgets incrustados en la teoría: <div data-w="tipo" data-id="clave"> ---------- */
   const WIDGETS = {
     plot: (el, cfg) => plot(el, cfg),
@@ -948,6 +1120,7 @@
     conv: (el) => conv(el),
     interf: (el) => interf(el),
     gen: (el, cfg, subj) => { const g = subj.gens && subj.gens[cfg.id || el.dataset.id]; if (g) { el.classList.add('gens', 'one'); genCard(el, g, subj.id + ':' + (cfg.id || el.dataset.id)); } },
+    locked: (el, cfg, subj) => lockedBox(el, subj.id, el.dataset.id, el.dataset.t),
   };
   function hydrate(root, subj, t) {
     $$('[data-w]', root).forEach(el => {

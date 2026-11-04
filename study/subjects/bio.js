@@ -17,6 +17,30 @@
   /* ===================================================================== */
   T.push({
     id: 'vistazo', group: 'general', title: 'La célula eucariota de un vistazo', short: 'La célula de un vistazo',
+    sheet: R`
+# Compartimentos
+| Compartimento | Membranas | Función | Dato |
+|---|---|---|---|
+| Núcleo | 2 + poros | ADN, transcripción | 3000–4000 poros de 120 nm |
+| Nucléolo | ninguna | ARNr y subunidades | 45S → 18S + 5,8S + 28S |
+| RE rugoso | 1 + ribosomas | proteínas de secreción y membrana | señal ≥ 8 aa hidrófobos |
+| RE liso | 1 | lípidos, esteroides, Ca²⁺, detoxificación | citocromo P450 |
+| Golgi | cisternas | modifica, clasifica, envía | cis entra, trans sale; M6P |
+| Lisosoma | 1 | digestión | ≈ 40 hidrolasas, pH ≈ 5 |
+| Vacuola | 1 (tonoplasto) | digiere, almacena, turgencia | hasta 90 % del volumen |
+| Mitocondria | 2 (crestas) | ATP | ADN propio, ≈ 26 ATP/glucosa |
+| Cloroplasto | 2 + tilacoides | fotosíntesis | Rubisco, 3 CO₂ → 1 G3P |
+| Peroxisoma | 1 | oxidación, detoxificación | oxidasas + catalasa, sin ADN |
+# Biomarcadores ambientales
+- **Biomarcador**: cambio medible que indica exposición o efecto de un contaminante
+- Envoltura y poros alterados → estrés por contaminantes
+- Aberraciones cromosómicas y menor índice mitótico en meristemos → **genotoxicidad**
+- Más **CYP1A** (P450) en el RE liso de organismos acuáticos → exposición temprana a orgánicos
+- Peroxisomas más numerosos y grandes → hidrocarburos, fármacos, tóxicos
+- **ADN ambiental** mitocondrial → identificar especies sin capturarlas
+- **Blanqueamiento** del coral → calentamiento del océano
+~ Nitrificantes en depuradoras · sumideros de carbono por la Rubisco · Gran Oxidación por cianobacterias
+`,
     src: 'Síntesis de los Temas 1–4',
     intro: R`Todos los compartimentos de la célula eucariota en una tabla y un mapa, y los <strong>biomarcadores ambientales</strong> que han ido apareciendo en los temas (lo que conecta la biología celular con Ciencias Ambientales).`,
     theory: [
@@ -84,6 +108,41 @@
   /* ===================================================================== */
   T.push({
     id: 'celula', group: 'temas', title: 'Tema 1 · La célula, unidad de la vida', short: 'Tema 1 · Introducción',
+    sheet: R`
+# Niveles de organización
+- Átomo → molécula → **célula** → tejido → órgano → sistema → organismo → población → comunidad → ecosistema → biosfera
+- **Tejido**: células especializadas + matriz extracelular. Vertebrados: epitelial, conectivo, muscular, nervioso
+- **Órgano**: dos o más tejidos · **sistema**: órganos con funciones relacionadas
+# Teoría celular
+| Año | Quién | Qué |
+|---|---|---|
+| 1665 | Hooke | celdillas en el corcho: «cells» |
+| 1838–39 | Schleiden y Schwann | teoría celular (plantas, animales) |
+| 1855 | Virchow | *omnis cellula e cellula* |
+| 1889 | Ramón y Cajal | individualidad de la neurona (Nobel 1906) |
+> 1) Todo ser vivo está formado por células · 2) la célula es la unidad estructural y funcional · 3) toda célula procede de otra
+? «38, 39, 55»: primero las plantas
+# Procariota y eucariota
+| | Procariota | Eucariota |
+|---|---|---|
+| Tamaño | ≈ 1 µm | ≈ 10–100 µm |
+| Núcleo | no (ADN en el citoplasma) | sí, con envoltura |
+| Orgánulos con membrana | no | sí |
+| Ejemplos | bacterias, arqueas | animales, plantas, hongos, protistas |
+# Biomoléculas: GLiPA
+| Familia | Monómero | Función |
+|---|---|---|
+| Glúcidos | monosacárido | energía, estructura |
+| Lípidos | ácido graso + glicerol | reserva, membranas (no son polímeros clásicos) |
+| Proteínas | aminoácido (20) | catálisis, estructura, transporte… |
+| Ácidos nucleicos | nucleótido | información genética |
+- Nucleótido = azúcar de 5 C + fosfato + base · A–T (A–U en ARN), G–C
+- ADN: doble hebra, desoxirribosa, timina · ARN: sencilla, ribosa, uracilo
+- **ATP**: transportador de energía · bacteria ≈ 70 % agua
+# Escalas
+- $1\ \text{m}=10^3\ \text{mm}=10^6\ \mu\text{m}=10^9\ \text{nm}$
+- Ojo 0,2 mm · células ≈ 20 µm (óptico) · límite del óptico ≈ 200 nm · macromoléculas 2–20 nm y átomos 0,2 nm (electrónico)
+`,
     src: 'Diapositivas del Tema 1',
     intro: R`Niveles de organización, historia de la teoría celular, células procariotas y eucariotas, las cuatro familias de biomoléculas y las escalas de tamaño.`,
     theory: [
@@ -206,6 +265,33 @@
   /* ===================================================================== */
   T.push({
     id: 'membranas', group: 'temas', title: 'Tema 2 · Biomembranas', short: 'Tema 2 · Biomembranas',
+    sheet: R`
+# La biomembrana
+- Lámina de ≈ **5 nm**, dinámica y fluida · separa citosol y exterior (u orgánulo)
+- Lípidos ≈ 50 % · proteínas ≈ 50 % · glúcidos 2–10 %
+- Más proteína si es muy activa (mitocondrial interna, ≈ 25 % lípidos); menos si aísla (mielina, ≈ 80 % lípidos)
+> **Mosaico fluido** (Singer y Nicholson, 1972): bicapa fluida con proteínas que se desplazan lateralmente
+# Lípidos
+- **Anfipáticos**: cabeza hidrófila + colas hidrófobas · el más común, la fosfatidilcolina
+- En agua forman micelas o bicapas, que se cierran solas
+- Se mueven en su hoja; pasar de una hoja a otra es raro sin enzimas
+- **Colesterol**: rellena huecos → bicapa más rígida y menos permeable
+- **Glucolípidos**: ceramida + glúcido corto, sin fosfato; en la cara externa
+# Fluidez
+- Colas **cortas**, dobles enlaces **cis** y **temperatura** alta → más fluida
+- Colesterol → menos fluida
+- Peces polares: más ácidos grasos insaturados
+? Las 4 C: Cortas, Curvadas y Calientes fluyen; el Colesterol las calma
+# Asimetría
+- Lípidos sintetizados en la **cara citosólica del RE**
+- **Escramblasa** (RE): pasa lípidos de una hoja a otra sin preferencia (*scramble*, revolver)
+- **Flipasa** (membrana plasmática): lleva PS y PE a la cara citosólica gastando energía (*flip*, dar la vuelta)
+# Proteínas y glucocáliz
+- Funciones: transporte, receptores, enzimas, anclaje · transmembrana o periféricas
+- Azúcares y puentes disulfuro, siempre en la cara **no citosólica** (se añaden en RE y Golgi; el citosol es reductor)
+- **Glucocáliz**: azúcares de glucoproteínas y glucolípidos → reconocimiento, protección e hidratación, adhesión
+- **Dominios**: movilidad restringida (apical/basolateral) → polaridad
+`,
     src: 'Diapositivas del Tema 2 (organización de las biomembranas)',
     intro: R`Composición, modelo del mosaico fluido, lípidos y proteínas de membrana, fluidez, asimetría, glucocáliz y dominios. Las diapositivas recibidas cubren la estructura; el transporte (difusión, transporte activo, endocitosis) se añadirá cuando las tengas.`,
     theory: [
@@ -330,6 +416,39 @@ ${(() => { let s = ''; for (let x = 22; x < 630; x += 18) { if (x > 214 && x < 2
   /* ===================================================================== */
   T.push({
     id: 'compartimentos', group: 'temas', title: 'Tema 3 · Compartimentación intracelular', short: 'Tema 3 · Compartimentos',
+    sheet: R`
+# Núcleo
+- Protege el ADN y separa transcripción (núcleo) y traducción (citosol): control extra
+- **Envoltura**: doble membrana (la externa sigue con el RE) + poros + lámina
+- **Poro**: 3000–4000 por núcleo, ≈ 30 nucleoporinas (simetría 8), 120 nm, ≈ 1000 moléculas/s; pasivo hasta ≈ 40 kDa
+- **NLS** → importinas meten · exportinas sacan · **Ran-GTP** da la energía
+- **Lámina**: filamentos intermedios; se fosforila → envoltura fuera en la mitosis
+- Eucromatina laxa y activa · heterocromatina compacta y silenciada · **nucleosoma**: octámero de histonas + ADN
+# Del ADN a la proteína
+- Transcripción → maduración (caperuza, poli-A, sin intrones) → poros → traducción
+? «Sombrero, cola y tijera»
+- **Nucléolo** (sin membrana): centro fibrilar (NOR) · fibrilar denso (pre-ARNr 45S) · granular (ensamblaje)
+- 40S = 18S · 60S = 28S + 5,8S + 5S → 80S (los S no se suman)
+# Tráfico de proteínas
+- Todas empiezan en ribosomas citosólicos; la **señal** decide el destino (necesaria y suficiente)
+- Poros (núcleo) · translocadores (RE, mitocondria, cloroplasto, peroxisoma) · vesículas
+? Puerta, túnel y autobús
+- Señal del RE: ≥ 8 aminoácidos hidrófobos · **SRP**: reconoce → lleva al receptor → suelta → se recicla
+- Soluble: pasa entera y la señal se corta · transmembrana: **secuencia de detención** que se queda en la bicapa
+- **N-glucosilación** en asparagina (N): protege, pliega y sirve de etiqueta
+# RE y Golgi
+- **RE rugoso**: proteínas de secreción, membrana y lisosomas
+- **RE liso**: lípidos, triglicéridos, hormonas esteroideas, glucogenólisis (glucosa-6-fosfatasa), Ca²⁺, detoxificación (P450)
+? «Los Tristes Hígados Guardan Calcio y Desintoxican»
+- **Golgi**: cis entra (del RE) → trans sale; glucosila, pone **M6P**, sulfata, clasifica; en plantas, pectinas y hemicelulosas
+- Vía secretora RE → Golgi → membrana o lisosoma · vía endocítica membrana → endosoma → lisosoma
+- Cubiertas: COPII (RE → Golgi), COPI (vuelta), clatrina (membrana y trans Golgi)
+# Lisosomas y vacuolas
+- ≈ 40 hidrolasas ácidas, **pH ≈ 5** (bomba de H⁺); roto, apenas digiere (citosol pH 7,2)
+- Enzimas: RE rugoso → M6P en el Golgi → receptor en el trans Golgi → endosomas → lisosomas
+- Entradas: endocitosis (líquido), fagocitosis (partículas), autofagia (orgánulos propios)
+- **Vacuola** vegetal: tonoplasto, hasta 90 % del volumen, digiere, almacena, **turgencia**
+`,
     src: 'Diapositivas del Tema 3',
     intro: R`El núcleo (envoltura, poros, lámina, cromatina y nucléolo), el camino del ADN a la proteína, cómo viaja cada proteína a su sitio y el sistema de endomembranas: RE, Golgi, vesículas, lisosomas, endosomas y vacuolas.`,
     theory: [
@@ -758,6 +877,47 @@ ${(() => { let s = ''; for (let x = 22; x < 630; x += 18) { if (x > 214 && x < 2
   /* ===================================================================== */
   T.push({
     id: 'energia', group: 'temas', title: 'Tema 4 · Orgánulos y energía', short: 'Tema 4 · Energía',
+    sheet: R`
+# Energía y ATP
+- Autótrofos (foto- o quimiosintéticos) · heterótrofos · la energía está en los **electrones**
+- Glucólisis (citosol): **2 ATP** · respiración aerobia: ≈ 15 veces más · fermentación: regenera NAD⁺
+- **ATP** = moneda, no reserva (reservas: glucógeno, grasas, almidón); hidrólisis ≈ −50 kJ/mol; acoplamiento
+| Transportador | Lleva | Para |
+|---|---|---|
+| NADH, FADH₂ | electrones | cadena respiratoria → ATP |
+| NADPH | electrones | biosíntesis (Calvin, ácidos grasos) |
+| Acetil-CoA | acetilo (2 C) | ciclo del ácido cítrico |
+? La P de NADPH es de **P**roducir
+- **GTP**: energía puntual e **interruptor** (GTPasas: Ras, proteínas G, Rab, Ran, tubulina β)
+# Quimiosmosis
+> Electrones a través de una membrana → gradiente de H⁺ → **ATP sintasa**
+? Central hidroeléctrica: embalse de H⁺ y turbina
+| | Mitocondria | Cloroplasto |
+|---|---|---|
+| Cadena y ATP sintasa | membrana interna (crestas) | membrana tilacoidal |
+| H⁺ hacia | espacio intermembrana | lumen tilacoidal |
+| ATP en | matriz | estroma |
+| Electrones de | alimentos | luz (y agua) |
+# Mitocondria
+- Piruvato y ácidos grasos → acetil-CoA → ciclo del ácido cítrico (CO₂, NADH) → cadena → O₂ → H₂O
+- **≈ 26 ATP por glucosa** en la fosforilación oxidativa · membrana externa con porinas
+- Además: β-oxidación, Ca²⁺, hemo, apoptosis, calor (grasa parda)
+# Fotosíntesis
+- Fase luminosa (tilacoide): **PSII** rompe el agua (O₂) y bombea H⁺ → ATP · **PSI** → NADPH
+! El PSII actúa antes que el I (se numeraron por orden de descubrimiento)
+- **Calvin** (estroma): carboxilación (**Rubisco** + RuBP) → reducción (G3P) → regeneración
+- Balance **3-1-9-6**: 3 CO₂ → 1 G3P con 9 ATP y 6 NADPH
+- Rubisco: lenta, hasta el 50 % de la proteína del cloroplasto, la más abundante de la Tierra
+# Genoma y origen
+- ADN propio con pocos genes (mitocondria humana: 13 proteínas); > 95 % de sus proteínas vienen del núcleo
+- Se dividen, no se forman de cero · plastos: del proplasto
+- **Endosimbiosis**: mitocondria ← α-proteobacteria · cloroplasto ← cianobacteria
+? Pruebas: «Te Mando A Revisar Fotos Pasadas» (tamaño, membrana doble, ADN circular, ribosomas, fisión, parentesco)
+# Peroxisoma
+- 1 membrana, **sin ADN ni ribosomas** · oxidasas (O₂ → H₂O₂) + **catalasa**
+- Detoxificación, β-oxidación de ácidos grasos muy largos, plasmalógenos, ácidos biliares; en plantas, glioxisomas y fotorrespiración
+- Nace del RE o se divide · proteínas con señal de 3 aa, entran **plegadas** (peroxinas) · no endosimbiótico
+`,
     src: 'Diapositivas del Tema 4 (partes I–IV)',
     intro: R`De dónde sacan la energía las células, el ATP y los demás transportadores, el GTP como interruptor, mitocondrias y cloroplastos (quimiosmosis, fotosíntesis, ciclo de Calvin, genoma y origen endosimbiótico) y los peroxisomas como orgánulos de detoxificación y biomarcadores.`,
     theory: [

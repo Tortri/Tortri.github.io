@@ -21,6 +21,35 @@
   /* ===================================================================== */
   T.push({
     id: 'vistazo', group: 'general', title: 'Los tres dominios de un vistazo', short: 'Los tres dominios',
+    sheet: R`
+# Los tres dominios
+| | Bacteria | Archaea | Eukarya |
+|---|---|---|---|
+| Pared | peptidoglicano | sin peptidoglicano (capa S, pseudomureína) | celulosa o quitina |
+| Lípidos | **éster**, ácidos grasos | **éter**, isoprenoides | éster, con esteroles |
+| ADN | girasas | girasas + histonas | histonas |
+| ARN polimerasas | 1 | 1 (tipo pol II) | 3 |
+| Iniciador | formilmetionina | metionina | metionina |
+| Ribosomas | 70S (16S) | 70S | 80S (18S) |
+| Cloranfenicol, estreptomicina | inhiben | no | no |
+| Toxina diftérica | no | inhibe | inhibe |
+| Brazo del ARNt | ribotimidina | **pseudouridina** | ribotimidina |
+| Ciclo de Calvin | puede | **nunca** | puede (algas) |
+? Las arqueas parecen bacterias por fuera y eucariotas por dentro
+# Entidades acelulares
+- **Virus**: un solo ácido nucleico + cápside; parásito obligado · virión = partícula infectiva
+- **Satélites**: ARNmc encapsidado (500–2000 nt), necesitan un virus auxiliar
+- **Viroides**: ARNmc circular desnudo (200–400 nt), no codifican proteínas
+- **Priones**: proteína mal plegada (PrPSc, 254 aa) que contagia su forma
+? «Vamos Sin Ver Proteínas»
+# La célula procariota, de fuera a dentro
+- Glicocálix (cápsula firme o capa mucosa laxa) → capa S → apéndices (flagelo se mueve, fimbria se pega, pelo pasa ADN)
+- Pared: peptidoglicano, 90 % en Gram + y 10 % en Gram −
+- Membrana sin esteroles (algunas, hopanoides) · citoplasma con nucleoide, plásmidos, 70S, inclusiones
+# Ambientales
+- Winogradsky: quimioautotrofia · ciclos biogeoquímicos · extremófilos en biorremediación
+- Hopanoides (petróleo) · PHA (bioplásticos) · nanocables (electricidad) · ARNr 16S (comunidades sin cultivar)
+`,
     src: 'Síntesis de los Temas 1–3',
     intro: R`Bacteria, Archaea y Eukarya comparados en una sola tabla, más las entidades acelulares y lo que cada tema aporta a <strong>Ciencias Ambientales</strong>. Es la página para repasar la víspera del examen.`,
     theory: [
@@ -106,6 +135,35 @@
   /* ===================================================================== */
   T.push({
     id: 'historia', group: 't1', title: 'Tema 1 · La microbiología y su historia', short: 'Historia',
+    sheet: R`
+# Etapas de Collard (1976)
+1. **E**speculativa (teoría miasmática)
+2. **A**cumulación de observaciones (desde 1675)
+3. **C**ultivo (Pasteur y Koch, finales del XIX)
+4. **C**omplejidad (siglo XX)
+? «El Agrónomo Cultiva Complejidades»
+- 1676 Leeuwenhoek ve microorganismos · 1892 Ivanovski y Beijerinck, virus
+# Fin de la generación espontánea
+- Redi: carne tapada · Spallanzani (1765): infusiones hervidas y cerradas (le objetan el «aire alterado»)
+- **Pasteur (1860)**: cuello de cisne, en contacto con el aire y estéril
+- Tyndall: formas de resistencia → esterilización
+- Pasteur: cada fermentación, un microbio; **aerobio/anaerobio**; efecto Pasteur
+# Cultivos puros
+- Lister: dilución al límite (lenta, solo el más abundante)
+- **Koch**: patata → gelatina, estrías, colonia = cultivo puro · Hesse: agar · Petri: placa
+? Patata → Gelatina → Agar → Placa
+# Teoría germinal
+- Precursores: Fracastoro, Bassi (1835), Semmelweis (1847)
+- Carbunco: Davaine → Koch (1876) cultiva el bacilo y reproduce la enfermedad
+> **Postulados de Koch** (1882): 1) en todos los enfermos · 2) se aísla en cultivo puro · 3) reproduce la enfermedad en un sano · 4) se reaísla y es el mismo
+# Control del crecimiento
+- **L**ister: asepsia (fenol) · **E**hrlich: toxicidad selectiva, Salvarsán (1910) · **F**leming: penicilina (*Penicillium notatum*) · Florey y Chain la purifican
+? L-E-F: Limpio, Elijo, Fármaco
+# Etapa 4
+- **Winogradsky**: quimioautotrofia; bacterias del S y del N; *Clostridium pasteurianum* (1890), primera fijadora de N₂
+- **Jenner** (1796): viruela de la vaca → padre de la inmunología · Pasteur: cólera aviar atenuado, carbunco (1881), rabia (1885)
+- Virología: Ivanovski 1892 (filtrable) · Beijerinck 1898 (*contagium vivum fluidum*) · Twort y d'Hérelle, fagos · Stanley 1935, cristaliza el VMT · Diener 1967, viroides · Prusiner 1981, priones
+`,
     src: 'Diapositivas del Tema 1 (1.ª parte)',
     intro: R`Qué estudia la microbiología, las <strong>cuatro etapas de Collard</strong>, el fin de la generación espontánea, los cultivos puros, la teoría germinal (postulados de Koch), el control del crecimiento y el nacimiento de la ecología microbiana, la inmunología y la virología.`,
     theory: [
@@ -282,6 +340,45 @@
   /* ===================================================================== */
   T.push({
     id: 'diversidad', group: 't1', title: 'Tema 1 · Diversidad de los microorganismos', short: 'Diversidad',
+    sheet: R`
+# Grupos
+| Grupo | Célula | Rasgo clave |
+|---|---|---|
+| Bacterias | procariota | peptidoglicano |
+| Arqueas | procariota | pared sin peptidoglicano |
+| Hongos | eucariota | quitina, **absorben** |
+| Hongos mucosos | eucariota | **fagocitan** y hacen esporas |
+| Protozoos | eucariota | sin pared, **ingieren**, móviles |
+| Microalgas | eucariota | fotosíntesis oxigénica |
+| Virus | acelular | parásito obligado, ADN o ARN |
+# De 2 a 5 reinos
+- 3: Haeckel 1866 (Protista) · 4: Copeland 1956 (Monera) · 5: Whittaker 1969 y Margulis 1982 (Monera, Protoctista, Fungi, Animalia, Plantae)
+! Basados en estructura, no en evolución → dominios de Woese
+# Cronómetro: ARNr 16S
+- Universal, misma función, zonas constantes y variables, ritmo de cambio adecuado
+- 16S en procariotas (30S del 70S), 18S en eucariotas · cambia 1–2 % cada 50 Ma
+- 70S = 50S (23S + 5S) + 30S (16S)
+# Procariota frente a eucariota
+- Levadura ≈ 8 µm · bacilo ≈ 1 × 1–5 µm
+- Solo procariotas: vacuolas de gas, inclusiones, **endosporas** · solo eucariotas: esteroles, centriolo, citoesqueleto
+# Protozoos y hongos
+- Flagelados (*Trypanosoma*, *Giardia*) · amebas (*Entamoeba*) · ciliados (*Paramecium*) · esporozoos (*Plasmodium*)
+| Hongo | Hifas | Espora sexual |
+|---|---|---|
+| Ascomicetos | septadas | ascospora |
+| Basidiomicetos | septadas | basidiospora |
+| Zigomicetos | **cenocíticas** | zigospora |
+| Oomicetos | **cenocíticas** | oospora |
+| Deuteromicetos | septadas | ninguna conocida |
+- Hongos mucosos: celulares (*Dictyostelium*) y acelulares (*Physarum*)
+# Microalgas
+- Verdes y *Euglena*: clorofila **b** · rojas: **d** + ficobiliproteínas · diatomeas, dinoflagelados y pardas: **c**
+- *Euglena* sin pared · diatomeas de sílice
+# Virus y subvirales
+- Nucleocápside = ácido nucleico + cápside · virus desnudo o con **envuelta** (gemación)
+- Morfologías: isométricos, varilla, complejos, pleomórficos
+- Satélite (necesita virus) · viroide (ARN circular desnudo) · prión: PrPC y PrPSc misma secuencia (gen *Prnp*), distinto plegamiento
+`,
     src: 'Diapositivas del Tema 1 (1.ª parte)',
     intro: R`Los grupos microbianos (bacterias, arqueas, hongos, hongos mucosos, protozoos, microalgas y virus), cómo se han clasificado los seres vivos (de 2 reinos a 5), el ARNr 16S como cronómetro evolutivo, procariotas frente a eucariotas y los agentes subvirales.`,
     theory: [
@@ -460,6 +557,40 @@
   /* ===================================================================== */
   T.push({
     id: 'taxonomia', group: 't1', title: 'Tema 1 · Taxonomía y grupos filogenéticos', short: 'Taxonomía y dominios',
+    sheet: R`
+# Taxonomía
+- **C**lasificación → **N**omenclatura → **I**dentificación
+- Cultivo mixto → aislamiento → **cultivo puro** (axénico) → **cepa** → **especie** (con su **cepa tipo**)
+- Dominio → reino → filo → clase → orden → familia → género → especie
+? «De Repente Fui a Clase y Olvidé Firmar el Gran Examen»
+- Binomial en latín y en cursiva: *Bacillus subtilis* · nombres no ambiguos y estables
+# Caracteres
+- **Fenotípicos**: morfología, fisiología, bioquímica, quimiotaxonomía, serología y fagotipia
+- **Genotípicos**: % G+C y Tm, hibridación, secuenciación (ARNr)
+- Molecular: uniforme, estable, sencilla y filogenética
+> Genomoespecie: ADN-ADN ≥ **70 %** y ΔTm ≤ **5 °C** · especie polifásica: además ARNr 16S > **97 %**
+- Sistemas artificiales (fenéticos) · naturales (filogenéticos)
+# Archaea
+- **Crenarchaeota**: calor y azufre; Thermoproteales, Desulfurococcales, Sulfolobales (termoacidófilos); nunca Calvin
+- **Euryarchaeota**: metanógenos (anaerobios; Methanobacteriales con pseudomureína), halobacterias, termoplasmas (**sin pared**), Archaeoglobales (sulfato), termococos
+# Bacteria
+| Filo | Rasgo |
+|---|---|
+| Aquificae | termófilos, usan H₂ |
+| Deinococcus-Thermus | resistentes a la radiación |
+| Chloroflexi | verdes **no** del azufre |
+| Chlorobi | verdes **del** azufre |
+| Cyanobacteria | fotosíntesis oxigénica, heterocistos |
+| Firmicutes (Gram +) | **bajo** G+C: *Bacillus*, *Clostridium* |
+| Actinobacteria (Gram +) | **alto** G+C: *Streptomyces*, micobacterias |
+| Tenericutes | micoplasmas, sin pared |
+| Planctomycetes | gemación, sin peptidoglicano |
+| Chlamydiae | parásitos intracelulares obligados |
+# Proteobacteria
+- **α**: *Nitrobacter*, rizobios, *Rickettsia* · **β**: *Nitrosomonas*, *Neisseria*
+- **γ**: *Pseudomonas*, enterobacterias, *Vibrio*, *Azotobacter* · **δ**: *Bdellovibrio*, *Desulfovibrio*, mixobacterias · **ε**: *Campylobacter*, *Helicobacter*
+? Nitroso**monas** (β) amonio → nitrito · Nitro**bacter** (α) nitrito → nitrato
+`,
     src: 'Diapositivas del Tema 1 (2.ª parte) y documento suplementario de dominios',
     intro: R`Clasificación, nomenclatura e identificación; cultivo puro, cepa, cepa tipo y especie; los caracteres que se usan para clasificar (fenotípicos y genotípicos), la taxonomía polifásica y los principales grupos de arqueas y bacterias.`,
     theory: [
@@ -659,6 +790,47 @@
 
   T.push({
     id: 'ambiente', group: 't2', title: 'Tema 2 · Microorganismos y ambiente; extremófilos', short: 'Tema 2 · Ambiente',
+    sheet: R`
+# Microbios y ambiente
+- **Ecología microbiana**: actividades y relaciones en el **micro**ambiente · **microbiología ambiental**: efecto a escala del **macro**ambiente
+- > 3000 millones de años, ≈ 10³⁰ individuos, solo un 0,1 % identificados
+- Mayor sumidero biológico de **carbono**, fijación de N₂, metano, la mayor parte de la **fotosíntesis**, biodegradación y biorremediación
+Hábitat :: dónde vive (la dirección)
+Nicho :: estrategia de supervivencia (la profesión)
+Microambiente :: el hábitat de un microorganismo, donde ocupa su nicho
+- Población (una especie) → **gremio** (distintas especies, misma función, como las nitrificantes) → comunidad
+# Temperatura
+| Grupo | °C |
+|---|---|
+| Criófilos | < 0 |
+| Psicrófilos | 0–10 |
+| Mesófilos | 10–45 |
+| Termófilos | 45–80 |
+| Hipertermófilos | 80–120 |
+- Mínima: membrana gelificada · máxima: proteínas desnaturalizadas y lisis · curva **asimétrica** (óptima cerca de la máxima)
+- Frío = **soltar**: proteínas flexibles, ácidos grasos poliinsaturados
+- Calor = **atar**: más enlaces, lípidos saturados e isoprenoides, mucho G+C, girasa inversa
+# Presión y oxígeno
+- Barotolerante (óptima atmosférica, tolera < 500 atm) · barófilo moderado (> 400 atm) · extremo (> 600–700 atm, no crece a 1 atm)
+- La presión: citoplasma viscoso, menos afinidad enzima-sustrato, crecen sin dividirse
+| Tipo | Crece en el tubo |
+|---|---|
+| Aerobio obligado | solo arriba |
+| Anaerobio obligado | solo abajo |
+| Facultativo | en todo, más arriba |
+| Microaerófilo | banda bajo la superficie |
+| Aerotolerante | uniforme |
+- Tóxicos: superóxido O₂⁻, H₂O₂, radical OH·
+# Sales, agua y pH
+- $a_w$ < 0,60: nada crece · 0,85–0,93: de las bacterias, solo *S. aureus*
+- Osmófilos (azúcar), xerófilos (seco), halófilos (NaCl): discretos 1–6 %, moderados 6–15 %, extremos 15–30 %
+- Adaptación: **solutos compatibles**, proteínas ácidas en superficie (aspártico)
+- Acidófilos 0,5–5 · neutrófilos 5,5–8 · basófilos 8,5–11,5 · el pH interno se mantiene neutro
+- Acidófilos: potencial de membrana inverso, membrana impermeable, bombeo de H⁺, reparación
+# Radiación y metales
+- *Deinococcus radiodurans*: hasta 2200 Gy (10 Gy matan a una persona) · varias copias del genoma, reparación rápida, ADN en toroides, mucho Mn
+- Metalotolerantes: exclusión, eflujo, secuestro, detoxificación, **co-resistencia** con antibióticos
+`,
     src: 'Diapositivas del Tema 2',
     intro: R`Ecología microbiana frente a microbiología ambiental, importancia ecológica de los microorganismos, hábitat, nicho y microambiente, población, gremio y comunidad, y los <strong>extremófilos</strong>: temperatura, presión, oxígeno, sales y actividad de agua, pH, radiación y metales, con sus adaptaciones.`,
     theory: [
@@ -946,6 +1118,38 @@
 
   T.push({
     id: 'externas', group: 't3', title: 'Tema 3 (I) · Morfología, movilidad y estructuras externas', short: '3.I · Forma, movilidad y superficie',
+    sheet: R`
+# Formas y tamaños
+- Cocos: diplo- (2), estrepto- (cadena), estafilo- (racimo), tétrada, sarcina (cubo de 8)
+- Bacilos · vibrios (coma) · espirilos · espiroquetas (flexibles) · micoplasmas pleomórficos (sin pared)
+- *E. coli* ≈ 1 × 2–3 µm · gigantes: *Epulopiscium* 200–500 µm, *Thiomargarita* ≈ 750 µm
+- **Protoplásticas** (no se regeneran): genóforo, citoplasma, membrana · **ergásticas** (se regeneran): flagelos, fimbrias, pelos, cápsula, pared
+# Movilidad
+| Tipo | Con qué | Cómo |
+|---|---|---|
+| Swimming | flagelos | individual, en líquido (20–90 µm/s) |
+| Swarming | flagelos | grupal, sobre sólido |
+| Darting | flagelos periplásmicos | lanzamientos |
+| Gliding | fimbrias IV, proteínas, EPS | deslizamiento grupal |
+| Twitching | fimbrias tipo IV | retracción («tirón») |
+# El flagelo
+- Monotrica, lofotrica, anfitrica, peritrica
+- Filamento (flagelina, crece por la punta) · gancho · cuerpo basal: anillos **L** (LPS), **P** (peptidoglicano), **MS** (membrana); Mot (estátor) y Fli (conmutador)
+- Gira como una hélice gracias a la **fuerza protón-motriz** (no ATP); el cilio eucariota bate
+- **Antihorario = avanzar** (carrera) · horario = voltereta
+- Taxias: quimio-, aero-, foto-, magnetotaxia · con atrayente, carreras más largas → desplazamiento neto
+# Fimbrias y pelos
+- **Fimbrias**: cortas y numerosas → adhesión · **pelos**: largos y escasos → transferencia de ADN
+- Tipo I y P (chaperona-ensamblador) · curli · **tipo IV** (twitching, biopelículas, catéteres) · **tipo III** = jeringa molecular (EPEC: Tir y EspF)
+- Gram +: fimbrias Spa (sortasas)
+- Pelo **F**: conjugación (F⁺ → F⁻) · pelo **T**: *Agrobacterium* pasa ADN a plantas · pili conductores = nanocables
+- Prostecas (medios oligotróficos) · holdfast (el pegamento natural más fuerte)
+# Capa S y glicocálix
+- **Capa S**: malla cristalina de proteínas o glucoproteínas (muy frecuente en arqueas)
+- **Glicocálix**: polisacáridos hidratados · cápsula = organizada y firme · capa mucosa = laxa, se desprende
+- Cápsula de *Bacillus anthracis*: ácido poli-D-glutámico
+- Funciones: adhesión, agua, reserva, protección, biopelículas; virulencia (resiste fagocitosis, opsonización y complemento)
+`,
     src: 'Diapositivas de la Lección 3 (I): estructuras externas y movilidad',
     intro: R`Formas y tamaños de las bacterias, estructuras protoplásticas y ergásticas, los tipos de movilidad, el <strong>flagelo</strong> (disposición, estructura, motor y giro), las <strong>taxias</strong>, y las estructuras de superficie: fimbrias, pelos, otras estructuras de adhesión, <strong>capa S</strong> y <strong>glicocálix</strong> (cápsulas y capas mucosas).`,
     theory: [
@@ -1195,6 +1399,41 @@
 
   T.push({
     id: 'pared', group: 't3', title: 'Tema 3 (II) · La pared celular', short: '3.II · Pared celular',
+    sheet: R`
+# Tinción de Gram (1884)
+1. Fijar
+2. **C**ristal violeta → todo morado
+3. **L**ugol (mordiente) → complejo cristal violeta-yodo
+4. **A**lcohol → las Gram − se decoloran
+5. **S**afranina → contraste rosa
+? «Cuando Llueve, Algunos Se mojan» · **P**ositivo = **P**úrpura
+- Pared: barrera, adhesión, resistencia osmótica, forma y rigidez
+# Peptidoglicano (mureína)
+- Cadenas **NAG–NAM** entrecruzadas por péptidos cortos
+- **90 %** de la pared en Gram + · **10 %** en Gram −
+- Arqueas: no tienen; algunas, pseudomureína
+# Gram positivas
+- Peptidoglicano **grueso**, de muchas capas
+- **Ácidos teicoicos** y lipoteicoicos: carga negativa, Mg²⁺, autolisinas, adherencia
+- Polímeros de la matriz: receptores de fagos y antígenos
+# Gram negativas
+- De fuera a dentro: **LPS** → membrana externa → **periplasma** con peptidoglicano fino → membrana plasmática
+- Membrana externa: tamiz, protección, receptores de fagos, ancla el anillo L
+- **LPS** = endotoxina; el **lípido A** es lo tóxico
+- Periplasma (20–40 %): hidrolasas (penicilinasa), proteínas de unión, quimiorreceptores
+- **Porinas**: poros para moléculas hidrófilas · lipoproteína de **Braun**: une la membrana externa al peptidoglicano
+! Endotoxina: se libera al lisarse; lisar muchas Gram − puede empeorar al paciente
+# Otras paredes
+- **Micobacterias**: peptidoglicano + arabinogalactano + **ácidos micólicos** → céreas, resistentes; tinción de **Ziehl-Neelsen**
+- **Arqueas**: capa S, pseudomureína; sin pared *Thermoplasma* y *Ferroplasma*
+? Los «-plasma» no tienen pared: *Mycoplasma*, *Thermoplasma*, *Ferroplasma*
+# División y formas sin pared
+- ADN → anillo **Z** (FtsZ, divisoma) → peptidoglicano nuevo → septo → **autolisinas** separan
+- Gemación (*Hyphomonas*), asimétrica (*Caulobacter*: móvil + con tallo), hijas internas (*Epulopiscium*)
+- **Protoplasto**: Gram + sin pared · **esferoplasto**: Gram − que conserva la membrana externa · **forma L**: sin pared o defectuosa
+- Frágiles: necesitan medio isotónico · se obtienen con lisozima o antibióticos
+- Inhiben el peptidoglicano: fosfomicina, cicloserina, vancomicina, bacitracina, **β-lactámicos** (entrecruzamiento) → solo bacterias en crecimiento, lisis osmótica
+`,
     src: 'Diapositivas de la Lección 3 (II): pared celular',
     intro: R`Funciones de la pared, la <strong>tinción de Gram</strong>, el peptidoglicano, las paredes Gram positiva y Gram negativa (ácidos teicoicos, membrana externa, LPS, periplasma, porinas), las micobacterias, la pared de las arqueas, la división celular y las bacterias sin pared (protoplastos, esferoplastos, formas L), y los antibióticos que atacan la pared.`,
     theory: [
@@ -1401,6 +1640,38 @@
 
   T.push({
     id: 'membrana', group: 't3', title: 'Tema 3 (III) · La membrana plasmática', short: '3.III · Membrana',
+    sheet: R`
+# Composición
+- Fosfolípidos + proteínas · **sin esteroles** (excepto micoplasmas, que toman colesterol)
+- **Hopanoides**: estabilizan como el colesterol; biomarcadores en el petróleo
+| | Bacterias | Arqueas |
+|---|---|---|
+| Enlace | **éster** | **éter** |
+| Cadenas | ácidos grasos | isoprenoides |
+| Estructura | bicapa | monocapa o bicapa |
+- Saturados → menos fluidez · insaturados → más · se ajustan con la temperatura
+? «Las arqueas son étERnas»
+# Estructura y funciones
+- Mosaico fluido (Singer y Nicolson)
+- Barrera selectiva, transporte, **energía** (cadena respiratoria y ATP), gradientes para el flagelo, síntesis de la envoltura
+- Proteínas integrales (atraviesan) y periféricas
+# Transporte
+| Tipo | Energía | Ejemplo |
+|---|---|---|
+| Difusión simple | ninguna | O₂, CO₂ |
+| Difusión facilitada | ninguna | permeasas, acuaporinas (saturable) |
+| Activo primario | ATP | transportadores **ABC** |
+| Activo secundario | gradiente de H⁺ o Na⁺ | simporte H⁺/lactosa (LacY) |
+| Translocación de grupo | **PEP** | **PTS**: el azúcar entra fosforilado |
+- Uniporte (1) · simporte (2, mismo sentido) · antiporte (2, opuestos)
+- **ABC**: captadora + transmembrana + dominio que une ATP · captadora libre en el periplasma (Gram −) o anclada a la membrana (Gram +)
+- Valinomicina: ionóforo que destruye el potencial de membrana
+? Energía del transporte activo: ATP (ABC), gradiente (secundario), PEP (PTS)
+# Secreción y hierro
+- Endocitosis y exocitosis: propias de eucariotas, no de bacterias
+- Translocación (cruzar una membrana) · exportación (al periplasma) · **secreción** (proteínas al exterior, sistemas I–VI) · excreción (no proteico)
+- **Sideróforos** (enterobactina): atrapan Fe³⁺ → receptor de la membrana externa → periplasma → ABC
+`,
     src: 'Diapositivas de la Lección 3 (III): membrana plasmática en procariotas',
     intro: R`Composición (fosfolípidos, proteínas, <strong>hopanoides</strong>), diferencias entre los lípidos de bacterias y arqueas, el modelo del mosaico fluido, funciones, <strong>mecanismos de transporte</strong> (pasivo, activo primario y secundario, ABC, translocación de grupo), secreción y captación de hierro con <strong>sideróforos</strong>.`,
     theory: [
@@ -1564,6 +1835,35 @@
   /* ===================================================================== */
   T.push({
     id: 'citoplasma', group: 't3', title: 'Tema 3 (IV) · Citoplasma, orgánulos e inclusiones', short: '3.IV · Citoplasma',
+    sheet: R`
+# Citoplasma
+- Agua, iones, **nucleoide**, plásmidos, ribosomas, inclusiones · **sin orgánulos membranosos**
+| Proteína | Función | En eucariotas |
+|---|---|---|
+| FtsZ | anillo Z de división | tubulina |
+| MreB | forma de bastón | actina |
+| Crescentina | curvatura (*Caulobacter*) | filamentos intermedios |
+# Ribosomas y ARNr 16S
+- **70S** = 30S (ARNr **16S**, lee el ARNm) + 50S (23S y 5S, enlace peptídico)
+- Transcripción y traducción **simultáneas** · primer aminoácido: fMet
+- **Woese**: el 16S define los dominios (Archaea) · regiones conservadas e hipervariables
+- Usos: identificar, filogenia y **comunidades ambientales sin cultivar**
+# Inclusiones de reserva
+| Inclusión | Guarda | Detalle |
+|---|---|---|
+| Glucógeno | C | con poco N; no provoca ósmosis; yodo |
+| PHB y PHA | C | negro Sudán; **bioplásticos** |
+| Cianoficina | **N** | Arg + Asp; acinetos |
+| Polifosfato | **P** | gránulos metacromáticos |
+| Glóbulos de azufre | **S** | SH₂ → S⁰ → sulfato |
+- *Anabaena*: **heterocistos** fijan N₂ · **acinetos** llenos de cianoficina
+# Estructuras especializadas
+- **Carboxisomas**: RuBisCO, concentran CO₂ (autótrofas)
+- **Vacuolas de gas** (GvpA, GvpC): flotar
+- **Magnetosomas**: magnetita Fe₃O₄, magnetotaxia; **con membrana**
+- **Clorosomas** (bacterias verdes) y **ficobilisomas** (cianobacterias): captar luz
+? Carboxisoma = CO₂ · gas = flotar · magnetosoma = brújula · cloro/fico = luz
+`,
     src: 'Diapositivas de la Lección 3 (IV): citoplasma, orgánulos e inclusiones',
     intro: R`Qué hay en el citoplasma bacteriano, el <strong>citoesqueleto</strong> procariota (FtsZ, MreB, crescentina), los ribosomas 70S y el <strong>ARNr 16S</strong>, las <strong>inclusiones de reserva</strong> (glucógeno, PHB, cianoficina, polifosfato, azufre) y las estructuras especializadas: carboxisomas, vacuolas de gas, magnetosomas, clorosomas y ficobilisomas.`,
     theory: [

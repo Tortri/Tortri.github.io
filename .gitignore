@@ -1,1 +1,4 @@
 node_modules/
+# Study: soluciones en claro (solo se publica subjects/<id>.vault.js, cifrado)
+study/private/
+*.plain.json

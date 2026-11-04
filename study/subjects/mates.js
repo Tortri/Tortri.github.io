@@ -10,6 +10,8 @@
      theory: [{ t: 'Apartado', h: 'HTML con $fórmulas$' }],
         // en h: <div class="key|mnemo|ojo|ej|note">…</div>, tablas <div class="tw"><table class="t">,
         // figuras SVG, y widgets <div data-w="plot|approx|calib|beer|conv|interf|gen" data-id="clave"></div>
+     sheet: R`…`,               // CHULETA (obligatoria en cada tema): lo imprescindible en una hoja, en mini-markdown
+        // (ver md.js): # caja · - lista · término :: definición · | tabla | · > clave · ! ojo · ? truco · $fórmulas$
      plots:   { clave: {fns:[{f:x=>…, lbl}], x:[a,b], y:[c,d], va:[], ha:[], ob:[[m,n]], pts:[[x,y,abierto,etiqueta]], params:[{k,lbl,min,max,step,v}], brk:[x] } },
      widgets: { clave: {...} },
      map:  { t: 'raíz', n: 'nota', c: [{ t, n, c: [...] }] },
@@ -38,6 +40,34 @@
   /* ===================================================================== */
   T.push({
     id: 'algebra', group: 'bases', title: 'Álgebra básica', short: 'Álgebra básica',
+    sheet: R`
+# Fracciones
+- Sumar y restar: común denominador (mcm) · multiplicar: en línea · dividir: en cruz, $\frac ab:\frac cd=\frac{ad}{bc}$
+- Solo se tachan **factores**, nunca sumandos: $\frac{x+3}{x}\neq3$
+- $\frac{a+b}{c}=\frac ac+\frac bc$ sí · $\frac{c}{a+b}\neq\frac ca+\frac cb$
+- Orden: paréntesis → potencias y raíces → · y : → + y −
+# Potencias y raíces
+| $a^m a^n=a^{m+n}$ | $\frac{a^m}{a^n}=a^{m-n}$ |
+| $(a^m)^n=a^{mn}$ | $(ab)^n=a^nb^n$ |
+| $a^0=1$ | $a^{-n}=\frac1{a^n}$ |
+| $a^{m/n}=\sqrt[n]{a^m}$ | $\sqrt{x^2}=\lvert x\rvert$ |
+- Extraer factores: $\sqrt{12}=2\sqrt3$ · índice par: radicando $\ge0$
+- Racionalizar: $\frac{6}{\sqrt3}=2\sqrt3$; con suma o resta, **conjugado**: $(\sqrt a-\sqrt b)(\sqrt a+\sqrt b)=a-b$
+! $(a+b)^2\neq a^2+b^2$ · $-2^2=-4$ pero $(-2)^2=4$
+# Productos notables
+$$(a\pm b)^2=a^2\pm2ab+b^2\qquad(a+b)(a-b)=a^2-b^2$$
+- Leídos al revés, factorizan: $x^2-9=(x-3)(x+3)$, $x^2-6x+9=(x-3)^2$
+# Factorizar: F-I-F-R
+1. **F**actor común: $x^3-4x=x(x^2-4)$
+2. **I**dentidades notables
+3. **F**órmula de 2.º grado: $ax^2+bx+c=a(x-x_1)(x-x_2)$ (¡no olvides la $a$!)
+4. **R**uffini: raíces enteras entre los divisores del término independiente
+> Teorema del resto: $P(a)=0\iff(x-a)$ es factor. Un límite $\frac00$ en $x=a$ significa que arriba y abajo comparten $(x-a)$.
+# Fracciones algebraicas
+- Simplificar: factorizar y tachar: $\frac{x^2-1}{x^2-2x+1}=\frac{x+1}{x-1}$ $(x\neq1)$
+- Sumar: factorizar denominadores, mcm y operar
+! La expresión simplificada «existe» donde la original no: es la discontinuidad evitable del Tema 2
+`,
     src: 'Repaso desde cero (nivel de bachillerato) con ejemplos sacados de las relaciones',
     intro: R`Fracciones, potencias, raíces y, sobre todo, <strong>factorizar polinomios</strong>: es la herramienta que más vas a usar para resolver límites $\frac00$, calcular dominios y estudiar signos.`,
     theory: [
@@ -191,6 +221,36 @@
   /* ===================================================================== */
   T.push({
     id: 'ecuaciones', group: 'bases', title: 'Ecuaciones e inecuaciones', short: 'Ecuaciones',
+    sheet: R`
+# Segundo grado
+$$x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\qquad\Delta=b^2-4ac$$
+- $\Delta>0$ dos soluciones · $\Delta=0$ una doble · $\Delta<0$ ninguna real
+- Incompletas: $ax^2+bx=0\Rightarrow x(ax+b)=0$ · $ax^2+c=0\Rightarrow x=\pm\sqrt{-c/a}$
+> $A\cdot B=0\iff A=0$ o $B=0$: factoriza antes de resolver
+! Nunca dividas entre $x$: pierdes $x=0$ ($x^2=3x\Rightarrow x(x-3)=0$)
+# Otras ecuaciones
+- Bicuadrada: $t=x^2$ y luego $x=\pm\sqrt t$ (solo $t\ge0$)
+- Racional: multiplicar por el mcm y comprobar que no anula ningún denominador
+- Irracional: aislar la raíz, elevar al cuadrado y **comprobar** (aparecen soluciones falsas)
+- Valor absoluto: $|A|=k\iff A=k$ o $A=-k$ ($k\ge0$)
+# Sistemas lineales
+| Tipo | Soluciones | Qué se ve |
+|---|---|---|
+| Compatible determinado | una | cada incógnita con su valor |
+| Compatible indeterminado | infinitas | queda $0=0$: depende de un parámetro |
+| Incompatible | ninguna | contradicción tipo $0=6$ |
+# Intervalos
+- $(a,b)$ extremos fuera · $[a,b]$ dentro · con $\pm\infty$ siempre paréntesis
+- $x\ge3\to[3,+\infty)$ · $\R\setminus\{a\}$: todos menos $a$ · $A\cup B$: unión
+# Inecuaciones: tabla de signos
+1. Todo a un lado: $\frac{P}{Q}$ comparado con $0$
+2. Factorizar: puntos críticos = ceros de cada factor
+3. Signo de cada factor en cada intervalo → multiplicar
+4. Ceros del numerador entran con $\ge$ o $\le$; los del denominador **nunca**
+- Multiplicar o dividir por un negativo **invierte** la desigualdad
+- $|x-a|<r\iff a-r<x<a+r$ (entre) · $|x-a|>r\iff x<a-r$ o $x>a+r$ (fuera)
+? Parábola con $a>0$ (∪): negativa solo entre las raíces
+`,
     src: 'Repaso desde cero, con los casos que aparecen en las relaciones',
     intro: R`Resolver ecuaciones e inecuaciones es la mitad del trabajo al calcular dominios, cortes con los ejes, el signo de una función y los parámetros que hacen continua una función.`,
     theory: [
@@ -334,6 +394,34 @@
   /* ===================================================================== */
   T.push({
     id: 'explog', group: 'bases', title: 'Exponenciales y logaritmos', short: 'Exponenciales y logaritmos',
+    sheet: R`
+# Exponencial $a^x$
+- $a>0$, $a\neq1$ · dominio $\R$ · recorrido $(0,+\infty)$: nunca 0 ni negativa
+- Pasa por $(0,1)$ · crece si $a>1$, decrece si $0<a<1$ · asíntota $y=0$
+- $e=\lim\left(1+\frac1n\right)^n\approx2{,}71828$
+# Logaritmo = exponente
+$$\log_a x=y\iff a^y=x\qquad(x>0)$$
+- $\log_a1=0$ · $\log_a a=1$ · $\log_a a^k=k$ · $a^{\log_a x}=x$
+- $\log=\log_{10}$ (Relación 1) · $\ln=\log_e$
+- Dominio $(0,+\infty)$ · recorrido $\R$ · pasa por $(1,0)$ · asíntota $x=0$ ($\ln x\to-\infty$ en $0^+$)
+- Inversa de $a^x$: $e^{\ln x}=x$, $\ln e^x=x$; gráficas simétricas respecto a $y=x$
+? «¿A qué elevo la base para obtener $x$?»: $\log_2 32=5$
+# Propiedades
+| Producto | $\log(xy)=\log x+\log y$ |
+| Cociente | $\log\frac xy=\log x-\log y$ |
+| Potencia | $\log x^n=n\log x$ |
+| Raíz | $\log\sqrt[n]x=\frac1n\log x$ |
+| Cambio de base | $\log_a x=\frac{\ln x}{\ln a}$ |
+! $\log(x+y)\neq\log x+\log y$ · $\frac{\log x}{\log y}\neq\log\frac xy$
+# Ecuaciones
+- Exponencial: aislar y tomar $\ln$: $Ae^{kx}=B\Rightarrow x=\frac1k\ln\frac BA$
+- Misma base: igualar exponentes ($3^{x+1}=3^4\Rightarrow x=3$)
+- Logarítmica: juntar en un logaritmo, deshacer con la exponencial y **comprobar** que los argumentos son $>0$
+# Aplicaciones
+- Malthus $N=N_0e^{rt}$: $r=\frac1t\ln\frac{N}{N_0}$ · duplicación $T_2=\frac{\ln2}{r}$
+- pH $=-\log[\mathrm{H^+}]$ · absorbancia $A=-\log T$
+- En $+\infty$: $\ln x\ll x^p\ll e^x$
+`,
     src: 'Repaso desde cero, enlazado con Malthus (Relación 1) y con la absorbancia (TIA)',
     intro: R`Aparecen en el modelo de Malthus, en el modelo logístico, en el número $e$ de los límites… y en química: el pH y la absorbancia $A=-\log T$ son logaritmos.`,
     theory: [
@@ -470,6 +558,38 @@
   /* ===================================================================== */
   T.push({
     id: 'trigo', group: 'bases', title: 'Trigonometría', short: 'Trigonometría (repaso)',
+    sheet: R`
+# Radianes
+- $\pi\text{ rad}=180^\circ$ · de grados a radianes: $\times\frac{\pi}{180}$
+- 30° $=\frac\pi6$ · 45° $=\frac\pi4$ · 60° $=\frac\pi3$ · 90° $=\frac\pi2$ · 270° $=\frac{3\pi}2$ · 360° $=2\pi$
+# Valores notables
+| $x$ | $0$ | $\frac\pi6$ | $\frac\pi4$ | $\frac\pi3$ | $\frac\pi2$ |
+|---|---|---|---|---|---|
+| $\sin$ | $0$ | $\frac12$ | $\frac{\sqrt2}2$ | $\frac{\sqrt3}2$ | $1$ |
+| $\cos$ | $1$ | $\frac{\sqrt3}2$ | $\frac{\sqrt2}2$ | $\frac12$ | $0$ |
+| $\tan$ | $0$ | $\frac{\sqrt3}3$ | $1$ | $\sqrt3$ | no existe |
+- $\sin^2x+\cos^2x=1$
+? Seno: $\frac{\sqrt0}2,\frac{\sqrt1}2,\frac{\sqrt2}2,\frac{\sqrt3}2,\frac{\sqrt4}2$; el coseno, al revés
+? Cuadrantes: «**T**odos **S**abemos **T**rigonometría **C**ompleta» (I todas +, II seno, III tangente, IV coseno)
+# Gráficas
+| | Recorrido | Período | Simetría | Ceros |
+|---|---|---|---|---|
+| $\sin x$ | $[-1,1]$ | $2\pi$ | impar | $k\pi$ |
+| $\cos x$ | $[-1,1]$ | $2\pi$ | par | $\frac\pi2+k\pi$ |
+| $\tan x$ | $\R$ | $\pi$ | impar | $k\pi$ |
+- Dominio de $\tan$: $\R\setminus\{\frac\pi2+k\pi\}$
+- Período de $\sin kx$ y $\cos kx$: $\frac{2\pi}{\lvert k\rvert}$ · de $\tan kx$: $\frac{\pi}{\lvert k\rvert}$
+# Ecuaciones ($k\in\Z$)
+- $\sin x=0\iff x=k\pi$ · $\cos x=0\iff x=\frac\pi2+k\pi$
+- $\cos x=c\Rightarrow x=\pm\arccos c+2k\pi$
+- $\sin x=c\Rightarrow x=\arcsin c+2k\pi$ o $x=\pi-\arcsin c+2k\pi$
+# Inversas
+| | Dominio | Recorrido | Rasgos |
+|---|---|---|---|
+| $\arcsin$ | $[-1,1]$ | $[-\frac\pi2,\frac\pi2]$ | creciente, impar |
+| $\arccos$ | $[-1,1]$ | $[0,\pi]$ | decreciente |
+| $\arctan$ | $\R$ | $(-\frac\pi2,\frac\pi2)$ | creciente, asíntotas $y=\pm\frac\pi2$ |
+`,
     src: 'Repaso rápido para los ejercicios 1f–1i, 4, 10, 11 y 12 de la Relación 1',
     intro: R`Lo justo para estudiar $\sin$, $\cos$, $\tan$ y sus inversas. En los apuntes se escribe $\sin$ (en muchos libros españoles, $\operatorname{sen}$).`,
     theory: [
@@ -594,6 +714,47 @@
   const r1c = x => Math.sqrt(x * x + 3 * x + 2) - Math.sqrt(x * x - 3 * x + 2);
   T.push({
     id: 'funciones', group: 'temario', title: 'Tema 1 · Funciones', short: 'Tema 1 · Funciones',
+    sheet: R`
+# Dominio
+| Si aparece | Condición |
+|---|---|
+| $\frac PQ$ | $Q\neq0$ |
+| raíz de índice par $\sqrt{g}$ | $g\ge0$ ($g>0$ si está en un denominador) |
+| $\log g$ | $g>0$ |
+| $\tan g$ | $\cos g\neq0$ |
+| $\arcsin g$, $\arccos g$ | $-1\le g\le1$ |
+| polinomio, $e^g$, $\sin$, $\cos$, $\arctan$, raíz impar | ninguna |
+- Varias condiciones → **intersección** · se calcula **antes** de simplificar
+# Cortes, signo y monotonía
+- Eje X: $f(x)=0$ · eje Y: $(0,f(0))$, como mucho uno
+- El signo solo cambia en ceros o en puntos fuera del dominio (tabla de signos)
+- Si $g$ crece: $g+k$, $kg$ ($k>0$), $e^g$ y $\ln g$ crecen; $-g$ y $\frac1g$ decrecen
+- Composición: misma monotonía → creciente; distinta → decreciente
+# Simetría y período
+- **Par** $f(-x)=f(x)$: simétrica respecto al eje Y ($x^2$, $\cos x$, $|x|$)
+- **Impar** $f(-x)=-f(x)$: respecto al origen ($x^3$, $\sin x$, $\frac1x$)
+? Se multiplican como signos: par = +, impar = −. Cualquier función de $x^2$ es par
+- Periódica: $f(x+T)=f(x)$ · $\sin kx$: $\frac{2\pi}{\lvert k\rvert}$ · $\sin(x^2)$ **no** es periódica
+# Operaciones, composición e inversa
+- $f\pm g$, $fg$: $\Dom f\cap\Dom g$ · $\frac fg$: además $g\neq0$
+- $(f\circ g)(x)=f(g(x))$: primero $g$ · dominio: $x\in\Dom g$ y $g(x)\in\Dom f$ · $f\circ g\neq g\circ f$
+- Inversa (solo si $f$ es inyectiva): $y=f(x)$ → despejar $x$ → intercambiar $x\leftrightarrow y$
+- $\Dom f^{-1}=\Rec f$ · gráficas simétricas respecto a $y=x$ · $e^x\leftrightarrow\ln x$
+- A trozos: cada fórmula en su intervalo; estudiar aparte los puntos de cambio
+# Catálogo
+| Función | Dominio | Recorrido | Rasgo |
+|---|---|---|---|
+| $mx+n$ | $\R$ | $\R$ | pendiente $m$ |
+| $ax^2+bx+c$ | $\R$ | desde el vértice | $x_v=-\frac b{2a}$, ∪ si $a>0$ |
+| $\frac1x$ | $\R\setminus\{0\}$ | $\R\setminus\{0\}$ | impar, asíntotas $x=0$ e $y=0$ |
+| $\sqrt x$ | $[0,\infty)$ | $[0,\infty)$ | creciente |
+| $a^x$ | $\R$ | $(0,\infty)$ | por $(0,1)$, asíntota $y=0$ |
+| $\log_a x$ | $(0,\infty)$ | $\R$ | por $(1,0)$, asíntota $x=0$ |
+# Modelo de Malthus
+$$N(t)=N_0e^{rt}\qquad r=r_n-r_m$$
+- $e^r$: crecimiento intrínseco · $r>0$ crece, $r<0$ decrece
+> ¿Datos malthusianos? Calcula $r$ con dos y predice el tercero; o comprueba que $\frac{N(t+h)}{N(t)}$ es constante
+`,
     src: 'Temario de la asignatura (Tema 1) y Relación 1 completa (16 ejercicios)',
     intro: R`Dominio, recorrido, funciones elementales, crecimiento, simetría, periodicidad, operaciones, composición e inversa, y el modelo de Malthus. Las asíntotas se calculan en el Tema 2 y la monotonía con derivadas en el Tema 3; aquí se leen de la gráfica.`,
     theory: [
@@ -919,6 +1080,47 @@
   const lim = (id, lvl, expr, steps, ans) => ({ id: 'L' + id, set: L, n: String(id), lvl, q: R`Calcula $\displaystyle ` + expr + '$.', s: steps, a: ans });
   T.push({
     id: 'limites', group: 'temario', title: 'Tema 2 · Límites y continuidad', short: 'Tema 2 · Límites',
+    sheet: R`
+# El límite
+- $\lim_{x\to a}f=L$: valores cerca de $a$ (lo que pase en $a$ no importa)
+> Existe si y solo si los dos laterales existen y son iguales
+- $\frac k0$ ($k\neq0$) **no** es indeterminación: da $\pm\infty$ (signo con los laterales)
+- $\frac k\infty=0$ · $e^{-\infty}=0$ · $\ln 0^+=-\infty$
+- Jerarquía en $+\infty$: $\ln x\ll x^p\ll a^x$ ($a>1$)
+# Indeterminaciones
+$$\tfrac00\quad\tfrac\infty\infty\quad\infty-\infty\quad0\cdot\infty\quad1^\infty\quad\infty^0\quad0^0$$
+| Tipo | Técnica |
+|---|---|
+| $\frac00$ con polinomios | factorizar y tachar $(x-a)$ |
+| $\frac00$ o $\infty-\infty$ con raíces | conjugado |
+| $\infty-\infty$ con fracciones | restarlas |
+| $\frac\infty\infty$ | comparar grados |
+| $1^\infty$ | $\lim f^g=e^{\lim g(f-1)}$ |
+| $0\cdot\infty$ | pasar a cociente |
+# Cocientes en $\pm\infty$
+- Arriba menor → $0$ · empate → $\frac{a_n}{b_m}$ (cociente de los «jefes») · arriba mayor → $\pm\infty$
+- $\lim\left(1+\frac ax\right)^{bx}=e^{ab}$
+! Con raíces y $x\to-\infty$: $\sqrt{x^2}=|x|=-x$
+# Continuidad en $a$
+1. Existe $f(a)$
+2. Existe $\lim_{x\to a}f$
+3. Coinciden
+? «Existe, existe y coincide». A trozos: en cada punto de cambio, izquierda = derecha = valor → una ecuación por punto
+| Discontinuidad | Qué pasa |
+|---|---|
+| Evitable | límite finito, pero $f(a)$ no existe o es distinto (agujero) |
+| Salto finito | laterales finitos y distintos |
+| Salto infinito | algún lateral es $\pm\infty$ (asíntota vertical) |
+| Esencial | algún lateral no existe ($\sin\frac1x$ en 0) |
+# Asíntotas
+- **Vertical** $x=a$: algún lateral da $\pm\infty$ (ceros del denominador que no se simplifican, bordes del dominio)
+- **Horizontal** $y=L$: $\lim_{x\to\pm\infty}f=L$ finito
+- **Oblicua** $y=mx+n$: $m=\lim\frac{f(x)}x$ (finito, $\neq0$), $n=\lim(f(x)-mx)$
+! En un mismo lado, horizontal u oblicua, no las dos. La gráfica puede cortar la horizontal; la vertical, nunca
+# Poblaciones
+- Malthus $N_0e^{rt}\to+\infty$ si $r>0$: crecimiento ilimitado
+- Logístico $N(t)=\dfrac{N_0N_{\max}}{N_0+(N_{\max}-N_0)e^{-rt}}$: $N(0)=N_0$ y $N\to N_{\max}$
+`,
     src: 'Temario (Tema 2) y Relación 2: Límites (25), Asíntotas (7) y Modelos aplicados (12)',
     intro: R`Límite en un punto y en el infinito, cómo resolver indeterminaciones, continuidad y tipos de discontinuidad, asíntotas y los modelos de Malthus y logístico.`,
     theory: [
