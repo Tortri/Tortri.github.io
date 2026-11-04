@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <!-- Autoplan engine (periodisation + adaptive weekly planning). Bump ?v= after changing engine.js so browsers fetch the new copy. -->
-    <script src="engine.js?v=1"></script>
+    <script src="engine.js?v=2"></script>
     <style>
         textarea, button, a, select { touch-action: manipulation; }
         .cell-input { resize: none; overflow: hidden; min-height: 36px; }
@@ -29,7 +29,7 @@
         .ghost { border: 1px dashed; border-radius: 6px; padding: 3px 5px 4px; font-size: 10.5px; line-height: 1.25; cursor: pointer; opacity: .82; transition: opacity .15s; margin-bottom: 2px; }
         .ghost:hover { opacity: 1; }
         .ghost-body { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; opacity: .85; margin-top: 1px; }
-        .ghost-btn { font-size: 11px; line-height: 1; padding: 3px 6px; border-radius: 4px; border: 1px solid currentColor; opacity: .7; }
+        .ghost-btn { font-size: 11px; line-height: 1; padding: 3px 6px; border-radius: 4px; border: 1px solid currentColor; opacity: .7; white-space: nowrap; }
         .ghost-btn:hover { opacity: 1; }
         .ghost-quality  { border-color: rgba(245,158,11,.6);  background: rgba(245,158,11,.07);  color: #b45309; }
         .ghost-long     { border-color: rgba(14,165,233,.6);  background: rgba(14,165,233,.07);  color: #0369a1; }
@@ -43,6 +43,7 @@
         .dark .ghost-strength { color: #c4b5fd; }
         .dark .ghost-tendon   { color: #ddd6fe; }
         .dark .ghost-race     { color: #fda4af; }
+        .ghost-notdone  { border-color: rgba(148,163,184,.45); background: transparent; color: #94a3b8; cursor: default; opacity: .9; }
         .projected .ghost { opacity: .5; border-style: dotted; }
         .rest-tag { font-size: 10px; color: #94a3b8; font-style: italic; padding: 2px 4px; }
         .cell-hint { font-size: 10px; line-height: 1.25; color: #94a3b8; padding: 0 4px; }
@@ -166,7 +167,10 @@
                         <li><b>Adapts to what you did</b>: weekly increases ≤10%; a much bigger week than your 4-week average (acute:chronic &gt; 1.3) triggers a lighter week; after 1–4+ weeks with little training it restarts at ~85/70/60/50% of your earlier level.</li>
                         <li><b>Taper</b>: volume cut ~40–60% over 1–2 weeks while intensity and frequency are kept (Bosquet et al. 2007).</li>
                         <li><b>Strength 2×/week in base/build, 1×/week near the race</b>; plyometrics in hard-day warm-ups; tendon loading 2–3×/week. No static stretching: it doesn't reduce injuries, strength work does (Lauersen et al. 2014).</li>
-                        <li><b>Far future is projected</b> from your season curve and firms up within ~3 weeks; past days are frozen so changes only move the future.</li>
+                        <li><b>Far future is projected</b> from your season curve and firms up within ~3 weeks.</li>
+                        <li><b>Tick ✓ when you've done a session</b> — that never changes anything else. Sessions not ticked by the end of the day count as skipped. Each week is laid out once and only repaired locally when something really changes: a missed key session or long run moves to a free, well-spaced day (or is dropped rather than crammed in), an extra hard session replaces the next planned one, and much more volume than planned shortens the remaining easy runs.</li>
+                        <li><b>800 m</b> (~60–66% aerobic): aerobic base first, then speed endurance (15–30 s near max, long rests) and 800 m-pace work on top; short sprints all year; more strength/power than distance runners. World-class 800 m runners train ~60/40 below/above threshold (Haugen et al. 2021).</li>
+                        <li><b>400 m</b> (~40% aerobic): speed (accelerations, flying sprints), speed endurance (7–15 s, ~2' between reps, ~8' between sets) and special endurance (20–40 s, long rests); tempo runs at &lt;70% speed on the easy days; intensive sprint days ≥48 h apart; strength/power 2×/week (Haugen et al. 2019).</li>
                     </ul>
                     <p class="mt-2 text-slate-400">Honest caveats: the 10% rule, the 1.3 acute:chronic threshold and the return-after-break percentages are practical rules of thumb built on the research, not exact laws (see Impellizzeri et al. 2020). Listen to your body; pain that changes how you run is a reason to stop.</p>
                 </div>
@@ -189,6 +193,12 @@
                         <li>Lauersen et al. (2014) Br J Sports Med — strength training cuts sports injuries; stretching doesn't.</li>
                         <li>Bohm et al. (2015) Sports Med Open — tendon adaptation needs high, sustained loads.</li>
                         <li>van der Horst et al. (2015) Am J Sports Med — Nordic hamstring exercise and hamstring injuries.</li>
+                        <li>Spencer &amp; Gastin (2001) Med Sci Sports Exerc 33:157–162 — energy system contribution 200–1500 m (400 m 43%, 800 m 66% aerobic).</li>
+                        <li>Duffield, Dawson &amp; Goodman (2005) J Sports Sci — energy system contribution to 400 m and 800 m track running.</li>
+                        <li>Haugen et al. (2019) Sports Med Open — training and development of elite sprint performance.</li>
+                        <li>Haugen et al. (2021) Sports Med 51:1835–1854 — the science and practice of training world-class 800 and 1500 m runners.</li>
+                        <li>Iaia &amp; Bangsbo (2010) Scand J Med Sci Sports — speed endurance training (production vs maintenance).</li>
+                        <li>Sandford, Laursen &amp; Buchheit (2021) Sports Med — anaerobic speed reserve in middle-distance running.</li>
                     </ul>
                 </div>
             </div>
@@ -414,14 +424,20 @@
         }
 
         // ---------- cell content model ----------
-        // Stored as: manual string | {text, programId} | {text, auto:1} (plan session counted as done) | {text:"", status:"missed"}
+        // Stored as (see engine.js): manual {text, at} or plain string | {text, programId, at} | {text, auto:1} (plan session done)
+        // | {status:"missed", planned, at} (skipped) | {status:"unlogged", planned} (day passed without ticking → counts as skipped)
         function parseCell(raw) {
             const c = E.parseRaw(raw);
-            return { text: c.text, programId: c.programId, auto: c.auto, status: c.status, empty: c.empty };
+            return { text: c.text, programId: c.programId, auto: c.auto, status: c.status, planned: c.planned, at: c.at, empty: c.empty };
         }
+        // Manual entries remember the day they were typed, so the planner knows whether they were planned ahead or are a change.
         function serializeCell(text, programId) {
-            if (!programId) return text || "";
-            return JSON.stringify({ text: text || "", programId });
+            return E.serializeRaw({ text: text || "", programId: programId || null, at: todayISO() });
+        }
+        function plannedLabel(text) {
+            const t = String(text || "");
+            const i = t.indexOf(":");
+            return (i > -1 ? t.slice(0, i) : t).trim();
         }
 
         function cellId(person, year, week, dayIdx, slotKey) {
@@ -509,9 +525,9 @@
             let content;
             if (programId) content = serializeCell(el.value, programId);
             else if (!el.value.trim()) {
-                // Clearing a past plan day means it didn't happen; clearing a future day brings the suggestion back.
-                content = s && iso < todayISO() && iso >= s.startDate ? E.serializeRaw({ text: "", status: "missed" }) : "";
-            } else content = el.value; // typing over a plan session makes it a manual entry
+                // Clearing a past plan day means it didn't happen; clearing today/a future day brings the suggestion back.
+                content = s && iso < todayISO() && iso >= s.startDate ? E.serializeRaw({ text: "", status: "missed", at: todayISO() }) : "";
+            } else content = serializeCell(el.value, null); // typing over a plan session makes it your own entry
             saveKey(id, content);
             refreshPlanOverlay();
             schedulePlanRefresh();
@@ -572,7 +588,8 @@
                 planCache[person] = null;
             }
         }
-        // Freeze passed days: untouched plan sessions are written into the cells as "counted as done".
+        // Passed days: plan sessions that were never ticked are written into the cells as "not done" (counts as skipped,
+        // can still be ticked late with "✓ did it"), so the rest of the week adapts and history stays as it really was.
         function runLocks(person) {
             const s = planSettings[person];
             if (!s) return;
@@ -624,17 +641,31 @@
             const i = t.indexOf(":");
             return i > -1 ? t.slice(i + 1).trim() : t;
         }
-        function ghostHtml(id, sess) {
+        function ghostHtml(id, sess, iso) {
             const showMin = sess.min > 0 ? `<span class="shrink-0 tabular-nums">${sess.min}'</span>` : "";
-            const body = sess.kind === "easy" ? sess.text.replace(/^Easy\s*/, "") : sessionBody(sess);
+            const body = sess.text.includes(":") ? sessionBody(sess) : sess.text.replace(/^Easy\s*/, "");
+            const isToday = iso === todayISO();
             return `
                 <div class="ghost ghost-${sess.kind}" onclick="openSession('${id}')" title="Tap for details">
                     <div class="flex items-start justify-between gap-1"><span class="font-semibold min-w-0 break-words">${escapeHtml(sess.title)}</span>${showMin}</div>
                     ${sess.kind === "race" ? "" : `<div class="ghost-body">${escapeHtml(body)}</div>`}
                     <div class="flex gap-1 mt-1">
-                        <button class="ghost-btn" title="Done / keep as planned" onclick="event.stopPropagation(); acceptSession('${id}')">✓</button>
-                        <button class="ghost-btn" title="Skip" onclick="event.stopPropagation(); skipSession('${id}')">✕</button>
+                        ${isToday ? `<button class="ghost-btn" title="Done" onclick="event.stopPropagation(); acceptSession('${id}')">✓</button>` : ""}
+                        <button class="ghost-btn" title="${isToday ? "Skip — not doing it today" : "Won't do it — replan the week"}" onclick="event.stopPropagation(); skipSession('${id}')">✕</button>
                     </div>
+                </div>`;
+        }
+        function notDoneHtml(id, cell, iso, today) {
+            const label = plannedLabel(cell.planned);
+            const past = iso < today;
+            const what = cell.status === "unlogged" ? "not done" : "skipped";
+            const action = past
+                ? (cell.planned ? `<button class="ghost-btn" title="I did do it" onclick="didIt('${id}')">✓ did it</button>` : "")
+                : `<button class="ghost-btn" onclick="undoCell('${id}')">undo</button>`;
+            return `
+                <div class="ghost ghost-notdone">
+                    ${label ? `<div class="line-through break-words">${escapeHtml(label)}</div>` : ""}
+                    <div class="flex flex-wrap items-center justify-between gap-1 mt-0.5"><span class="italic">${what}</span>${action}</div>
                 </div>`;
         }
 
@@ -645,27 +676,26 @@
             document.getElementById("weekTableWrap").classList.toggle("projected", !!(pw && pw.projected));
             document.querySelectorAll("#weekTableBody td[data-cell-id]").forEach(td => {
                 const id = td.dataset.cellId, i = Number(td.dataset.day), slot = td.dataset.slot, iso = td.dataset.iso;
-                const cell = parseCell(getCellRaw(activePerson, Number(td.dataset.year), Number(td.dataset.week), i, slot));
+                const raw = getCellRaw(activePerson, Number(td.dataset.year), Number(td.dataset.week), i, slot);
+                const cell = parseCell(raw);
                 const overlay = td.querySelector(".cell-overlay");
                 const hint = td.querySelector(".cell-hint");
                 const day = pw && pw.days ? pw.days[i] : null;
                 const sess = day && !day.past ? day.slots[slot] : null;
                 let oh = "", hh = "";
-                if (cell.status === "missed") {
-                    oh = `<div class="cell-hint italic">${iso < today ? "missed" : "skipped"}${iso >= today ? ` · <button onclick="undoCell('${id}')">undo</button>` : ""}</div>`;
+                if (cell.status) {
+                    oh = notDoneHtml(id, cell, iso, today);
                 } else if (cell.empty && sess) {
                     ghostIndex[id] = { sess, iso, slot, i };
-                    oh = ghostHtml(id, sess);
+                    oh = ghostHtml(id, sess, iso);
                 } else if (cell.empty && day && !day.past && slot === "am" && day.role === "rest") {
                     oh = `<div class="rest-tag">rest</div>`;
                 }
                 if (!cell.empty && !cell.status) {
-                    const l = E.cellLoad(E.parseRaw(getCellRaw(activePerson, Number(td.dataset.year), Number(td.dataset.week), i, slot)), programs);
+                    const l = E.cellLoad(E.parseRaw(raw), programs);
                     const desc = E.describeLoad(l);
                     if (cell.auto) {
-                        hh = iso < today
-                            ? `✓ from plan, counted as done · <button onclick="markMissed('${id}')">didn't do it</button>`
-                            : `✓ kept from plan · <button onclick="undoCell('${id}')">undo</button>`;
+                        hh = `✓ done · <button onclick="undoDone('${id}')">undo</button>`;
                     } else if (l.guess) {
                         hh = `<span class="text-amber-500">≈30' guessed — add minutes, e.g. 40' Z2</span>`;
                     } else if (desc && planSettings[activePerson]) {
@@ -674,7 +704,7 @@
                 }
                 overlay.innerHTML = oh;
                 hint.innerHTML = hh;
-                td.classList.toggle("has-ghost", !!ghostIndex[id]);
+                td.classList.toggle("has-ghost", !!ghostIndex[id] || !!cell.status);
             });
         }
 
@@ -687,42 +717,50 @@
             refreshPlanOverlay();
             schedulePlanRefresh();
         }
+        function cellById(id) {
+            const td = document.querySelector(`td[data-cell-id="${id}"]`);
+            if (!td) return { cell: parseCell(""), iso: null };
+            return { cell: parseCell(getCellRaw(activePerson, Number(td.dataset.year), Number(td.dataset.week), Number(td.dataset.day), td.dataset.slot)), iso: td.dataset.iso };
+        }
+        // ✓ — done as planned (today). Never moves anything else in the plan.
         function acceptSession(id) {
             const g = ghostIndex[id];
             if (!g) return;
             setCellContent(id, E.serializeRaw({ text: g.sess.text, auto: true }), g.sess.text);
             closeModal();
         }
+        // ✕ — not doing it: counts as skipped and the rest of the week is repaired around it.
         function skipSession(id) {
-            if (!ghostIndex[id]) return;
-            setCellContent(id, E.serializeRaw({ text: "", status: "missed" }), "");
+            const g = ghostIndex[id];
+            if (!g) return;
+            setCellContent(id, E.serializeRaw({ text: "", status: "missed", planned: g.sess.text, at: todayISO() }), "");
             closeModal();
         }
         function editSession(id) {
             const g = ghostIndex[id];
             if (!g) return;
-            setCellContent(id, g.sess.text, g.sess.text);
+            setCellContent(id, serializeCell(g.sess.text, null), g.sess.text);
             closeModal();
             const ta = document.querySelector(`textarea[data-cell-id="${id}"]`);
             if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
         }
-        function markMissed(id) { setCellContent(id, E.serializeRaw({ text: "", status: "missed" }), ""); }
-        function undoCell(id) { setCellContent(id, "", ""); }
-
-        function markWeekNotTrained() {
-            const monday = currentMonday();
-            const { year, week } = getISOWeek(monday);
-            const today = todayISO();
-            if (!confirm("Mark every plan session on the past days of this week as not done? The coming weeks will rebuild from that.")) return;
-            for (let i = 0; i < 7; i++) {
-                if (isoOf(addDays(monday, i)) >= today) continue;
-                SLOTS.forEach(slot => {
-                    const c = parseCell(getCellRaw(activePerson, year, week, i, slot.key));
-                    if (c.auto) saveKey(cellId(activePerson, year, week, i, slot.key), E.serializeRaw({ text: "", status: "missed" }));
-                });
-            }
-            renderWeek();
-            schedulePlanRefresh();
+        // Late tick on a past day that counted as skipped.
+        function didIt(id) {
+            const { cell } = cellById(id);
+            if (!cell.planned) return;
+            setCellContent(id, E.serializeRaw({ text: cell.planned, auto: true }), cell.planned);
+        }
+        // Undo a skip: today/future → suggestion comes back; past → back to "not done".
+        function undoCell(id) {
+            const { cell, iso } = cellById(id);
+            if (iso && iso < todayISO() && cell.planned) setCellContent(id, E.serializeRaw({ text: "", status: "unlogged", planned: cell.planned }), "");
+            else setCellContent(id, "", "");
+        }
+        // Undo a ✓: past → "not done" (still tickable later); today → the suggestion comes back.
+        function undoDone(id) {
+            const { cell, iso } = cellById(id);
+            if (iso && iso < todayISO()) setCellContent(id, E.serializeRaw({ text: "", status: "unlogged", planned: cell.text }), "");
+            else setCellContent(id, "", "");
         }
 
         // ---------- autoplan: session details ----------
@@ -743,7 +781,9 @@
             const zonesUsed = ZONES.filter(z => sess.z && sess.z[z] >= 0.25);
             const zoneChips = zonesUsed.map(z => `<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">Z${z} ${sess.z[z] < 1 ? Math.round(sess.z[z] * 60) + "s" : Math.round(sess.z[z]) + "'"}</span>`).join(" ");
             const list = Array.isArray(sess.detail) ? `<ul class="list-disc pl-5 space-y-0.5 text-sm">${sess.detail.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>` : "";
-            const notes = [sess.note, sess.plyos ? PLYO_NOTE : null].filter(Boolean).map(n => `<p class="text-sm">${escapeHtml(n)}</p>`).join("");
+            // sprint/speed sessions already describe their warm-up drills → only add the plyometrics part
+            const plyo = sess.plyos ? (/drills/.test(sess.note || "") ? "Plyometrics in the warm-up: pogo jumps 3×15s, bounding 3×10s." : PLYO_NOTE) : null;
+            const notes = [sess.note, plyo].filter(Boolean).map(n => `<p class="text-sm">${escapeHtml(n)}</p>`).join("");
             showModal(`
                 <div class="flex items-start justify-between gap-3 mb-3">
                     <div>
@@ -759,11 +799,11 @@
                 ${zonesUsed.length ? `<div class="text-xs text-slate-500 dark:text-slate-400 space-y-0.5 mb-3">${zonesUsed.map(zoneGuideHtml).join("")}</div>` : ""}
                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-4"><b>Why:</b> ${escapeHtml(sess.why || "")}</p>
                 <div class="flex flex-wrap gap-2">
-                    <button onclick="acceptSession('${id}')" class="text-xs px-3 py-1.5 rounded-md bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900">✓ Keep / done as planned</button>
-                    <button onclick="editSession('${id}')" class="text-xs px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700">✎ Edit</button>
-                    <button onclick="skipSession('${id}')" class="text-xs px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 text-red-500">✕ Skip</button>
+                    ${g.iso === todayISO() ? `<button onclick="acceptSession('${id}')" class="text-xs px-3 py-1.5 rounded-md bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900">✓ Done</button>` : ""}
+                    <button onclick="editSession('${id}')" class="text-xs px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700">✎ Did something else</button>
+                    <button onclick="skipSession('${id}')" class="text-xs px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 text-red-500">✕ ${g.iso === todayISO() ? "Skip" : "Won't do it"}</button>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-3">Untouched sessions count as done once the day has passed. Edit or skip and the rest of the plan adapts.</p>`);
+                <p class="text-[11px] text-slate-400 mt-3">Tick ✓ on the day you do it — that never changes anything else. Sessions not ticked by the end of the day count as skipped; skipping or changing a session only moves what has to move (a missed key session goes to a free, well-spaced day, or is dropped rather than crammed in).</p>`);
         }
 
         // ---------- autoplan: plan bar & season strip ----------
@@ -805,11 +845,10 @@
                 else nums = `target ${w.target}' · planned ${w.plannedMin}'${w.doneMin ? ` · done ${w.doneMin}'` : ""}${w.strengthMin ? ` · strength/tendon ${w.strengthMin}'` : ""}`;
                 const reasons = (w.reasons || []).map(r => `<div>${escapeHtml(r)}</div>`).join("");
                 const projected = w.projected ? `<div class="text-slate-400 italic">Projected from your season curve — it firms up when the week is ~3 weeks away.</div>` : "";
-                const hasPastAuto = w.status !== "future" && hasPastPlanCells();
                 weekHtml = `
                     <div class="flex flex-wrap items-center gap-2">${chip}<span class="font-medium">${type}</span><span class="text-slate-400">${nums}</span></div>
                     <div class="mt-1 space-y-0.5 text-slate-500 dark:text-slate-400">${reasons}${projected}</div>
-                    ${hasPastAuto ? `<button onclick="markWeekNotTrained()" class="mt-1 underline text-slate-400 hover:text-red-500">I didn't train on the past days of this week</button>` : ""}`;
+`;
             }
 
             // season strip
@@ -848,17 +887,6 @@
                     </div>
                 </div>`;
         }
-        function hasPastPlanCells() {
-            const monday = currentMonday();
-            const { year, week } = getISOWeek(monday);
-            const today = todayISO();
-            for (let i = 0; i < 7; i++) {
-                if (isoOf(addDays(monday, i)) >= today) continue;
-                for (const slot of SLOTS) if (parseCell(getCellRaw(activePerson, year, week, i, slot.key)).auto) return true;
-            }
-            return false;
-        }
-
         // ---------- autoplan: setup wizard ----------
         function showModal(html) {
             document.getElementById("modalBox").innerHTML = html;
@@ -929,7 +957,7 @@
                     <div>
                         <label class="${lbl}">Running now (min/week)</label>
                         <input type="number" min="30" max="1500" step="5" class="${field}" value="${wiz.baselineMin}" oninput="wizSet('baselineMin', Number(this.value))">
-                        <div class="text-[11px] text-slate-400 mt-0.5">${detected ? `Your logged weeks: ~${detected}'/week` : "Average of the last few weeks"}</div>
+                        <div id="wizBaseHint" class="text-[11px] text-slate-400 mt-0.5">${detected ? `Your logged weeks: ~${detected}'/week` : "Average of the last few weeks"}</div>
                     </div>
                     <div>
                         <label class="${lbl}">Peak week (min/week)</label>
@@ -1042,6 +1070,8 @@
             if (st.runDays.length <= 3) tips.push("With 3 run days you get 1 key session + long run per week.");
             if (pv.totalWeeks < 8) tips.push("Short runway: mostly race-specific work and taper.");
             if (st.experience === "new" && st.block === 3) tips.push("Tip: 2+1 suits new runners, 40+ or injury-prone runners.");
+            if (st.raceType === "400m") tips.push("400 m: minutes include warm-ups and the long walk/jog recoveries between sprints — a typical week is 2–3 sprint days ≥48 h apart, tempo days and one aerobic run.");
+            if (st.raceType === "800m") tips.push("800 m: aerobic base first (threshold, long run), then speed endurance and 800 m-pace work on top, with short sprints all year.");
             box.innerHTML = `
                 <div class="flex gap-[2px] mb-1.5">${bar}</div>
                 <div class="text-slate-500">${pv.totalWeeks} weeks: ${txt}</div>
@@ -1595,7 +1625,7 @@
                     slot.label,
                     ...Array.from({ length: 7 }, (_, i) => {
                         const c = parseCell(getCellRaw(person.key, year, week, i, slot.key));
-                        if (c.status === "missed") return "(missed)";
+                        if (c.status) return pdfSafe(`(${c.status === "unlogged" ? "not done" : "skipped"}${c.planned ? ": " + plannedLabel(c.planned) : ""})`);
                         if (!c.empty) return pdfSafe(c.text);
                         const sess = pw && pw.days && !pw.days[i].past ? pw.days[i].slots[slot.key] : null;
                         return sess ? pdfSafe(`[plan] ${sess.text}`) : "";
