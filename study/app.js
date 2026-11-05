@@ -40,10 +40,12 @@
     { id: 'dvrs', title: 'Diseño y Virtualización de Redes y Servicios', file: 'subjects/dvrs.js',
       outline: ['Semana 1 · De la VM a Internet: dirección, salida y DNS (en Debian)'],
       blurb: 'Las guías de laboratorio semana a semana, hechas en Debian en lugar de Windows/WSL: qué hacer, qué mirar y qué debe tener cada respuesta.' },
-    // Cuaderno aparte con su propio motor (calculadoras, trellis, simulaciones): se abre en rat-arm/
-    { id: 'ratarm', title: 'RAT & ARM', href: 'rat-arm/', note: 'Cuaderno aparte, en inglés',
-      outline: ['Block 0 · Foundations (dB, QAM, Fourier)', 'Blocks 1–2 · Radio channel, cells, OFDM', 'Blocks 3–4 · Coding, adaptation, MIMO', 'Block 5 · Architecture, core network, 6G'],
-      blurb: 'Radio Access Technology y Arquitectura de Redes Móviles en un solo cuaderno: teoría con herramientas interactivas, preguntas tipo examen y cálculos paso a paso.' },
+    { id: 'rat', title: 'Tecnologías de Acceso Radio', file: 'subjects/rat.js',
+      outline: ['Bases · dB, ondas, números complejos, QAM y desvanecimiento', 'Cap. 1 · Canal radio y sistemas celulares', 'Cap. 2 · Multiplexación y OFDM', 'Cap. 3 · Codificación y adaptación', 'Cap. 4 · MIMO'],
+      blurb: 'La capa física de LTE y 5G: canal radio, OFDM, Hamming y Viterbi, modulación adaptativa y MIMO, con herramientas interactivas, cálculos paso a paso y lo que piden el examen y las prácticas.' },
+    { id: 'arm', title: 'Arquitecturas de Redes Móviles', file: 'subjects/arm.js',
+      outline: ['Tema 1 · Introducción a 5G NR', 'Tema 2 · La red de acceso radio NR', 'Tema 3 · 5GC, QoS y procedimientos extremo a extremo', 'Tema 4 · Hacia 6G · Proyecto srsRAN'],
+      blurb: 'Cómo funciona una red 5G de punta a punta: la radio, los protocolos, el núcleo 5GC, QoS y slicing, y los procedimientos contados como historias, con las preguntas de repaso resueltas.' },
   ];
 
   const TABS = [

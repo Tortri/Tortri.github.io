@@ -1,9 +1,13 @@
+/* =========================================================================
+   Herramientas interactivas de radio (RAT y ARM)
+   -------------------------------------------------------------------------
+   Las cargan subjects/rat.js y subjects/arm.js solo cuando un tema las usa:
+   en la teoría, <div data-w="rt" data-id="ofdm"></div> monta TOOLS.ofdm.
+   Vienen del antiguo cuaderno rat-arm/ (mismo código, ahora compartido).
+   ========================================================================= */
 (function () {
 'use strict';
-
-var NB = window.NB;
-var BLOCKS = NB.blocks.slice().sort(function (a, b) { return a.n - b.n; });
-var app = document.getElementById('app');
+if (window.RadioTools) return;
 
 /* ---------- small helpers ---------- */
 function $(s, r) { return (r || document).querySelector(s); }
@@ -28,398 +32,6 @@ function db(x) { return 10 * Math.log10(x); }
 function undb(x) { return Math.pow(10, x / 10); }
 function num(id, d) { var e = document.getElementById(id); var v = e ? parseFloat(e.value) : NaN; return isFinite(v) ? v : d; }
 
-/* ---------- storage (per viewer, optional) ---------- */
-var store = {
-  get: function (k, d) { try { var v = localStorage.getItem('ratarm.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set: function (k, v) { try { localStorage.setItem('ratarm.' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
-};
-var marks = store.get('marks', {});
-function setMark(id, v) { if (marks[id] === v) delete marks[id]; else marks[id] = v; store.set('marks', marks); }
-
-/* ---------- maths ---------- */
-function ktx(x, d) {
-  if (!window.katex) return '<code class="mfb">' + esc(x) + '</code>';
-  try { return window.katex.renderToString(x, { displayMode: d, throwOnError: false, output: 'html' }); }
-  catch (e) { return '<code class="mfb">' + esc(x) + '</code>'; }
-}
-function tex(s) {
-  if (!s) return '';
-  return String(s)
-    .replace(/\\\[([\s\S]+?)\\\]/g, function (m, x) { return '<div class="mb">' + ktx(x, true) + '</div>'; })
-    .replace(/\\\(([\s\S]+?)\\\)/g, function (m, x) { return ktx(x, false); });
-}
-
-/* ---------- ids and counts ---------- */
-function allItems(b) {
-  var out = [];
-  (b.explain || []).forEach(function (q, i) { out.push({ id: b.id + '.e' + (i + 1), kind: 'e', q: q, b: b, i: i }); });
-  (b.calc || []).forEach(function (q, i) { out.push({ id: b.id + '.c' + (i + 1), kind: 'c', q: q, b: b, i: i }); });
-  return out;
-}
-function progress(b) {
-  var it = allItems(b), ok = 0;
-  it.forEach(function (x) { if (marks[x.id] === 'ok') ok++; });
-  return { ok: ok, n: it.length, p: it.length ? Math.round(ok / it.length * 100) : 0 };
-}
-function courseTag(c) {
-  if (c === 'RAT') return '<span class="tag rat">RAT</span>';
-  if (c === 'ARM') return '<span class="tag arm">ARM</span>';
-  return '<span class="tag both">RAT + ARM</span>';
-}
-function srcTags(src) {
-  if (!src) return '';
-  return src.map(function (s) {
-    var c = s[0] === 'RAT' ? 'rat' : s[0] === 'ARM' ? 'arm' : s[0] === 'PREV' ? 'prev' : 'both';
-    var label = s[0] === 'PREV' ? s[1] : s[0] + ' · ' + s[1];
-    return '<span class="tag ' + c + '">' + esc(label) + '</span>';
-  }).join(' ');
-}
-
-/* ---------- routing ---------- */
-function parseHash() {
-  var h = (location.hash || '').replace(/^#/, '');
-  if (h === 'drill') return { v: 'drill' };
-  if (h === 'sheets') return { v: 'sheets' };
-  var m = h.match(/^b(\d)(?:-(learn|sheet|explain|calc|compare))?$/);
-  if (m) {
-    var b = BLOCKS.filter(function (x) { return x.n === +m[1]; })[0];
-    if (b) return { v: 'block', b: b, tab: m[2] || 'learn' };
-  }
-  return { v: 'hub' };
-}
-var lastKey = '';
-function route() {
-  var r = parseHash();
-  var key = r.v + (r.b ? r.b.id : '') + (r.tab || '');
-  if (r.v === 'block') { renderBlock(r.b, r.tab); store.set('last', { n: r.b.n, tab: r.tab }); }
-  else if (r.v === 'drill') renderDrill();
-  else if (r.v === 'sheets') renderSheets();
-  else renderHub();
-  if (key !== lastKey) window.scrollTo(0, 0);
-  lastKey = key;
-}
-window.addEventListener('hashchange', route);
-
-/* ---------- hub ---------- */
-var PLAN = [
-  { w: 'Oct 22 – 28', t: 'Foundations, then the radio channel and cells', d: 'Blocks 0 and 1. dB, wavelength, complex numbers, QAM and SNR, Fourier intuition. Then RAT Ch. 1 together with ARM Tema 1, which recaps the same basics.', b: [0, 1], from: '2026-10-22', to: '2026-10-28' },
-  { w: 'Oct 29 – Nov 4', t: 'The OFDM block', d: 'Block 2. RAT Ch. 2 alongside ARM Tema 2.1–2.3. RAT Practice 1 (OFDM and SC-FDM) is likely around here, so use the PAPR and OFDM tools before the lab.', b: [2], from: '2026-10-29', to: '2026-11-04' },
-  { w: 'Nov 5 – 11', t: 'Coding, link adaptation, scheduling', d: 'Block 3. RAT Ch. 3 alongside ARM Tema 2.4–2.6. Start Block 5 (the core network) as ARM Tema 3 begins.', b: [3, 5], from: '2026-11-05', to: '2026-11-11' },
-  { w: 'Nov 12 – 18', t: 'MIMO and beamforming', d: 'Block 4. Do the matrix crash course first, then RAT Ch. 4 and the ARM beamforming slides. Finish Block 5 with ARM Tema 4 (6G).', b: [4, 5], from: '2026-11-12', to: '2026-11-18' },
-  { w: 'Nov 19 – Dec 10', t: 'srsRAN project weeks', d: 'ARM theory turns into the project. Prepare RAT Practice 2 (adaptive modulation and MIMO) with the AMC, diversity and 2×2 MIMO tools. One short Drill session per week keeps the ARM material alive.', b: [], from: '2026-11-19', to: '2026-12-10' },
-  { w: 'December → exams', t: 'Exam mode', d: 'Drill mode filtered to "Review again", past exams if Campus Virtual has them, and every Calculate exercise once more by hand.', b: [], from: '2026-12-11', to: '2027-01-31' }
-];
-function today() { var d = new Date(); var p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
-
-function renderHub() {
-  document.title = 'RAT & ARM Notebook';
-  var t = today();
-  var last = store.get('last', null);
-  var lastB = last ? BLOCKS.filter(function (x) { return x.n === last.n; })[0] : null;
-  var tabName = { learn: 'Learn', sheet: 'Cheat sheet', explain: 'Explain it', calc: 'Calculate', compare: 'Compare' };
-  var s = '<div class="wrap"><div class="hub-top"><a class="back" href="../">← Study</a></div>';
-  s += '<header class="hub-head"><p class="eyebrow">Radio Access Technology + Arquitectura de Redes Móviles · MTRT · UMA 2026/27</p>' +
-    '<h1>RAT &amp; ARM Notebook</h1>' +
-    '<p class="lede">One notebook for both courses, organised by the study blocks of your plan. Each block teaches the idea with worked examples, then lets you practise the way the exams ask: explain it in a few sentences, or calculate it by hand.</p></header>';
-  if (lastB) s += '<a class="resume" href="#b' + lastB.n + '-' + last.tab + '"><span class="resume-k">Continue</span><span>Block ' + lastB.n + ': ' + esc(lastB.title) + ' · ' + tabName[last.tab] + '</span></a>';
-
-  s += '<h2 class="h-hub">What each exam wants</h2><div class="facts">' +
-    '<section class="fact"><h3>Radio Access Technology ' + courseTag('RAT') + '</h3><ul>' +
-    '<li>Practice 1 (OFDM / SC-FDM) test: <b>2.5 pts</b>, first 30 min of the next class</li>' +
-    '<li>Practice 2 (adaptive modulation + MIMO) test: <b>2.5 pts</b></li>' +
-    '<li>Final exam: <b>5 pts</b>, 5–6 developed questions, about 2 h</li>' +
-    '<li>Expect: explain a technique <i>and</i> run its numbers (OFDM parameters, Hamming, Viterbi, diversity gains)</li></ul></section>' +
-    '<section class="fact"><h3>Arquitectura de Redes Móviles ' + courseTag('ARM') + '</h3><ul>' +
-    '<li>Written exam: <b>60%</b>, short questions. <span class="must">You must pass it to pass the course.</span></li>' +
-    '<li>srsRAN project: <b>30%</b> (report, group oral exam, personal mark)</li>' +
-    '<li>Practice + oral presentation: <b>10%</b></li>' +
-    '<li>Expect: "why does X exist, how does it work, what is the trade-off". Understanding over acronyms; blackboard-style numerical examples too.</li></ul></section></div>';
-
-  s += '<h2 class="h-hub">The plan, week by week</h2><ol class="plan">';
-  PLAN.forEach(function (p) {
-    var now = t >= p.from && t <= p.to;
-    var links = p.b.map(function (n) { var b = BLOCKS.filter(function (x) { return x.n === n; })[0]; return b ? '<a href="#b' + n + '">Block ' + n + '</a>' : ''; }).join(' · ');
-    s += '<li class="' + (now ? 'now' : '') + '"><span class="plan-w">' + p.w + (now ? ' · this week' : '') + '</span><span class="plan-t">' + esc(p.t) + '</span><span class="plan-d">' + esc(p.d) + (links ? ' ' + links : '') + '</span></li>';
-  });
-  s += '</ol>';
-
-  s += '<h2 class="h-hub">Study blocks</h2><div class="blocks">';
-  BLOCKS.forEach(function (b) {
-    var pr = progress(b);
-    s += '<article class="bc"><div class="bc-top"><span class="bc-n">Block ' + b.n + '</span>' + srcTags(b.courses) + '<span class="bc-dates">' + esc(b.dates) + '</span></div>' +
-      '<h2><a href="#b' + b.n + '">' + esc(b.title) + '</a></h2><p class="bc-blurb">' + esc(b.blurb) + '</p>' +
-      '<ul class="bc-outline">' + b.learn.map(function (x) { return '<li>' + esc(x.t) + '</li>'; }).join('') + '</ul>' +
-      '<div class="bc-foot"><div class="meter"><div class="meter-top"><span>Practice marked “I had it”</span><span>' + pr.ok + ' / ' + pr.n + '</span></div><div class="meter-track"><div class="meter-fill" style="width:' + pr.p + '%"></div></div></div>' +
-      '<div class="bc-actions"><a class="btn primary small" href="#b' + b.n + '-learn">Learn</a><a class="btn small" href="#b' + b.n + '-sheet">Cheat sheet</a><a class="btn small" href="#b' + b.n + '-explain">Explain it · ' + b.explain.length + '</a><a class="btn small" href="#b' + b.n + '-calc">Calculate · ' + b.calc.length + '</a></div></div></article>';
-  });
-  s += '</div>';
-
-  s += '<h2 class="h-hub">Mixed drill</h2><div class="fact" style="max-width:46rem"><p>Random questions from every block, one at a time, the way they come in an exam. Filter by course or by the ones you marked “Review again”.</p><div class="act"><a class="btn primary" href="#drill">Start a drill</a></div></div>';
-
-  s += '<h2 class="h-hub">Cheat sheets</h2><div class="fact" style="max-width:46rem"><p>Everything you must know from each block on one page, all together and ready to print (or save as PDF).</p><div class="act"><a class="btn primary" href="#sheets">All cheat sheets</a></div></div>';
-
-  s += '<details class="howto"><summary>How to use this notebook</summary><div class="prose">' +
-    '<p><b>Learn</b> first: read a section, then play with the tool in it until the numbers make sense. Every section is tagged with the slides it comes from.</p>' +
-    '<p><b>Cheat sheet</b>: the block on one page. Read it before the exercises and again the night before the exam.</p>' +
-    '<p><b>Explain it</b>: answer out loud or in 3–4 written sentences <i>before</i> opening the model answer. Then compare against “What the grader looks for”. Mark it “I had it” or “Review again”.</p>' +
-    '<p><b>Calculate</b>: do it on paper, then reveal one step at a time. The exam gives you no calculator tools, so the tools here are for checking, not for skipping the work.</p>' +
-    '<p><b>Compare</b>: the X-vs-Y tables. Short-answer exams love these.</p>' +
-    '<p>Your marks are saved in this browser only. Block 5 sections tagged “Preview” are written from standard 5G material ahead of the ARM Tema 3–4 slides; check them against the slides once they are published.</p></div></details>';
-  s += '</div>';
-  app.innerHTML = s;
-}
-
-/* ---------- block view ---------- */
-function renderToc(cur) {
-  var s = '<nav class="toc" aria-label="Blocks"><div class="toc-group"><p class="toc-g">Blocks</p><ul>';
-  BLOCKS.forEach(function (b) {
-    var pr = progress(b);
-    s += '<li><a class="toc-t' + (cur && cur.id === b.id ? ' on' : '') + '" href="#b' + b.n + '"><span class="toc-n">' + b.n + '</span>' + esc(b.short) + '<span class="dot" style="--p:' + pr.p + '" title="' + pr.ok + ' of ' + pr.n + ' marked"></span></a></li>';
-  });
-  s += '</ul></div><div class="toc-group"><p class="toc-g">Practice</p><ul><li><a class="toc-t' + (cur === 'drill' ? ' on' : '') + '" href="#drill">Mixed drill</a></li><li><a class="toc-t' + (cur === 'sheets' ? ' on' : '') + '" href="#sheets">All cheat sheets</a></li></ul></div></nav>';
-  return s;
-}
-
-function renderBlock(b, tab) {
-  document.title = 'Block ' + b.n + ' · ' + b.title + ' · RAT & ARM Notebook';
-  var tabs = [['learn', 'Learn', b.learn.length], ['sheet', 'Cheat sheet', null], ['explain', 'Explain it', b.explain.length], ['calc', 'Calculate', b.calc.length], ['compare', 'Compare', b.compare.length]];
-  var s = '<div class="subj-head"><a class="back" href="#">← All blocks</a><span class="subj-title">RAT &amp; ARM Notebook</span></div>';
-  s += '<div class="layout">' + renderToc(b) + '<main class="main">';
-  s += '<header class="topic-head"><p class="eyebrow">Block ' + b.n + ' · ' + esc(b.dates) + '</p><h1>' + esc(b.title) + '</h1>' +
-    '<div class="meta-row">' + srcTags(b.courses) + '<span class="hours">' + esc(b.hours) + '</span></div>' +
-    '<p class="intro">' + tex(b.intro) + '</p></header>';
-  s += '<nav class="tabs" aria-label="Sections">' + tabs.map(function (t) {
-    return '<a class="tab' + (t[0] === tab ? ' on' : '') + '" href="#b' + b.n + '-' + t[0] + '">' + t[1] + (t[2] != null ? '<span class="tab-n">' + t[2] + '</span>' : '') + '</a>';
-  }).join('') + '</nav>';
-  s += '<div class="panel" id="panel"></div></main></div>';
-  app.innerHTML = s;
-  var panel = $('#panel');
-  if (tab === 'learn') renderLearn(b, panel);
-  else if (tab === 'sheet') renderSheet(b, panel);
-  else if (tab === 'explain') renderExplain(b, panel);
-  else if (tab === 'calc') renderCalc(b, panel);
-  else renderCompare(b, panel);
-}
-
-/* ---------- cheat sheets: mini-markdown (../md.js) + KaTeX for $…$ ---------- */
-function mathify(h) {
-  return h
-    .replace(/<p>\s*\$\$([\s\S]+?)\$\$\s*<\/p>/g, function (m, x) { return '<div class="mb">' + ktx(x, true) + '</div>'; })
-    .replace(/\$\$([\s\S]+?)\$\$/g, function (m, x) { return '<div class="mb">' + ktx(x, true) + '</div>'; })
-    .replace(/\$([^$\n]+?)\$/g, function (m, x) { return ktx(x, false); });
-}
-function sheetHtml(b) {
-  if (!b.sheet || !window.StudyMD) return '<p class="empty">No cheat sheet yet.</p>';
-  if (!b._sheet) b._sheet = mathify(window.StudyMD.md(b.sheet, { sheet: true }));
-  return b._sheet;
-}
-function renderSheet(b, panel) {
-  panel.innerHTML = '<div class="sheet-tools"><p class="panel-note">The whole block on one page. <a href="#sheets">All cheat sheets</a></p><span class="sp"></span><button class="btn small" type="button" data-print>Print</button></div>' + sheetHtml(b);
-  $('[data-print]', panel).addEventListener('click', function () { window.print(); });
-}
-function renderSheets() {
-  document.title = 'Cheat sheets · RAT & ARM Notebook';
-  var s = '<div class="subj-head"><a class="back" href="#">← All blocks</a><span class="subj-title">RAT &amp; ARM Notebook</span></div>';
-  s += '<div class="layout">' + renderToc('sheets') + '<main class="main">';
-  s += '<header class="topic-head"><p class="eyebrow">All blocks</p><h1>Cheat sheets</h1><p class="intro">Every block on one page, in order. Print it or save it as PDF: each block starts on a new page.</p></header>';
-  s += '<div class="sheet-tools" style="margin-top:18px"><div class="chips">' + BLOCKS.map(function (b) { return '<button class="chip" type="button" data-go="sh-' + b.id + '">' + b.n + ' · ' + esc(b.short) + '</button>'; }).join('') + '</div><span class="sp"></span><button class="btn small" type="button" data-print>Print</button></div>';
-  BLOCKS.forEach(function (b) {
-    s += '<section class="sheet-topic" id="sh-' + b.id + '"><h2><a href="#b' + b.n + '-sheet">Block ' + b.n + ' · ' + esc(b.title) + '</a></h2>' + sheetHtml(b) + '</section>';
-  });
-  s += '</main></div>';
-  app.innerHTML = s;
-  $('[data-print]').addEventListener('click', function () { window.print(); });
-  $$('[data-go]').forEach(function (btn) { btn.addEventListener('click', function () { var t = document.getElementById(btn.getAttribute('data-go')); if (t) t.scrollIntoView({ block: 'start' }); }); });
-}
-
-function renderLearn(b, panel) {
-  var s = '<div class="sec-nav">' + b.learn.map(function (x, i) { return '<button class="chip" data-go="sec-' + i + '">' + esc(x.t) + '</button>'; }).join('') + '</div>';
-  b.learn.forEach(function (x, i) {
-    s += '<section class="sec" id="sec-' + i + '"><div class="sec-h"><h2>' + esc(x.t) + '</h2><div class="meta-row">' + srcTags(x.src) + '</div></div><div class="prose">' + tex(x.html) + '</div></section>';
-  });
-  s += '<div class="act"><a class="btn primary" href="#b' + b.n + '-explain">Practise: Explain it</a><a class="btn" href="#b' + b.n + '-calc">Practise: Calculate</a></div>';
-  panel.innerHTML = s;
-  $$('[data-go]', panel).forEach(function (btn) {
-    btn.addEventListener('click', function () { var t = document.getElementById(btn.getAttribute('data-go')); if (t) t.scrollIntoView({ block: 'start' }); });
-  });
-  mountTools(panel);
-}
-
-function qaCard(item, opts) {
-  var q = item.q, b = item.b, id = item.id;
-  var label = (opts && opts.long ? 'Block ' + b.n + ' · ' : '') + (item.kind === 'e' ? 'E' : 'C') + (item.i + 1);
-  var st = marks[id];
-  var s = '<article class="qa' + (st === 'ok' ? ' is-ok' : st === 'rev' ? ' is-rev' : '') + '" data-id="' + id + '">';
-  s += '<div class="qa-h"><span class="qid">' + label + '</span>' + courseTag(q.c) + '<h3>' + tex(q.q) + '</h3></div>';
-  s += '<div class="ans" hidden><span class="lbl">Model answer</span><div>' + tex(q.a) + '</div></div>';
-  if (q.keys && q.keys.length) s += '<div class="keys" hidden><span class="lbl">What the grader looks for</span><ul>' + q.keys.map(function (k) { return '<li>' + tex(k) + '</li>'; }).join('') + '</ul></div>';
-  s += '<div class="act"><button class="btn small" data-reveal>Show model answer</button><span class="sp"></span>' +
-    '<button class="mk ok" data-mk="ok" aria-pressed="' + (st === 'ok') + '">I had it</button><button class="mk rev" data-mk="rev" aria-pressed="' + (st === 'rev') + '">Review again</button></div>';
-  return s + '</article>';
-}
-function calcCard(item) {
-  var q = item.q, id = item.id, st = marks[id];
-  var s = '<article class="cx' + (st === 'ok' ? ' is-ok' : st === 'rev' ? ' is-rev' : '') + '" data-id="' + id + '">';
-  s += '<div class="qa-h"><span class="qid">C' + (item.i + 1) + '</span>' + courseTag(q.c) + '<h3>' + esc(q.t) + '</h3></div>';
-  s += '<div class="cx-q">' + tex(q.q) + '</div>';
-  s += '<ol class="cx-steps">' + q.steps.map(function (x) { return '<li hidden>' + tex(x) + '</li>'; }).join('') + '</ol>';
-  s += '<div class="cx-res" hidden><span class="lbl">Result</span><div>' + tex(q.ans) + '</div></div>';
-  s += '<div class="act"><button class="btn small" data-next>Show step 1</button><button class="btn small" data-all>Show all</button>' +
-    (q.tool ? '<span class="hint">Check with the tool in Learn</span>' : '') + '<span class="sp"></span>' +
-    '<button class="mk ok" data-mk="ok" aria-pressed="' + (st === 'ok') + '">I had it</button><button class="mk rev" data-mk="rev" aria-pressed="' + (st === 'rev') + '">Review again</button></div>';
-  return s + '</article>';
-}
-function wireCards(root, onMark) {
-  $$('[data-reveal]', root).forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var card = btn.closest('article');
-      var a = $('.ans', card), k = $('.keys', card);
-      var show = a.hidden;
-      a.hidden = !show; if (k) k.hidden = !show;
-      btn.textContent = show ? 'Hide model answer' : 'Show model answer';
-    });
-  });
-  $$('[data-next]', root).forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var card = btn.closest('article');
-      var hiddenSteps = $$('.cx-steps li[hidden]', card);
-      if (hiddenSteps.length) hiddenSteps[0].hidden = false;
-      var left = $$('.cx-steps li[hidden]', card).length;
-      if (!left) { $('.cx-res', card).hidden = false; btn.hidden = true; }
-      else btn.textContent = 'Show step ' + ($$('.cx-steps li', card).length - left + 1);
-    });
-  });
-  $$('[data-all]', root).forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var card = btn.closest('article');
-      $$('.cx-steps li', card).forEach(function (li) { li.hidden = false; });
-      $('.cx-res', card).hidden = false;
-      var n = $('[data-next]', card); if (n) n.hidden = true;
-      btn.hidden = true;
-    });
-  });
-  $$('[data-mk]', root).forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var card = btn.closest('article'), id = card.getAttribute('data-id');
-      setMark(id, btn.getAttribute('data-mk'));
-      var st = marks[id];
-      $$('[data-mk]', card).forEach(function (x) { x.setAttribute('aria-pressed', String(st === x.getAttribute('data-mk'))); });
-      card.classList.toggle('is-ok', st === 'ok'); card.classList.toggle('is-rev', st === 'rev');
-      updateDots();
-      if (onMark) onMark(id, st);
-    });
-  });
-}
-function updateDots() {
-  $$('.toc-t').forEach(function (a) {
-    var m = (a.getAttribute('href') || '').match(/^#b(\d)$/); if (!m) return;
-    var b = BLOCKS.filter(function (x) { return x.n === +m[1]; })[0]; if (!b) return;
-    var d = $('.dot', a); if (d) { var pr = progress(b); d.style.setProperty('--p', pr.p); d.title = pr.ok + ' of ' + pr.n + ' marked'; }
-  });
-}
-
-var exFilter = 'all';
-function renderExplain(b, panel) {
-  var items = allItems(b).filter(function (x) { return x.kind === 'e'; });
-  var f = [['all', 'All'], ['RAT', 'RAT'], ['ARM', 'ARM'], ['rev', 'Review again'], ['open', 'Not marked yet']];
-  var s = '<p class="panel-note">Answer first, out loud or in 3–4 sentences, then open the model answer. Short-answer exams reward the structure “what it is → why it exists → how it works → trade-off”.</p>';
-  s += '<div class="filters"><div class="chips">' + f.map(function (x) { return '<button class="chip' + (exFilter === x[0] ? ' on' : '') + '" data-f="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
-  var shown = items.filter(function (x) {
-    if (exFilter === 'all') return true;
-    if (exFilter === 'rev') return marks[x.id] === 'rev';
-    if (exFilter === 'open') return !marks[x.id];
-    return x.q.c === exFilter || x.q.c === 'both';
-  });
-  s += '<div class="cards">' + (shown.length ? shown.map(function (x) { return qaCard(x); }).join('') : '<p class="empty">Nothing here with this filter.</p>') + '</div>';
-  panel.innerHTML = s;
-  $$('[data-f]', panel).forEach(function (c) { c.addEventListener('click', function () { exFilter = c.getAttribute('data-f'); renderExplain(b, panel); }); });
-  wireCards(panel);
-}
-function renderCalc(b, panel) {
-  var items = allItems(b).filter(function (x) { return x.kind === 'c'; });
-  var s = '<p class="panel-note">Work each one on paper first. Reveal one step at a time only when you are stuck. These mirror the slide examples and blackboard exercises.</p>';
-  s += '<div class="cards">' + items.map(calcCard).join('') + '</div>';
-  panel.innerHTML = s;
-  wireCards(panel);
-}
-function renderCompare(b, panel) {
-  var s = '<p class="panel-note">Can you fill each row from memory? Cover the right-hand columns and try.</p>';
-  b.compare.forEach(function (c) {
-    s += '<section class="cmp"><h3>' + esc(c.t) + '</h3><div class="meta-row" style="margin-bottom:6px">' + courseTag(c.c) + '</div><div class="tw"><table class="t"><thead><tr>' +
-      c.head.map(function (h) { return '<th>' + tex(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      c.rows.map(function (r) { return '<tr>' + r.map(function (x) { return '<td>' + tex(x) + '</td>'; }).join('') + '</tr>'; }).join('') +
-      '</tbody></table></div>' + (c.note ? '<p class="cmp-note">' + tex(c.note) + '</p>' : '') + '</section>';
-  });
-  panel.innerHTML = s;
-}
-
-/* ---------- drill ---------- */
-var drill = { blocks: null, course: 'all', onlyRev: false, kinds: 'e', order: [], pos: 0 };
-function drillPool() {
-  var pool = [];
-  BLOCKS.forEach(function (b) {
-    if (drill.blocks && drill.blocks.indexOf(b.n) < 0) return;
-    allItems(b).forEach(function (x) {
-      if (drill.kinds === 'e' && x.kind !== 'e') return;
-      if (drill.kinds === 'c' && x.kind !== 'c') return;
-      if (drill.course !== 'all' && !(x.q.c === drill.course || x.q.c === 'both')) return;
-      if (drill.onlyRev && marks[x.id] !== 'rev') return;
-      pool.push(x);
-    });
-  });
-  return pool;
-}
-function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
-function newDrill() { drill.order = shuffle(drillPool()); drill.pos = 0; }
-function renderDrill() {
-  document.title = 'Mixed drill · RAT & ARM Notebook';
-  if (!drill.order.length && !drill.started) { newDrill(); drill.started = true; }
-  var s = '<div class="subj-head"><a class="back" href="#">← All blocks</a><span class="subj-title">RAT &amp; ARM Notebook</span></div>';
-  s += '<div class="layout">' + renderToc('drill') + '<main class="main"><header class="topic-head"><p class="eyebrow">Practice</p><h1>Mixed drill</h1><p class="intro">One question at a time from the blocks you choose. Answer before revealing, mark yourself honestly, move on.</p></header>';
-  s += '<div class="filters" style="margin-top:20px"><div class="chips"><button class="chip' + (!drill.blocks ? ' on' : '') + '" data-db="all">All blocks</button>' +
-    BLOCKS.map(function (b) { return '<button class="chip' + (drill.blocks && drill.blocks.indexOf(b.n) >= 0 ? ' on' : '') + '" data-db="' + b.n + '">' + b.n + ' · ' + esc(b.short) + '</button>'; }).join('') + '</div>' +
-    '<div class="chips">' + [['e', 'Explain questions'], ['c', 'Calculations'], ['ec', 'Both']].map(function (x) { return '<button class="chip' + (drill.kinds === x[0] ? ' on' : '') + '" data-dk="' + x[0] + '">' + x[1] + '</button>'; }).join('') +
-    [['all', 'Both courses'], ['RAT', 'RAT only'], ['ARM', 'ARM only']].map(function (x) { return '<button class="chip' + (drill.course === x[0] ? ' on' : '') + '" data-dc="' + x[0] + '">' + x[1] + '</button>'; }).join('') +
-    '<button class="chip' + (drill.onlyRev ? ' on' : '') + '" data-dr>Only “Review again”</button></div></div>';
-  s += '<div class="drill" id="drill-box"></div></main></div>';
-  app.innerHTML = s;
-  var box = $('#drill-box');
-  function showCard() {
-    if (!drill.order.length) { box.innerHTML = '<p class="empty">No questions match these filters' + (drill.onlyRev ? ' (nothing is marked “Review again” yet)' : '') + '.</p>'; return; }
-    if (drill.pos >= drill.order.length) {
-      box.innerHTML = '<div class="empty"><p><b>Round finished.</b> ' + drill.order.length + ' questions.</p><div class="act" style="margin-top:10px"><button class="btn primary" id="drill-again">Shuffle a new round</button></div></div>';
-      $('#drill-again').addEventListener('click', function () { newDrill(); showCard(); });
-      return;
-    }
-    var it = drill.order[drill.pos];
-    box.innerHTML = '<p class="drill-stat">Question ' + (drill.pos + 1) + ' of ' + drill.order.length + ' · <a href="#b' + it.b.n + '-' + (it.kind === 'e' ? 'explain' : 'calc') + '">Block ' + it.b.n + ': ' + esc(it.b.title) + '</a></p>' +
-      (it.kind === 'e' ? qaCard(it, { long: true }) : calcCard(it)) +
-      '<div class="act"><button class="btn" id="drill-prev"' + (drill.pos ? '' : ' disabled') + '>Previous</button><button class="btn primary" id="drill-next">Next question</button></div>';
-    wireCards(box);
-    $('#drill-next').addEventListener('click', function () { drill.pos++; showCard(); });
-    $('#drill-prev').addEventListener('click', function () { if (drill.pos) { drill.pos--; showCard(); } });
-  }
-  $$('[data-db]', app).forEach(function (c) {
-    c.addEventListener('click', function () {
-      var v = c.getAttribute('data-db');
-      if (v === 'all') drill.blocks = null;
-      else {
-        var n = +v; var cur = drill.blocks ? drill.blocks.slice() : [];
-        var i = cur.indexOf(n); if (i >= 0) cur.splice(i, 1); else cur.push(n);
-        drill.blocks = cur.length ? cur : null;
-      }
-      newDrill(); renderDrill();
-    });
-  });
-  $$('[data-dk]', app).forEach(function (c) { c.addEventListener('click', function () { drill.kinds = c.getAttribute('data-dk'); newDrill(); renderDrill(); }); });
-  $$('[data-dc]', app).forEach(function (c) { c.addEventListener('click', function () { drill.course = c.getAttribute('data-dc'); newDrill(); renderDrill(); }); });
-  $$('[data-dr]', app).forEach(function (c) { c.addEventListener('click', function () { drill.onlyRev = !drill.onlyRev; newDrill(); renderDrill(); }); });
-  showCard();
-}
-
-/* ======================================================================
-   Plot helper (SVG, scaled from one set of axes)
-   ====================================================================== */
 function plot(o) {
   var W = o.w || 640, H = o.h || 260, L = 52, R = 14, T = 12, B = 38;
   var xlog = !!o.xlog, ylog = !!o.ylog;
@@ -461,8 +73,8 @@ function plot(o) {
 function legend(items) { return '<div class="legend">' + items.map(function (i) { return '<span><span class="sw ' + i[0] + (i[2] ? ' dash' : '') + '"></span>' + esc(i[1]) + '</span>'; }).join('') + '</div>'; }
 function kv(pairs) { return '<dl class="kv">' + pairs.map(function (p) { return '<dt>' + p[0] + '</dt><dd' + (p[2] ? ' class="' + p[2] + '"' : '') + '>' + p[1] + '</dd>'; }).join('') + '</dl>'; }
 function head(kind, title) { return '<div class="tool-h"><span>Try it · ' + kind + '</span><b>' + title + '</b></div>'; }
-function inp(id, label, val, step, extra) { return '<label for="' + id + '">' + label + '<input id="' + id + '" type="number" value="' + val + '" step="' + (step || 'any') + '"' + (extra || '') + '></label>'; }
-function sel(id, label, opts, val) { return '<label for="' + id + '">' + label + '<select id="' + id + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>'; }
+function inp(id, label, val, step, extra) { return '<label for="' + id + '"><span>' + label + '</span><input id="' + id + '" type="number" value="' + val + '" step="' + (step || 'any') + '"' + (extra || '') + '></label>'; }
+function sel(id, label, opts, val) { return '<label for="' + id + '"><span>' + label + '</span><select id="' + id + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>'; }
 function rng(id, label, min, max, step, val) { return '<label for="' + id + '"><span>' + label + '</span><input id="' + id + '" type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '"><output id="' + id + '-o"></output></label>'; }
 function onAny(el, fn) { el.addEventListener('input', fn); el.addEventListener('change', fn); fn(); }
 
@@ -1046,16 +658,18 @@ TOOLS.rohc = function (el) {
   });
 };
 
-function mountTools(root) {
-  $$('[data-tool]', root).forEach(function (el) {
-    var f = TOOLS[el.getAttribute('data-tool')];
+/* ---------- estilos de las herramientas ---------- */
+var CSS = ".tool { background: var(--surface); border: 1px solid var(--line-2); border-radius: 12px; padding: 16px; margin: 1.3em 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }\n.tool-h { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }\n.tool-h b { font: 600 1rem/1.3 var(--f-b); }\n.tool-h span { font: 500 .66rem/1.3 var(--f-m); letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }\n.tool .tgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }\n.tool .tgrid label, .tool .tsl label { display: grid; gap: 4px; font-size: .82rem; color: var(--ink-2); min-width: 0; }\n.tool input[type=\"number\"], .tool input[type=\"text\"], .tool select { font: 400 .95rem/1.3 var(--f-m); padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 7px; background: var(--bg); color: var(--ink); width: 100%; min-width: 0; }\n.tool input[type=\"range\"] { accent-color: var(--accent); width: 100%; }\n.tool .tsl { display: grid; gap: 8px; }\n.tool .tsl label { grid-template-columns: minmax(110px, 170px) minmax(0, 1fr) minmax(70px, auto); align-items: center; gap: 10px; font-size: .88rem; }\n.tool .tsl output { font: 400 .82rem/1.2 var(--f-m); text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }\n.tool .kv { display: grid; grid-template-columns: minmax(9em, max-content) minmax(0, 1fr); gap: 5px 16px; margin: 0; font-size: .92rem; }\n.tool .kv dt { color: var(--ink-2); }\n.tool .kv dd { margin: 0; font-family: var(--f-m); font-size: .88rem; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }\n.tool .kv dd.good { color: var(--ok); }\n.tool .kv dd.bad { color: var(--no); }\n.tool .tnote { font-size: .86rem; color: var(--ink-3); }\n.tool .tmsg { font-size: .9rem; padding: 8px 12px; border-radius: 8px; background: var(--surface-2); }\n.tool .tmsg.bad { background: var(--no-soft); color: var(--ink); }\n.tool .tmsg.good { background: var(--ok-soft); color: var(--ink); }\n.tool .plot svg { display: block; width: 100%; height: auto; }\n.tool .pl .grid line { stroke: var(--line); stroke-width: 1; }\n.tool .pl .ax line { stroke: var(--ink-3); stroke-width: 1.2; }\n.tool .pl text { fill: var(--ink-3); font: 400 11px var(--f-m); }\n.tool .pl .axl { fill: var(--ink-2); }\n.tool .pl .cv { fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }\n.tool .pl .c1 { stroke: var(--s1); } .tool .pl .c2 { stroke: var(--s2); } .tool .pl .c3 { stroke: var(--s3); } .tool .pl .c4 { stroke: var(--s4); } .tool .pl .cA { stroke: var(--accent); } .tool .pl .cI { stroke: var(--ink-3); }\n.tool .pl .f1 { fill: var(--s1); } .tool .pl .f2 { fill: var(--s2); } .tool .pl .f3 { fill: var(--s3); } .tool .pl .f4 { fill: var(--s4); } .tool .pl .fA { fill: var(--accent); } .tool .pl .fI { fill: var(--ink-3); }\n.tool .pl .dash { stroke-dasharray: 6 5; }\n.tool .pl .thin { stroke-width: 1.3; }\n.tool .pl .vl { stroke-width: 1.2; stroke-dasharray: 3 4; }\n.tool .pl .lab { font: 500 11px var(--f-m); }\n.tool .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .84rem; color: var(--ink-2); }\n.tool .sw { display: inline-block; width: 20px; border-top: 2.5px solid; vertical-align: middle; margin-right: 6px; }\n.tool .sw.c1 { border-color: var(--s1); } .tool .sw.c2 { border-color: var(--s2); } .tool .sw.c3 { border-color: var(--s3); } .tool .sw.c4 { border-color: var(--s4); } .tool .sw.cA { border-color: var(--accent); } .tool .sw.cI { border-color: var(--ink-3); }\n.tool .sw.dash { border-top-style: dashed; }\n.tool .bitrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }\n.tool .bitrow .lbl { font: 500 .7rem/1.3 var(--f-m); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); width: 7.5em; }\n.tool .bit { font: 500 1rem/1 var(--f-m); width: 2.6em; min-height: 2.6em; display: inline-grid; place-items: center; border-radius: 7px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); gap: 2px; padding: 3px 0; }\n.tool button.bit { cursor: pointer; }\n.tool .bit small { font: 400 .62rem/1 var(--f-m); color: var(--ink-3); }\n.tool .bit.par { background: var(--accent-soft); }\n.tool .bit.err { border-color: var(--no); background: var(--no-soft); color: var(--no); }\n.tool .bit.fix { border-color: var(--ok); background: var(--ok-soft); }\n.tool .trellis svg { display: block; width: 100%; height: auto; min-width: 460px; }\n.tool .trellis { overflow-x: auto; }\n.tool .tr .br { stroke: var(--line-2); stroke-width: 1.2; fill: none; }\n.tool .tr .sv { stroke: var(--ink-3); stroke-width: 1.8; fill: none; }\n.tool .tr .bp { stroke: var(--accent); stroke-width: 3.2; fill: none; }\n.tool .tr .d1 { stroke-dasharray: 5 4; }\n.tool .tr circle { fill: var(--ink); }\n.tool .tr .m { fill: var(--s1); font: 600 12px var(--f-m); }\n.tool .tr text { fill: var(--ink-3); font: 400 11px var(--f-m); }\n.tool .tr .rx { fill: var(--ink); font: 500 12px var(--f-m); }\n.tool .tr .dec { fill: var(--accent); font: 600 12px var(--f-m); }\n.tool .bits { font-family: var(--f-m); letter-spacing: .06em; }\n.tool { --s4: #8a4cc2; }\n:root[data-theme=\"dark\"] .tool { --s4: #b994f0; }\n@media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) .tool { --s4: #b994f0; } }\n.tool .act { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }\n.tool .act .hint { font-size: .84rem; color: var(--ink-3); }\n.tool .btn.small { padding: 6px 11px; font-size: .84rem; }\n.tool .tw { margin: 0; }\n@media (max-width: 640px) {\n  .tool { padding: 14px 12px; }\n  .tool .tsl label { grid-template-columns: minmax(0, 1fr) minmax(64px, auto); }\n  .tool .tsl label input[type=\"range\"] { grid-column: 1 / -1; grid-row: 2; }\n  .tool .kv { grid-template-columns: minmax(0, 1fr); gap: 0; }\n  .tool .kv dd { margin-bottom: 8px; }\n}\n";
+(function () { var s = document.createElement('style'); s.id = 'radio-tools-css'; s.textContent = CSS; document.head.appendChild(s); })();
+
+window.RadioTools = {
+  mount: function (el, name) {
+    var f = TOOLS[name];
     el.classList.add('tool');
-    if (f) { try { f(el); } catch (e) { el.innerHTML = '<p class="tmsg bad">This tool failed to load.</p>'; } }
-  });
-}
-
-/* expose for testing */
-window.__nb = { viterbi: viterbi, convEncode: convEncode, CODES: CODES, thresholdDb: thresholdDb, MODS: MODS, tex: tex };
-
-route();
+    if (!f) { el.innerHTML = '<p class="tmsg bad">Unknown tool: ' + esc(name) + '</p>'; return; }
+    try { f(el); } catch (e) { el.innerHTML = '<p class="tmsg bad">This tool failed to load.</p>'; if (window.console) console.error(e); }
+  },
+  names: function () { return Object.keys(TOOLS); },
+  _test: { viterbi: viterbi, convEncode: convEncode, CODES: CODES, thresholdDb: thresholdDb, MODS: MODS }
+};
 })();

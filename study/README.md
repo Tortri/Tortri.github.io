@@ -11,7 +11,9 @@ study/
 ├─ subjects/<id>.js        contenido de cada asignatura (llama a Cuaderno.register)
 ├─ subjects/<id>.vault.js  soluciones cifradas (opcional)
 ├─ tools/vault.js          cifra y descifra las soluciones
-├─ rat-arm/                cuaderno RAT & ARM (en inglés), con su propio motor; usa ../md.js y ../vendor
+├─ subjects/radio-tools.js herramientas interactivas de RAT y ARM (OFDM, Viterbi, MIMO…), se cargan al usarlas
+├─ tools/radio/check.js    comprueba fórmulas, tablas y tests de rat.js y arm.js
+├─ rat-arm/                redirige a #rat (era el cuaderno RAT & ARM, ahora dos asignaturas)
 └─ vendor/                 KaTeX (fórmulas)
 ```
 
@@ -25,9 +27,8 @@ con la clave `cuaderno-v1`, así que se conserva tras el cambio de nombre.
 3. `subjects/<id>.js` con `Cuaderno.register({ id, title, groups, topics })`. El esquema de un tema está
    comentado al principio de `subjects/mates.js`.
 
-Una entrada de `SUBJECTS` con `href` (como `ratarm`) es un cuaderno aparte: la tarjeta enlaza a esa carpeta.
-En `rat-arm/` cada bloque es un `NB.block({...})` en `data/bN.js`, y su chuleta va en el campo `sheet`
-(el mismo mini-markdown, con fórmulas entre `$…$`).
+Una entrada de `SUBJECTS` con `href` en lugar de `file` es un cuaderno aparte: la tarjeta enlaza a esa
+carpeta. Ahora mismo no hay ninguno.
 
 **Cada tema lleva siempre su chuleta** (campo `sheet`): lo imprescindible del tema en una hoja,
 con todo lo que hay que saberse. Aparece en la pestaña *Chuleta* de cada tema y todas juntas en
@@ -60,6 +61,23 @@ La semana 1 de `subjects/dvrs.js` se edita a mano. El Toolkit y las semanas 2–
 ```sh
 python3 study/tools/dvrs/build.py   # reescribe el bloque GENERATED de subjects/dvrs.js
 node study/tools/dvrs/check.js      # avisa de fórmulas sueltas o tablas rotas
+```
+
+### RAT y ARM
+
+`subjects/rat.js` (Tecnologías de Acceso Radio) y `subjects/arm.js` (Arquitecturas de Redes Móviles) se
+editan a mano, como `mates.js`. El contenido va en inglés, como las diapositivas y los exámenes; la teoría
+es HTML con fórmulas `$…$`. Cada asignatura empieza con un tema *La asignatura* (evaluación y qué pide el
+examen), cada tema abre con una caja `<div class="exam">` (*En el examen*) y cada ejercicio de explicar
+termina con *What the grader looks for*. Las preguntas de repaso oficiales van en `ex` con `set: 'Repaso Tema N'`.
+
+Las herramientas interactivas viven en `subjects/radio-tools.js` (compartido) y se insertan en la teoría con
+`<div data-w="rt" data-id="ofdm"></div>`. Las que hay: `db wave pathloss fading reuse ptx ofdm numerology
+papr hamming viterbi amc cqi dci diversity beam mimo2 rohc`. Cajas extra: `exam`, `real`, `both`, y
+`<p class="th-src">` para citar las diapositivas.
+
+```sh
+node study/tools/radio/check.js   # dibuja cada fórmula con KaTeX y revisa tablas, tests e ids
 ```
 
 ## Mini-markdown (`md.js`)
