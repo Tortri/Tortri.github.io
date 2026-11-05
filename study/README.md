@@ -52,6 +52,16 @@ guarda 10 días en `localStorage` (`geo-fotos-v1`). Cada mineral o roca de `MIN`
 Si una foto sale mal, basta con cambiar esos campos: la caché va por `w|q|kw`, así que se vuelven
 a pedir solas. Sin conexión, la clave y los tests siguen funcionando con las descripciones.
 
+### DVRS (semanas 2–4 y Toolkit)
+
+La semana 1 de `subjects/dvrs.js` se edita a mano. El Toolkit y las semanas 2–4 se generan desde
+`tools/dvrs/c_*.py` (texto en mini-markdown, sin escapar comillas invertidas ni `$`):
+
+```sh
+python3 study/tools/dvrs/build.py   # reescribe el bloque GENERATED de subjects/dvrs.js
+node study/tools/dvrs/check.js      # avisa de fórmulas sueltas o tablas rotas
+```
+
 ## Mini-markdown (`md.js`)
 
 Se usa en `sheet` (cada `#` abre una caja) y, con `Cuaderno.md\`…\``, en cualquier texto.
