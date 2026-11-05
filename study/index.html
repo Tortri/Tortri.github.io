@@ -41,11 +41,14 @@
 :root[data-subject="bio"] { --accent: #a82c5e; }
 :root[data-subject="micro"] { --accent: #6b45b8; }
 :root[data-subject="rmds"] { --accent: #b04f17; }
+:root[data-subject="dvrs"] { --accent: #6e6610; }
 .sc[data-s="mates"] { --accent: #2b52c2; }
 .sc[data-s="tia"] { --accent: #08776a; }
 .sc[data-s="bio"] { --accent: #a82c5e; }
 .sc[data-s="micro"] { --accent: #6b45b8; }
 .sc[data-s="rmds"] { --accent: #b04f17; }
+.sc[data-s="dvrs"] { --accent: #6e6610; }
+.sc[data-s="ratarm"] { --accent: #0b6a85; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -59,6 +62,8 @@
   :root:not([data-theme="light"])[data-subject="bio"], :root:not([data-theme="light"]) .sc[data-s="bio"] { --accent: #f08bb5; }
   :root:not([data-theme="light"])[data-subject="micro"], :root:not([data-theme="light"]) .sc[data-s="micro"] { --accent: #b9a2f2; }
   :root:not([data-theme="light"])[data-subject="rmds"], :root:not([data-theme="light"]) .sc[data-s="rmds"] { --accent: #f09a62; }
+  :root:not([data-theme="light"])[data-subject="dvrs"], :root:not([data-theme="light"]) .sc[data-s="dvrs"] { --accent: #d4c96b; }
+  :root:not([data-theme="light"]) .sc[data-s="ratarm"] { --accent: #6cc6e0; }
 }
 :root[data-theme="dark"] {
   --bg: #111513; --surface: #181d1a; --surface-2: #222824; --ink: #e5eae6; --ink-2: #b3bcb6; --ink-3: #8c968f;
@@ -71,6 +76,8 @@
 :root[data-theme="dark"][data-subject="bio"], :root[data-theme="dark"] .sc[data-s="bio"] { --accent: #f08bb5; }
 :root[data-theme="dark"][data-subject="micro"], :root[data-theme="dark"] .sc[data-s="micro"] { --accent: #b9a2f2; }
 :root[data-theme="dark"][data-subject="rmds"], :root[data-theme="dark"] .sc[data-s="rmds"] { --accent: #f09a62; }
+:root[data-theme="dark"][data-subject="dvrs"], :root[data-theme="dark"] .sc[data-s="dvrs"] { --accent: #d4c96b; }
+:root[data-theme="dark"] .sc[data-s="ratarm"] { --accent: #6cc6e0; }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--f-b); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }

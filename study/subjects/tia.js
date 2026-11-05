@@ -442,7 +442,8 @@ Técnica → método → procedimiento :: de lo general (principio, instrumento)
 - Orden: patrones de menor a mayor → blanco → fortificada → extractos
 - UV llega a µg/L; para ng/L o sin cromóforo, LC-MS/MS
 # Cálculos
-$$C_\text{extracto}=\frac{A-a}{b}\qquad C_\text{agua}=C_\text{extracto}\cdot\frac{V_\text{final}}{V_\text{muestra}}=C_\text{extracto}\cdot\frac{10}{50}$$
+$$C_\text{extracto}=\frac{A-a}{b}$$
+$$C_\text{agua}=C_\text{extracto}\cdot\frac{V_\text{final}}{V_\text{muestra}}=C_\text{extracto}\cdot\frac{10}{50}$$
 - Patrones de 10–40 mg/L desde una intermedia de 100 ppm
 - **Blanco de procedimiento** (agua desionizada): sin señal = sin contaminación
 - **Fortificada**: $R(\%)=\frac{C_\text{medida}}{C_\text{añadida}}\cdot100$
@@ -911,7 +912,8 @@ $$T=\frac{P}{P_0}\qquad A=-\log T\qquad A=\varepsilon\,b\,c$$
 - Monocromador de red (Czerny-Turner) · detector: fotodiodo o fotomultiplicador
 - Cubeta de **cuarzo** en el UV (el vidrio absorbe por debajo de 350 nm)
 # Cloruros (método indirecto)
-$$\mathrm{Hg(SCN)_2+2Cl^-\to HgCl_2+2SCN^-}\qquad\mathrm{Fe^{3+}+SCN^-\rightleftharpoons Fe(SCN)^{2+}}$$
+$$\mathrm{Hg(SCN)_2+2Cl^-\to HgCl_2+2SCN^-}$$
+$$\mathrm{Fe^{3+}+SCN^-\rightleftharpoons Fe(SCN)^{2+}}$$
 - HNO₃: evita la hidrólisis del Fe³⁺ · metanol: más estabilidad y sensibilidad
 - Interfieren Br⁻, I⁻, CN⁻ y tiosulfato
 - Patrones 10–50 mg/L (0,25–1,25 mL de 1000 mg/L + 2 mL de R, a 25 mL)

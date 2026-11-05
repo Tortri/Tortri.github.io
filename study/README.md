@@ -11,6 +11,7 @@ study/
 ├─ subjects/<id>.js        contenido de cada asignatura (llama a Cuaderno.register)
 ├─ subjects/<id>.vault.js  soluciones cifradas (opcional)
 ├─ tools/vault.js          cifra y descifra las soluciones
+├─ rat-arm/                cuaderno RAT & ARM (en inglés), con su propio motor; usa ../md.js y ../vendor
 └─ vendor/                 KaTeX (fórmulas)
 ```
 
@@ -23,6 +24,10 @@ con la clave `cuaderno-v1`, así que se conserva tras el cambio de nombre.
 2. Color de la asignatura en `index.html` (busca `rmds` y copia sus reglas: color claro y color oscuro).
 3. `subjects/<id>.js` con `Cuaderno.register({ id, title, groups, topics })`. El esquema de un tema está
    comentado al principio de `subjects/mates.js`.
+
+Una entrada de `SUBJECTS` con `href` (como `ratarm`) es un cuaderno aparte: la tarjeta enlaza a esa carpeta.
+En `rat-arm/` cada bloque es un `NB.block({...})` en `data/bN.js`, y su chuleta va en el campo `sheet`
+(el mismo mini-markdown, con fórmulas entre `$…$`).
 
 **Cada tema lleva siempre su chuleta** (campo `sheet`): lo imprescindible del tema en una hoja,
 con todo lo que hay que saberse. Aparece en la pestaña *Chuleta* de cada tema y todas juntas en

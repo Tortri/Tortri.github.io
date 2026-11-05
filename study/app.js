@@ -34,6 +34,13 @@
     { id: 'rmds', title: 'Redes Móviles Definidas por Software', file: 'subjects/rmds.js',
       outline: ['Tema 0 · Repaso de TCP/IP', 'Tema 1 · SDN y OpenFlow · Mininet, iPerf y netem', 'Tema 2 · El controlador Ryu', 'Prácticas 1, 2.1 y 2.2 con los controladores comentados'],
       blurb: 'De la pila TCP/IP a programar switches con OpenFlow y Ryu: mensajes, reglas de flujo, controladores línea a línea y las prácticas.' },
+    { id: 'dvrs', title: 'Diseño y Virtualización de Redes y Servicios', file: 'subjects/dvrs.js',
+      outline: ['Semana 1 · De la VM a Internet: dirección, salida y DNS (en Debian)'],
+      blurb: 'Las guías de laboratorio semana a semana, hechas en Debian en lugar de Windows/WSL: qué hacer, qué mirar y qué debe tener cada respuesta.' },
+    // Cuaderno aparte con su propio motor (calculadoras, trellis, simulaciones): se abre en rat-arm/
+    { id: 'ratarm', title: 'RAT & ARM', href: 'rat-arm/', note: 'Cuaderno aparte, en inglés',
+      outline: ['Block 0 · Foundations (dB, QAM, Fourier)', 'Blocks 1–2 · Radio channel, cells, OFDM', 'Blocks 3–4 · Coding, adaptation, MIMO', 'Block 5 · Architecture, core network, 6G'],
+      blurb: 'Radio Access Technology y Arquitectura de Redes Móviles en un solo cuaderno: teoría con herramientas interactivas, preguntas tipo examen y cálculos paso a paso.' },
   ];
 
   const TABS = [
@@ -240,6 +247,15 @@
     window.scrollTo(0, 0);
   }
   function subjCard(m) {
+    if (m.href) return h('article', { class: 'sc', 'data-s': m.id },
+      h('h2', null, h('a', { href: m.href }, m.title)),
+      h('p', { class: 'sc-blurb' }, m.blurb),
+      h('ul', { class: 'sc-outline' }, m.outline.map(o => h('li', null, o))),
+      h('p', { class: 'sc-new' }, m.note || ''),
+      h('div', { class: 'sc-actions' },
+        h('a', { class: 'btn primary', href: m.href }, 'Abrir'),
+        h('a', { class: 'btn', href: m.href + '#sheets' }, 'Chuletas'),
+        h('a', { class: 'btn', href: m.href + '#drill' }, 'Practicar')));
     const sum = store.sum[m.id];
     const stat = sum ? h('div', { class: 'sc-stats' },
       bar('Tarjetas sabidas', sum.known, sum.cards),
