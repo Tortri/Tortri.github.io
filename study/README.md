@@ -33,6 +33,25 @@ En `rat-arm/` cada bloque es un `NB.block({...})` en `data/bN.js`, y su chuleta 
 con todo lo que hay que saberse. Aparece en la pestaña *Chuleta* de cada tema y todas juntas en
 *Todas las chuletas* de cada asignatura, listas para imprimir.
 
+Una asignatura puede traer sus propios widgets: `Cuaderno.widget('tipo', (el, cfg, subj) => { … })`
+antes de `Cuaderno.register`, y en la teoría `<div data-w="tipo" data-id="clave">` con la
+configuración en `t.widgets.clave`. Así lo hace `subjects/geo.js` (atlas, clave de identificación,
+test de fotos y diagrama QAP).
+
+### Fotos de Geología
+
+Las fotos de minerales y rocas no están en el repositorio: el navegador las pide a Wikipedia y
+Wikimedia Commons al abrir la ficha (solo imágenes de Commons, con autor y licencia debajo) y las
+guarda 10 días en `localStorage` (`geo-fotos-v1`). Cada mineral o roca de `MIN`/`ROCK` en
+`subjects/geo.js` tiene:
+
+- `w`: título del artículo de Wikipedia (en inglés; `es:Título` para la española).
+- `q`: búsqueda en Commons si el artículo da menos de 3 fotos (`q: false` la desactiva).
+- `kw`: palabras que debe contener el nombre del archivo para aceptarlo (filtra mapas, dibujos…).
+
+Si una foto sale mal, basta con cambiar esos campos: la caché va por `w|q|kw`, así que se vuelven
+a pedir solas. Sin conexión, la clave y los tests siguen funcionando con las descripciones.
+
 ## Mini-markdown (`md.js`)
 
 Se usa en `sheet` (cada `#` abre una caja) y, con `Cuaderno.md\`…\``, en cualquier texto.

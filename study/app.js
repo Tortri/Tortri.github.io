@@ -31,6 +31,9 @@
     { id: 'micro', title: 'Microbiología', file: 'subjects/micro.js',
       outline: ['Tema 1 · Historia, diversidad y taxonomía', 'Tema 2 · Microorganismos y ambiente; extremófilos', 'Tema 3 · La célula procariota: superficie, pared, membrana y citoplasma'],
       blurb: 'De Pasteur y Koch a los extremófilos y la célula bacteriana por dentro, con esquemas, tarjetas y preguntas al azar.' },
+    { id: 'geo', title: 'Geología', file: 'subjects/geo.js',
+      outline: ['Reconocer minerales y rocas a visu: atlas con fotos, clave de identificación y test de fotos', 'Temas 1–3 · La Tierra, su interior y la tectónica de placas', 'Tema 4 · Cristales y minerales', 'Temas 5–8 · Rocas ígneas, sedimentarias y metamórficas'],
+      blurb: 'Para reconocer cada mineral y cada roca de prácticas (fotos, propiedades y una clave que va descartando) y toda la teoría, del interior de la Tierra al metamorfismo.' },
     { id: 'rmds', title: 'Redes Móviles Definidas por Software', file: 'subjects/rmds.js',
       outline: ['Tema 0 · Repaso de TCP/IP', 'Tema 1 · SDN y OpenFlow · Mininet, iPerf y netem', 'Tema 2 · El controlador Ryu', 'Prácticas 1, 2.1 y 2.2 con los controladores comentados'],
       blurb: 'De la pila TCP/IP a programar switches con OpenFlow y Ryu: mensajes, reglas de flujo, controladores línea a línea y las prácticas.' },
@@ -181,6 +184,8 @@
     },
     vault(id, data) { vaults[id] = data; (vaultWait[id] || []).forEach(f => f(data)); vaultWait[id] = []; },
     md: (str, opt) => window.StudyMD.md(str, opt),
+    // Widgets propios de una asignatura: Cuaderno.widget('tipo', (el, cfg, subj) => …) y <div data-w="tipo" data-id="clave">
+    widget(type, fn) { WIDGETS[type] = fn; },
     util: U,
     _dbg: { loaded: loaded, rich: rich, needKatex: needKatex, macros: MACROS }, // para pruebas automáticas
   };
