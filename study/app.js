@@ -20,8 +20,8 @@
 
   const SUBJECTS = [
     { id: 'mates', title: 'Matemáticas', file: 'subjects/mates.js',
-      outline: ['Bases: álgebra, ecuaciones, logaritmos, trigonometría', 'Tema 1 · Funciones', 'Tema 2 · Límites y continuidad'],
-      blurb: 'Desde las bases de álgebra hasta límites y asíntotas, con todas las relaciones resueltas paso a paso.' },
+      outline: ['Bases: álgebra, ecuaciones, logaritmos, trigonometría', 'Tema 1 · Funciones', 'Tema 2 · Límites y continuidad', 'Tema 3 · Derivación'],
+      blurb: 'Desde las bases de álgebra hasta derivadas, gráficas y optimización, con todas las relaciones resueltas paso a paso.' },
     { id: 'tia', title: 'Técnicas Instrumentales de Análisis', file: 'subjects/tia.js',
       outline: ['Tema 1 · Química analítica y proceso analítico', 'P1 HPLC · P2 ATR-FTIR', 'P3 UV-Vis · P4 Fluorescencia'],
       blurb: 'Fundamentos, esquemas de los instrumentos y todos los cálculos de las prácticas.' },
@@ -961,7 +961,7 @@
         cv.append(s('path', { d, class: 'curve s' + ((fn.c || k + 1)) + (fn.dash ? ' dash' : '') }));
       });
       svg.append(cv);
-      (cfg.pts || []).forEach(([px, py, open, lab]) => {
+      (typeof cfg.pts === 'function' ? cfg.pts(params) : cfg.pts || []).forEach(([px, py, open, lab]) => {
         svg.append(s('circle', { cx: X(px), cy: Y(py), r: 4.5, class: open ? 'pt open' : 'pt' }));
         if (lab) svg.append(s('text', { x: X(px) + 7, y: Y(py) - 7, class: 'ptl' }, lab));
       });

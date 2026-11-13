@@ -1354,11 +1354,515 @@ $$\tfrac00\quad\tfrac\infty\infty\quad\infty-\infty\quad0\cdot\infty\quad1^\inft
   });
 
   /* ===================================================================== */
+  /*  TEMA 3 · DERIVACIÓN (apuntes de Irene, Relación 3 y Cálculo de der.)  */
+  /* ===================================================================== */
+  const D = 'Relación 3 · Cálculo de derivadas', TG = 'Relación 3 · Rectas tangentes', RF = 'Relación 3 · Estudio de funciones',
+    RC = 'Relación 3 · Continuidad y derivabilidad', RO = 'Relación 3 · Optimización';
+  const arr = c => '<td>' + (c === '+' ? '↗' : c === '-' ? '↘' : c) + '</td>';
+  const mono = (ivs, rows, fr, lbl) => '<div class="tw"><table class="t sg"><thead><tr><th></th>' + ivs.map(i => '<th>$' + i + '$</th>').join('') + '</tr></thead><tbody>' +
+    rows.map(([l, cells]) => '<tr><td>' + l + '</td>' + sg(cells) + '</tr>').join('') +
+    (fr ? '<tr><td>' + (lbl || '$f$') + '</td>' + fr.map(arr).join('') + '</tr>' : '') + '</tbody></table></div>';
+  const der = (id, lvl, f, steps, ans) => ({ id: 'D' + id, set: D, n: String(id), lvl, q: R`Calcula la derivada de $f(x)=` + f + '$.', s: steps, a: ans });
+  const S3 = Math.sqrt(3);
+  T.push({
+    id: 'derivadas', group: 'temario', title: 'Tema 3 · Derivación', short: 'Tema 3 · Derivadas',
+    sheet: R`
+# La derivada
+$$f'(x_0)=\lim_{x\to x_0}\frac{f(x)-f(x_0)}{x-x_0}=\lim_{h\to0}\frac{f(x_0+h)-f(x_0)}{h}$$
+- **Tasa de variación media** en $[a,b]$: $\frac{f(b)-f(a)}{b-a}$ = pendiente de la secante
+- **Tasa instantánea** $f'(x_0)$ = pendiente de la tangente (velocidad, ritmo de cambio)
+- Unidades de $f'$: unidades de $f$ entre unidades de $x$ (litros/hora, ppm/año…)
+# Recta tangente en $x_0$
+$$y=f(x_0)+f'(x_0)\,(x-x_0)$$
+? Dos números: el punto $f(x_0)$ y la pendiente $f'(x_0)$
+# Derivabilidad en un punto
+- Laterales: $f'_-(x_0)$ (por la izquierda) y $f'_+(x_0)$ (por la derecha)
+> Derivable en $x_0$ $\iff$ existen los dos laterales y son iguales
+- Derivable $\Rightarrow$ continua. **Al revés no**: $|x|$ es continua en $0$ pero tiene un pico ($f'_-=-1$, $f'_+=1$)
+! Si no es continua, ya no es derivable: **primero continuidad**
+- A trozos: en cada punto de cambio, continua + derivadas de los trozos iguales a cada lado
+# Derivadas inmediatas (con la regla de la cadena, $u=u(x)$)
+| $f$ | $f'$ |
+|---|---|
+| $k$ | $0$ |
+| $u^n$ | $n\,u^{n-1}u'$ |
+| $\sqrt u$ | $\dfrac{u'}{2\sqrt u}$ |
+| $e^u$ | $e^u\,u'$ |
+| $a^u$ | $a^u\ln a\;u'$ |
+| $\ln u$ | $\dfrac{u'}{u}$ |
+| $\log_a u$ | $\dfrac{u'}{u\ln a}$ |
+| $\sin u$ | $\cos u\;u'$ |
+| $\cos u$ | $-\sin u\;u'$ |
+| $\tan u$ | $\dfrac{u'}{\cos^2u}=(1+\tan^2u)\,u'$ |
+| $\arcsin u$ | $\dfrac{u'}{\sqrt{1-u^2}}$ |
+| $\arccos u$ | $-\dfrac{u'}{\sqrt{1-u^2}}$ |
+| $\arctan u$ | $\dfrac{u'}{1+u^2}$ |
+# Reglas
+- $(kf)'=kf'$ · $(f\pm g)'=f'\pm g'$
+- Producto: $(fg)'=f'g+fg'$
+- Cociente: $\left(\dfrac fg\right)'=\dfrac{f'g-fg'}{g^2}$
+- Cadena: $\big(f(g(x))\big)'=f'(g(x))\cdot g'(x)$ («derivada de fuera × derivada de dentro»)
+- $f^g$: $f^g=e^{g\ln f}\Rightarrow(f^g)'=f^g\left(g'\ln f+g\dfrac{f'}{f}\right)$
+! $x^x$ no es $x\cdot x^{x-1}$: $(x^x)'=x^x(\ln x+1)$
+# Monotonía y extremos
+- $f'>0$ en $I$ → **crece** · $f'<0$ → **decrece**
+- Punto crítico: $f'(x_0)=0$ o $f$ no derivable en $x_0$
+- Máximo: $f'$ pasa de $+$ a $-$ · Mínimo: de $-$ a $+$ · Sin cambio de signo: no hay extremo ($x^3$ en $0$)
+- Con la segunda: $f'(x_0)=0$ y $f''(x_0)<0$ → máximo; $f''(x_0)>0$ → mínimo
+# Curvatura
+- $f''>0$ → **convexa** $\cup$ · $f''<0$ → **cóncava** $\cap$
+- Punto de inflexión: cambia la curvatura ($f''$ cambia de signo)
+? Convexa = sonrisa (∪, $+$); cóncava = tristeza (∩, $-$)
+# Representar una función
+1. Dominio, continuidad, cortes con los ejes, simetría, signo, periodicidad
+2. Asíntotas (verticales, horizontales, oblicuas)
+3. Monotonía: signo de $f'$ → máximos y mínimos
+4. Curvatura: signo de $f''$ → inflexión
+5. Tabla con todo y dibujar
+# Optimización
+1. Dibujo y variables
+2. Función a optimizar (coste, área, superficie…)
+3. Ligadura → despejar → función de **una** variable
+4. $f'=0$ y comprobar ($f''$ o signo de $f'$, y los bordes)
+5. Responder con unidades
+# L'Hôpital
+- Si sale $\frac00$ o $\frac\infty\infty$: $\lim\frac fg=\lim\frac{f'}{g'}$ (se puede repetir)
+- $\lim_{x\to0}\frac{1-\cos x}{x^2}=\frac12$ · $\lim_{x\to0}\frac{\sin x}x=1$
+`,
+    src: 'Apuntes del Tema 3 (Derivación, primera parte), Relación 3 (19 ejercicios), Relación 3 · Cálculo de derivadas y formulario de derivadas',
+    intro: R`Qué es la derivada (tasa de variación y pendiente de la tangente), derivabilidad en un punto y a trozos, tabla de derivadas y reglas, y sus aplicaciones: crecimiento, máximos y mínimos, curvatura, representación gráfica, L'Hôpital y problemas de optimización.`,
+    theory: [
+      { t: 'Qué es la derivada: tasa de variación', h: R`
+<p><strong>Ejemplo del depósito.</strong> Una cañería vierte agua en un depósito; $V(t)$ es el volumen (litros) en el instante $t$ (horas). Entre $t=a$ y $t=b$ han entrado $V(b)-V(a)$ litros, así que en promedio han entrado</p>
+$$\frac{V(b)-V(a)}{b-a}\ \text{litros/hora}\qquad\text{(tasa de variación media)}$$
+<p>Si acercamos $b$ a $a$ cada vez más, obtenemos cuánto entra <em>justo en el instante</em> $a$:</p>
+$$V'(a)=\lim_{t\to a}\frac{V(t)-V(a)}{t-a}=\lim_{h\to0}\frac{V(a+h)-V(a)}{h}\qquad\text{(tasa de variación instantánea)}$$
+<p><strong>Ejemplo del coche.</strong> Si $x(t)$ es la distancia recorrida (m) en el instante $t$ (s), la tasa media entre $0$ y $1$ es la velocidad media en ese segundo, y $x'(t)$ es la <strong>velocidad en el instante</strong> $t$ (m/s).</p>
+<div class="key"><p>La derivada mide <strong>lo rápido que cambia</strong> $f$ en un punto. Sus unidades son las de $f$ divididas entre las de $x$.</p></div>` },
+      { t: 'Interpretación geométrica: la recta tangente', h: R`
+<ul><li>La tasa media entre $(a,f(a))$ y $(b,f(b))$ es la <strong>pendiente de la recta secante</strong> que pasa por esos dos puntos: positiva si $f(b)>f(a)$, negativa si $f(b)<f(a)$.</li>
+<li>La tasa instantánea $f'(x_0)$ es la <strong>pendiente de la recta tangente</strong> a la gráfica en $(x_0,f(x_0))$: la recta que mejor aproxima la gráfica cerca de $x_0$.</li></ul>
+$$\boxed{\,y=f(x_0)+f'(x_0)\,(x-x_0)\,}$$
+<p>Mueve $h$ hacia $0$: la secante se convierte en la tangente (discontinua). Mueve $x_0$ para ver la tangente en otros puntos.</p>
+<div data-w="plot" data-id="secante"></div>
+<div class="ej"><p><strong>Recta tangente a $f(x)=x^3-3x^2+5x+1$ en $x=1$.</strong> $f(1)=1-3+5+1=4$. Con la definición:</p>
+<p>$$f'(1)=\lim_{x\to1}\frac{x^3-3x^2+5x+1-4}{x-1}=\lim_{x\to1}\frac{x^3-3x^2+5x-3}{x-1}=\Big[\tfrac00\Big]$$ Por Ruffini, $x^3-3x^2+5x-3=(x-1)(x^2-2x+3)$, así que $f'(1)=\lim_{x\to1}(x^2-2x+3)=2$.</p>
+<p>Tangente: $y=2(x-1)+4$, es decir, $y=2x+2$. (Con las reglas: $f'(x)=3x^2-6x+5$ y $f'(1)=2$.)</p></div>` },
+      { t: 'Derivabilidad en un punto', h: R`
+<p>$f$ es <strong>derivable en $x_0$</strong> si existe (y es finito) el límite $\displaystyle f'(x_0)=\lim_{x\to x_0}\frac{f(x)-f(x_0)}{x-x_0}$.</p>
+<p>Derivadas laterales: $\displaystyle f'_+(x_0)=\lim_{x\to x_0^+}\frac{f(x)-f(x_0)}{x-x_0}$ (por la derecha) y $\displaystyle f'_-(x_0)=\lim_{x\to x_0^-}\frac{f(x)-f(x_0)}{x-x_0}$ (por la izquierda).</p>
+<div class="key"><p><strong>Teorema.</strong> $f$ es derivable en $x_0$ si y solo si es derivable por la derecha y por la izquierda y $f'_+(x_0)=f'_-(x_0)$.</p></div>
+<div class="ej"><p>$f(x)=\begin{cases}x^2 & x\le0\\ x & x>0\end{cases}$. $\;f'_+(0)=\lim_{x\to0^+}\frac{x-0}{x}=1$ y $f'_-(0)=\lim_{x\to0^-}\frac{x^2}{x}=\lim x=0$. Son distintas: <strong>no es derivable en $0$</strong> (hay un pico).</p>
+<p>$f(x)=\begin{cases}x^2 & x\ge0\\ x^3 & x<0\end{cases}$. $\;f'_+(0)=\lim_{x\to0^+}\frac{x^2}{x}=0$ y $f'_-(0)=\lim_{x\to0^-}\frac{x^3}{x}=0$. Son iguales: <strong>sí es derivable en $0$</strong>, con $f'(0)=0$.</p></div>
+<div class="key"><p><strong>Teorema.</strong> Si $f$ es derivable en $x_0$, entonces es continua en $x_0$. Por tanto, si <strong>no</strong> es continua, tampoco es derivable.</p></div>
+<div class="ojo"><p>El recíproco es falso: $f(x)=|x|$ es continua en $0$, pero $f'_+(0)=\lim_{x\to0^+}\frac{x}{x}=1$ y $f'_-(0)=\lim_{x\to0^-}\frac{-x}{x}=-1$. No es derivable: la gráfica tiene un <strong>pico</strong> (acercándose por la izquierda la pendiente es negativa y por la derecha positiva).</p></div>
+<div data-w="plot" data-id="pico"></div>` },
+      { t: 'La función derivada desde la definición', h: R`
+<p>Si calculamos $f'(x_0)$ para un $x_0$ cualquiera, obtenemos una nueva función, la <strong>función derivada</strong> $f'(x)$.</p>
+<div class="ej"><p>$f(x)=x^2-1$: $\displaystyle f'(x_0)=\lim_{x\to x_0}\frac{x^2-1-x_0^2+1}{x-x_0}=\lim_{x\to x_0}\frac{(x-x_0)(x+x_0)}{x-x_0}=2x_0$. Así $f'(x)=2x$, $\;f'(1)=2$ y $f'(2)=4$.</p></div>
+<div class="ej"><p>$f(x)=x+2x^2$: $\displaystyle f'(x_0)=\lim_{x\to x_0}\frac{2x^2-2x_0^2+x-x_0}{x-x_0}=\lim_{x\to x_0}\frac{(x-x_0)\big(2(x+x_0)+1\big)}{x-x_0}=4x_0+1$. Así $f'(x)=4x+1$.</p></div>
+<p>Igual se demuestran las derivadas inmediatas: $(a)'=0$ (el cociente vale $\frac{a-a}{x-x_0}=0$), $(ax)'=a$, y $(x^n)'=nx^{n-1}$ usando $x^n-x_0^n=(x-x_0)(x^{n-1}+x^{n-2}x_0+\dots+x_0^{n-1})$.</p>
+<div class="note"><p>En los ejercicios no se usa la definición salvo que lo pidan o en los puntos de cambio de una función a trozos; lo normal es usar la tabla y las reglas.</p></div>` },
+      { t: 'Derivadas inmediatas', h: R`
+<div class="tw"><table class="t"><thead><tr><th>Función</th><th>Derivada</th><th>Con la cadena ($u=u(x)$)</th></tr></thead><tbody>
+<tr><td>$k$ (constante)</td><td>$0$</td><td>—</td></tr>
+<tr><td>$ax$</td><td>$a$</td><td>—</td></tr>
+<tr><td>$x^n$ ($n$ cualquiera)</td><td>$nx^{n-1}$</td><td>$n\,u^{n-1}\,u'$</td></tr>
+<tr><td>$x^{p/q}=\sqrt[q]{x^p}$</td><td>$\frac pq\,x^{\frac pq-1}$</td><td>$\frac pq\,u^{\frac pq-1}\,u'$</td></tr>
+<tr><td>$\sqrt x$</td><td>$\dfrac1{2\sqrt x}$</td><td>$\dfrac{u'}{2\sqrt u}$</td></tr>
+<tr><td>$\frac1x$</td><td>$-\dfrac1{x^2}$</td><td>$-\dfrac{u'}{u^2}$</td></tr>
+<tr><td>$e^x$</td><td>$e^x$</td><td>$e^u\,u'$</td></tr>
+<tr><td>$a^x$ ($a>0$)</td><td>$a^x\ln a$</td><td>$a^u\ln a\;u'$</td></tr>
+<tr><td>$\ln x$</td><td>$\dfrac1x$</td><td>$\dfrac{u'}u$</td></tr>
+<tr><td>$\log_a x$</td><td>$\dfrac{1}{x\ln a}=\dfrac1x\log_a e$</td><td>$\dfrac{u'}{u\ln a}$</td></tr>
+<tr><td>$\sin x$</td><td>$\cos x$</td><td>$\cos u\;u'$</td></tr>
+<tr><td>$\cos x$</td><td>$-\sin x$</td><td>$-\sin u\;u'$</td></tr>
+<tr><td>$\tan x$</td><td>$\dfrac1{\cos^2x}=1+\tan^2x$</td><td>$\dfrac{u'}{\cos^2u}$</td></tr>
+<tr><td>$\cot x$</td><td>$-\dfrac1{\sin^2x}=-1-\cot^2x$</td><td>$-\dfrac{u'}{\sin^2u}$</td></tr>
+<tr><td>$\arcsin x$</td><td>$\dfrac1{\sqrt{1-x^2}}$</td><td>$\dfrac{u'}{\sqrt{1-u^2}}$</td></tr>
+<tr><td>$\arccos x$</td><td>$-\dfrac1{\sqrt{1-x^2}}$</td><td>$-\dfrac{u'}{\sqrt{1-u^2}}$</td></tr>
+<tr><td>$\arctan x$</td><td>$\dfrac1{1+x^2}$</td><td>$\dfrac{u'}{1+u^2}$</td></tr>
+<tr><td>$\operatorname{arccot} x$</td><td>$-\dfrac1{1+x^2}$</td><td>$-\dfrac{u'}{1+u^2}$</td></tr>
+</tbody></table></div>
+<p>Ejemplo de raíz como potencia: $f(x)=\sqrt[3]{x}=x^{1/3}\Rightarrow f'(x)=\frac13x^{-2/3}=\dfrac{1}{3\sqrt[3]{x^2}}$.</p>
+<p>La de la tangente sale del cociente: $\left(\frac{\sin x}{\cos x}\right)'=\frac{\cos x\cos x-\sin x(-\sin x)}{\cos^2x}=\frac{\cos^2x+\sin^2x}{\cos^2x}=\frac1{\cos^2x}$.</p>
+<div class="ojo"><p>$\arcsin$ y $\arccos$ solo están definidas en $[-1,1]$, y sus derivadas en $(-1,1)$.</p></div>
+<div class="mnemo"><p>Seno → coseno → <strong>menos</strong> seno: al derivar el coseno aparece el signo menos. Y todas las «co» ($\cos$, $\cot$, $\arccos$, $\operatorname{arccot}$) llevan un menos en la derivada.</p></div>` },
+      { t: 'Reglas de derivación', h: R`
+<div class="tw"><table class="t"><thead><tr><th>Regla</th><th>Fórmula</th><th>Ejemplo</th></tr></thead><tbody>
+<tr><td>Por una constante</td><td>$(kf)'=k\,f'$</td><td>$(3x^2)'=3\cdot2x=6x$</td></tr>
+<tr><td>Suma y resta</td><td>$(f\pm g)'=f'\pm g'$</td><td>$(e^x+\ln x)'=e^x+\frac1x$</td></tr>
+<tr><td>Producto</td><td>$(fg)'=f'g+fg'$</td><td>$\big(e^x(x^2+1)\big)'=e^x(x^2+1)+e^x\cdot2x=e^x(x+1)^2$</td></tr>
+<tr><td>Cociente</td><td>$\left(\dfrac fg\right)'=\dfrac{f'g-fg'}{g^2}$</td><td>$\left(\dfrac{\ln x}{x+1}\right)'=\dfrac{\frac1x(x+1)-\ln x}{(x+1)^2}=\dfrac{x+1-x\ln x}{x(x+1)^2}$</td></tr>
+<tr><td>Cadena</td><td>$\big(g(f(x))\big)'=g'(f(x))\,f'(x)$</td><td>$\left(e^{x^2}\right)'=e^{x^2}\cdot2x$</td></tr>
+<tr><td>Exponencial $f^g$</td><td>$(f^g)'=f^g\left(g'\ln f+g\dfrac{f'}{f}\right)$</td><td>$(x^x)'=x^x\left(\ln x+x\cdot\frac1x\right)=x^x(\ln x+1)$</td></tr>
+</tbody></table></div>
+<div class="key"><p><strong>Regla de la cadena:</strong> se deriva la función «de fuera» dejando dentro lo que hay, y se multiplica por la derivada de «lo de dentro». Si hay varias capas, una derivada por capa.</p></div>
+<p>Para $f^g$ (base y exponente variables) se escribe $f^g=e^{\ln f^{\,g}}=e^{g\ln f}$ y se deriva como $e^u$ con $u=g\ln f$.</p>
+<div class="ojo"><p>$x^x$ no es una potencia ($x^n$) ni una exponencial ($a^x$): hay que usar el truco de $e^{g\ln f}$.</p></div>` },
+      { t: 'Ejemplos resueltos', h: R`
+<ul>
+<li>$f(x)=\dfrac{e^x+\cos x}{\sin x}$: $\;f'(x)=\dfrac{(e^x-\sin x)\sin x-(e^x+\cos x)\cos x}{\sin^2x}=\dfrac{e^x(\sin x-\cos x)-1}{\sin^2x}$ (porque $\sin^2x+\cos^2x=1$).</li>
+<li>$h(x)=(\cos x)^2$: fuera $u^2$, dentro $\cos x$. $\;h'(x)=2\cos x\cdot(-\sin x)=-2\sin x\cos x$.</li>
+<li>$h(x)=\cos(x^2)$: fuera $\cos u$, dentro $x^2$. $\;h'(x)=-\sin(x^2)\cdot2x$.</li>
+<li>$h(x)=e^{x^3+x^2+x+1}$: $\;h'(x)=e^{x^3+x^2+x+1}(3x^2+2x+1)$.</li>
+<li>$h(x)=\sqrt{2x+\ln x}$: $\;h'(x)=\dfrac{2+\frac1x}{2\sqrt{2x+\ln x}}$.</li>
+<li>$h(x)=\tan(x^3)$: $\;h'(x)=\dfrac{3x^2}{\cos^2(x^3)}$.</li>
+<li>$f(x)=\sin(2-x^2)\cos(3x)$: producto y dos cadenas. $\;f'(x)=-2x\cos(2-x^2)\cos(3x)-3\sin(2-x^2)\sin(3x)$.</li>
+<li>$h(x)=2^{-x^3+x^2-2}$: $\;h'(x)=2^{-x^3+x^2-2}\ln2\cdot(-3x^2+2x)$.</li>
+</ul>` },
+      { t: 'Funciones a trozos con parámetros', h: R`
+<p>Para estudiar continuidad y derivabilidad de una función a trozos:</p>
+<ol><li>Cada trozo es continuo y derivable en su intervalo abierto (si es polinomio, exponencial…; cuidado con denominadores, raíces y logaritmos).</li>
+<li>En cada <strong>punto de cambio</strong>, continuidad: lateral izquierdo = lateral derecho = valor.</li>
+<li>Si es continua ahí, derivabilidad: las derivadas laterales (las de cada trozo evaluadas en el punto) deben coincidir.</li></ol>
+<div class="ej"><p><strong>$f(x)=\begin{cases}3-ax^2 & x\le1\\ \frac2{ax} & x>1\end{cases}$</strong> ($a\neq0$).</p>
+<p><em>Continuidad en $x=1$:</em> $f(1)=\lim_{x\to1^-}f=3-a$ y $\lim_{x\to1^+}\frac2{ax}=\frac2a$. Igualando: $3-a=\frac2a\iff a^2-3a+2=0\iff a=1$ o $a=2$. Para otro $a$, es continua en $\R\setminus\{1\}$.</p>
+<p><em>Derivabilidad en $x=1$</em> (solo si $a=1$ o $a=2$): $f'(x)=-2ax$ para $x<1$ y $f'(x)=-\frac{2}{ax^2}$ para $x>1$, así que $f'_-(1)=-2a$ y $f'_+(1)=-\frac2a$.</p>
+<ul><li>$a=1$: $-2=-2$ ✓. Derivable en todo $\R$.</li><li>$a=2$: $-4\neq-1$ ✗. Continua pero no derivable en $x=1$ (pico).</li></ul></div>
+<div class="ojo"><p>Usar las derivadas de cada trozo para calcular $f'_\pm$ solo vale si la función es <strong>continua</strong> en el punto. Si no lo es, ya sabemos que no es derivable.</p></div>` },
+      { t: 'Monotonía, máximos y mínimos', h: R`
+<p>$x_0$ es un <strong>máximo relativo</strong> (local) de $f$ si hay un intervalo $I\ni x_0$ con $f(x)\le f(x_0)$ para todo $x\in I$; <strong>mínimo relativo</strong> si $f(x)\ge f(x_0)$.</p>
+<p>La <strong>primera derivada estudia la monotonía</strong>. Si $f$ es derivable en un intervalo $I$:</p>
+<ul><li>$f'>0$ en $I$ ⇒ $f$ es <strong>creciente</strong> en $I$ (tangentes con pendiente positiva).</li>
+<li>$f'<0$ en $I$ ⇒ $f$ es <strong>decreciente</strong> en $I$.</li>
+<li>Si $x_0$ es máximo o mínimo y $f$ es derivable en $x_0$, entonces $f'(x_0)=0$ (tangente horizontal).</li></ul>
+<p><strong>Punto crítico:</strong> $x_0$ con $f'(x_0)=0$ o donde $f$ no es derivable. Los extremos se buscan entre ellos.</p>
+<div class="key"><p><strong>Método:</strong> calcular $f'$, factorizarla, hallar sus ceros y los puntos fuera del dominio, y hacer la <strong>tabla de signos</strong> de $f'$. Donde $f'$ pasa de $+$ a $-$ hay un máximo; de $-$ a $+$, un mínimo.</p></div>
+<div class="ojo"><p>$f'(x_0)=0$ no basta: $f(x)=x^3$ tiene $f'(0)=0$ pero crece a los dos lados (no cambia el signo de $f'$). Y los puntos que no están en el dominio también separan intervalos en la tabla, aunque no sean extremos.</p></div>
+<p>Ejemplo $f(x)=x^3-3x$: $f'(x)=3(x-1)(x+1)$.</p>
+${mono([R`(-\infty,-1)`, R`(-1,1)`, R`(1,+\infty)`], [[R`$f'$`, ['+', '-', '+']]], ['+', '-', '+'])}
+<p>Máximo en $(-1,2)$ y mínimo en $(1,-2)$. En la gráfica: donde $f'$ está por encima del eje, $f$ sube; donde $f''$ es positiva, $f$ es convexa.</p>
+<div data-w="plot" data-id="monot"></div>` },
+      { t: 'Curvatura: concavidad, convexidad e inflexión', h: R`
+<p>La <strong>segunda derivada</strong> mide cómo cambia $f'$: si la pendiente va aumentando o disminuyendo (la «aceleración» de $f$).</p>
+<ul><li>$f''>0$ ⇒ las pendientes aumentan: $f$ es <strong>convexa</strong> ($\cup$).</li>
+<li>$f''<0$ ⇒ las pendientes disminuyen: $f$ es <strong>cóncava</strong> ($\cap$).</li>
+<li>Donde la curvatura cambia (de cóncava a convexa o al revés) hay un <strong>punto de inflexión</strong>. Ahí $f''(x_0)=0$ (si existe), pero hay que comprobar que $f''$ cambia de signo.</li></ul>
+<div class="mnemo"><p>Convexa: cara sonriente $\cup$, signo $+$. Cóncava: cara triste $\cap$, signo $-$. Así lo usan los apuntes; algunos libros lo llaman al revés, así que en el examen di también «$\cup$» o «$\cap$».</p></div>
+<div class="key"><p><strong>Criterio de la segunda derivada.</strong> Si $f'(x_0)=0$: $\;f''(x_0)<0$ ⇒ <strong>máximo</strong> (está en una $\cap$); $\;f''(x_0)>0$ ⇒ <strong>mínimo</strong> (en una $\cup$); $\;f''(x_0)=0$ ⇒ no decide (usa la tabla de $f'$).</p></div>
+<div class="tw"><table class="t"><thead><tr><th></th><th>$f''>0$ (convexa $\cup$)</th><th>$f''<0$ (cóncava $\cap$)</th></tr></thead><tbody>
+<tr><td>$f'>0$</td><td>crece cada vez más deprisa</td><td>crece cada vez más despacio</td></tr>
+<tr><td>$f'<0$</td><td>decrece cada vez más despacio</td><td>decrece cada vez más deprisa</td></tr>
+<tr><td>$f'=0$</td><td>mínimo</td><td>máximo</td></tr>
+</tbody></table></div>
+<p>En $f(x)=x^3-3x$: $f''(x)=6x$, cóncava en $(-\infty,0)$, convexa en $(0,+\infty)$ e inflexión en $(0,0)$.</p>` },
+      { t: 'Representación gráfica de funciones', h: R`
+<ol><li><strong>Propiedades globales:</strong> dominio, continuidad, cortes con los ejes, simetrías, signo y periodicidad.</li>
+<li><strong>Asíntotas:</strong> verticales, horizontales y oblicuas (Tema 2).</li>
+<li><strong>Monotonía:</strong> signo de $f'$ → crecimiento, máximos y mínimos.</li>
+<li><strong>Curvatura:</strong> signo de $f''$ → cóncava, convexa e inflexión.</li>
+<li>Se junta todo y se dibuja: primero asíntotas y puntos notables, luego la curva respetando la tabla.</li></ol>
+<div class="ej"><p><strong>Ejemplo: $f(x)=\dfrac{e^x}{x-1}$.</strong></p>
+<ul><li><em>Dominio:</em> $\R\setminus\{1\}$. Ni par ni impar; no periódica.</li>
+<li><em>Cortes:</em> eje Y, $f(0)=-1$: $(0,-1)$. Eje X: $e^x=0$ no tiene solución, no corta.</li>
+<li><em>Signo:</em> $e^x>0$, así que el de $x-1$: negativa en $(-\infty,1)$, positiva en $(1,+\infty)$.</li>
+<li><em>Asíntotas:</em> vertical $x=1$ ($\frac e{0^-}=-\infty$ por la izquierda, $+\infty$ por la derecha). Horizontal $y=0$ en $-\infty$ ($\frac{0}{-\infty}$). En $+\infty$ gana la exponencial: $\frac{e^x}{x-1}\to+\infty$ y $\frac{f(x)}x\to+\infty$, sin horizontal ni oblicua.</li>
+<li><em>Monotonía:</em> $f'(x)=\dfrac{e^x(x-1)-e^x}{(x-1)^2}=\dfrac{e^x(x-2)}{(x-1)^2}$, que se anula en $x=2$.</li></ul>
+${mono([R`(-\infty,1)`, R`(1,2)`, R`(2,+\infty)`], [[R`$f'$`, ['-', '-', '+']]], ['-', '-', '+'])}
+<ul><li>Decrece en $(-\infty,1)\cup(1,2)$, crece en $(2,+\infty)$. Mínimo relativo en $(2,e^2)\approx(2;\,7{,}39)$.</li>
+<li><em>Curvatura:</em> $f''(x)=\dfrac{e^x(x^2-4x+5)}{(x-1)^3}$. $x^2-4x+5$ no tiene raíces reales ($\Delta=-4$), siempre positivo: el signo es el de $(x-1)^3$. Cóncava en $(-\infty,1)$, convexa en $(1,+\infty)$. Sin inflexión.</li></ul>
+<div data-w="plot" data-id="repr"></div></div>` },
+      { t: "Regla de L'Hôpital", h: R`
+<p>Está en el temario oficial del Tema 3 (aunque no en esta primera parte de los apuntes) y hace falta en el ejercicio 13 de la Relación 3.</p>
+<div class="key"><p>Si $\lim\frac{f(x)}{g(x)}$ da $\frac00$ o $\frac\infty\infty$ y existe $\lim\frac{f'(x)}{g'(x)}$, entonces $$\lim\frac{f(x)}{g(x)}=\lim\frac{f'(x)}{g'(x)}.$$ Se derivan numerador y denominador <strong>por separado</strong> (no es la regla del cociente). Se puede aplicar varias veces.</p></div>
+<ul><li>$\displaystyle\lim_{x\to0}\frac{\sin x}{x}=\Big[\tfrac00\Big]=\lim_{x\to0}\frac{\cos x}{1}=1$.</li>
+<li>$\displaystyle\lim_{x\to0}\frac{1-\cos x}{x^2}=\Big[\tfrac00\Big]=\lim_{x\to0}\frac{\sin x}{2x}=\Big[\tfrac00\Big]=\lim_{x\to0}\frac{\cos x}{2}=\frac12$.</li>
+<li>$\displaystyle\lim_{x\to+\infty}\frac{x}{e^x}=\Big[\tfrac\infty\infty\Big]=\lim_{x\to+\infty}\frac1{e^x}=0$ (la jerarquía de infinitos del Tema 2).</li></ul>
+<div class="ojo"><p>Otras indeterminaciones ($0\cdot\infty$, $\infty-\infty$, $1^\infty$) hay que pasarlas antes a cociente. Y si no hay indeterminación, L'Hôpital da resultados falsos.</p></div>` },
+      { t: 'Problemas de optimización', h: R`
+<ol><li>Dibuja la figura y pon nombre a las variables.</li>
+<li>Escribe la <strong>función a optimizar</strong> (coste, área, superficie, volumen…).</li>
+<li>Usa la <strong>ligadura</strong> (el dato fijo: volumen, perímetro…) para despejar una variable y dejar una función de <strong>una sola variable</strong>.</li>
+<li>Deriva, iguala a $0$ y resuelve. Comprueba que es máximo o mínimo ($f''$ o tabla de signos) y mira los extremos del intervalo si los hay.</li>
+<li>Responde a lo que piden, con unidades.</li></ol>
+<div class="ej"><p><strong>Depósito de base cuadrada de 1 m³ (ejercicio 17).</strong> Lado $x$, altura $y$. Ligadura: $x^2y=1\Rightarrow y=\frac1{x^2}$. Coste: base $10x^2$ y cuatro laterales $5\cdot4xy$: $\;C(x)=10x^2+\dfrac{20}{x}$, $x>0$.</p>
+<p>$C'(x)=20x-\dfrac{20}{x^2}=0\iff x^3=1\iff x=1$. $\;C''(x)=20+\dfrac{40}{x^3}>0$: mínimo. Es un cubo de 1 m de lado y cuesta 30 €.</p>
+<div data-w="plot" data-id="opt"></div></div>
+<div class="mnemo"><p>«Dibujo, función, ligadura, derivada, comprobación».</p></div>` },
+    ],
+    plots: {
+      secante: { fns: p => {
+        const f = x => x * x * x / 4 - x + 1, fp = x => 3 * x * x / 4 - 1, a = p.a, b = p.a + p.h, m = (f(b) - f(a)) / (b - a);
+        return [{ f, lbl: 'f(x)' }, { f: x => f(a) + m * (x - a), lbl: 'secante', c: 2 }, { f: x => f(a) + fp(a) * (x - a), lbl: 'tangente', c: 3, dash: true }];
+      }, pts: p => { const f = x => x * x * x / 4 - x + 1; return [[p.a, f(p.a), false, 'x₀'], [p.a + p.h, f(p.a + p.h), true]]; },
+      x: [-3.5, 3.5], y: [-3, 5], params: [{ k: 'a', lbl: '$x_0$', min: -2.5, max: 2.5, step: 0.05, v: 0.5 }, { k: 'h', lbl: '$h$', min: 0.02, max: 2.5, step: 0.01, v: 2 }],
+      cap: R`Pendiente de la secante: $\frac{f(x_0+h)-f(x_0)}{h}$. Cuando $h\to0$ tiende a $f'(x_0)$, la pendiente de la tangente.`, alt: 'Secante que se convierte en tangente' },
+      pico: { fns: [{ f: x => Math.abs(x), lbl: '|x|' }], x: [-3, 3], y: [-1, 3], h: 240, pts: [[0, 0, false, 'pico']], alt: 'Valor absoluto: continua pero no derivable en 0' },
+      monot: { fns: [{ f: x => x ** 3 - 3 * x, lbl: 'f(x) = x³ − 3x' }, { f: x => 3 * x * x - 3, lbl: "f'(x) = 3x² − 3", c: 2, dash: true }, { f: x => 6 * x, lbl: "f''(x) = 6x", c: 3, dash: true }],
+        x: [-3, 3], y: [-5, 7], pts: [[-1, 2, false, 'máx'], [1, -2, false, 'mín'], [0, 0, false, 'inflexión']], alt: 'Una función con su primera y segunda derivada' },
+      repr: { fns: [{ f: x => Math.exp(x) / (x - 1), lbl: 'f(x) = eˣ/(x − 1)' }], x: [-5, 5], y: [-6, 16], va: [1], ha: [0], pts: [[0, -1, false], [2, Math.E ** 2, false, 'mín (2, e²)']], alt: 'Gráfica de e^x/(x−1)' },
+      opt: { fns: [{ f: x => 10 * x * x + 20 / x, lbl: 'C(x) = 10x² + 20/x' }], x: [0, 3], y: [0, 100], pts: [[1, 30, false, 'mínimo: 30 €']], xl: 'x (m)', alt: 'Coste del depósito en función del lado' },
+    },
+    map: { t: 'Derivación', c: [
+      { t: 'Qué es', c: [
+        { t: 'Tasa media = pendiente de la secante', n: R`$\frac{f(b)-f(a)}{b-a}$` },
+        { t: 'Tasa instantánea = derivada', n: R`$f'(x_0)=\lim_{h\to0}\frac{f(x_0+h)-f(x_0)}{h}$` },
+        { t: 'Recta tangente', n: R`$y=f(x_0)+f'(x_0)(x-x_0)$` }] },
+      { t: 'Derivabilidad', c: [
+        { t: 'Laterales iguales', n: R`$f'_-(x_0)=f'_+(x_0)$` },
+        { t: 'Derivable ⇒ continua', n: 'Al revés no: |x| tiene un pico en 0.' },
+        { t: 'A trozos', n: 'Primero continuidad en cada cambio; después, derivadas laterales.' }] },
+      { t: 'Cálculo', c: [
+        { t: 'Tabla de inmediatas' }, { t: 'Producto y cociente' },
+        { t: 'Regla de la cadena', n: 'Derivada de fuera × derivada de dentro.' },
+        { t: 'f^g = e^{g ln f}' }] },
+      { t: "f' → monotonía", c: [
+        { t: "f' > 0 crece; f' < 0 decrece" },
+        { t: 'Puntos críticos', n: "f' = 0 o no derivable." },
+        { t: 'Máx: + → −; mín: − → +' }] },
+      { t: "f'' → curvatura", c: [
+        { t: "f'' > 0 convexa ∪; f'' < 0 cóncava ∩" },
+        { t: 'Inflexión: cambia la curvatura' },
+        { t: "f' = 0 y f'' < 0 → máx; f'' > 0 → mín" }] },
+      { t: 'Aplicaciones', c: [
+        { t: 'Representación gráfica', n: 'Dominio, cortes, simetría, signo, asíntotas, monotonía, curvatura.' },
+        { t: 'Optimización', n: 'Función + ligadura → una variable → derivar.' },
+        { t: "L'Hôpital", n: R`$\frac00$ o $\frac\infty\infty$: derivar arriba y abajo por separado.` },
+        { t: 'Ritmos de cambio', n: 'Velocidad, tasa de variación de un contaminante…' }] },
+    ] },
+    cards: [
+      { f: R`Definición de $f'(x_0)$`, b: R`$\displaystyle\lim_{h\to0}\frac{f(x_0+h)-f(x_0)}{h}=\lim_{x\to x_0}\frac{f(x)-f(x_0)}{x-x_0}$` },
+      { f: 'Tasa de variación media en [a, b]', b: R`$\frac{f(b)-f(a)}{b-a}$: pendiente de la secante.` },
+      { f: 'Ecuación de la recta tangente en x₀', b: R`$y=f(x_0)+f'(x_0)(x-x_0)$` },
+      { f: '¿Cuándo es derivable f en x₀?', b: R`Cuando existen las derivadas laterales y son iguales: $f'_-(x_0)=f'_+(x_0)$.` },
+      { f: '¿Derivable implica continua? ¿Y al revés?', b: R`Derivable ⇒ continua, sí. Continua ⇒ derivable, no: $|x|$ en $0$.` },
+      { f: R`$(x^n)'$`, b: R`$nx^{n-1}$` },
+      { f: R`$(\sqrt u)'$`, b: R`$\dfrac{u'}{2\sqrt u}$` },
+      { f: R`$(a^u)'$`, b: R`$a^u\ln a\cdot u'$`, m: R`Con $a=e$: $\ln e=1$, por eso $(e^u)'=e^u u'$.` },
+      { f: R`$(\ln u)'$ y $(\log_a u)'$`, b: R`$\dfrac{u'}{u}$ y $\dfrac{u'}{u\ln a}$` },
+      { f: R`$(\sin u)'$ y $(\cos u)'$`, b: R`$\cos u\cdot u'$ y $-\sin u\cdot u'$` },
+      { f: R`$(\tan x)'$`, b: R`$\dfrac1{\cos^2x}=1+\tan^2x$` },
+      { f: R`$(\arctan x)'$`, b: R`$\dfrac1{1+x^2}$` },
+      { f: R`$(\arcsin x)'$ y $(\arccos x)'$`, b: R`$\dfrac1{\sqrt{1-x^2}}$ y $-\dfrac1{\sqrt{1-x^2}}$` },
+      { f: 'Regla del producto', b: R`$(fg)'=f'g+fg'$` },
+      { f: 'Regla del cociente', b: R`$\left(\frac fg\right)'=\dfrac{f'g-fg'}{g^2}$`, m: '«La de arriba derivada por la de abajo, menos la de arriba por la de abajo derivada, entre la de abajo al cuadrado».' },
+      { f: 'Regla de la cadena', b: R`$\big(g(f(x))\big)'=g'(f(x))\,f'(x)$`, m: 'Derivada de fuera (con lo de dentro sin tocar) × derivada de dentro.' },
+      { f: R`Derivada de $f(x)^{g(x)}$`, b: R`$f^g\left(g'\ln f+g\frac{f'}f\right)$, escribiendo $f^g=e^{g\ln f}$.` },
+      { f: R`$(x^x)'$`, b: R`$x^x(\ln x+1)$` },
+      { f: 'Punto crítico', b: R`$x_0$ con $f'(x_0)=0$ o donde $f$ no es derivable.` },
+      { f: R`¿Qué significa $f'>0$ en un intervalo?`, b: 'Que f es creciente en ese intervalo.' },
+      { f: 'Cómo distinguir máximo y mínimo con la primera derivada', b: R`$f'$ pasa de $+$ a $-$: máximo. De $-$ a $+$: mínimo. Sin cambio: no hay extremo.` },
+      { f: 'Criterio de la segunda derivada', b: R`Si $f'(x_0)=0$: $f''(x_0)<0$ máximo; $f''(x_0)>0$ mínimo; $=0$ no decide.` },
+      { f: R`$f''>0$ / $f''<0$`, b: R`Convexa $\cup$ / cóncava $\cap$.`, m: 'Sonrisa positiva, tristeza negativa.' },
+      { f: 'Punto de inflexión', b: R`Donde $f$ cambia de curvatura ($f''$ cambia de signo).` },
+      { f: "Regla de L'Hôpital", b: R`Si sale $\frac00$ o $\frac\infty\infty$: $\lim\frac fg=\lim\frac{f'}{g'}$ (derivando arriba y abajo por separado).` },
+      { f: R`$\lim_{x\to0}\frac{1-\cos x}{x^2}$`, b: R`$\frac12$ (L'Hôpital dos veces)` },
+      { f: 'Pasos de un problema de optimización', b: 'Dibujo y variables → función a optimizar → ligadura para dejar una variable → derivar e igualar a 0 → comprobar y responder.' },
+    ],
+    quiz: [
+      { q: R`La pendiente de la recta tangente a $f$ en $x_0$ es…`, o: [R`$f(x_0)$`, R`$f'(x_0)$`, R`$\frac{f(x_0)}{x_0}$`, R`$f''(x_0)$`], a: 1 },
+      { q: R`Tangente a $f(x)=x^2$ en $x_0=3$`, o: [R`$y=6x-9$`, R`$y=6x+9$`, R`$y=2x+3$`, R`$y=9x-6$`], a: 0, w: R`$f(3)=9$, $f'(3)=6$: $y=9+6(x-3)=6x-9$.` },
+      { q: R`$f(x)=|x|$ en $x=0$ es…`, o: ['continua y derivable', 'continua pero no derivable', 'derivable pero no continua', 'ni continua ni derivable'], a: 1, w: R`Laterales de la derivada: $-1$ y $1$.` },
+      { q: 'Si una función no es continua en x₀…', o: ['puede ser derivable en x₀', 'no es derivable en x₀', 'tiene un máximo en x₀', R`$f'(x_0)=0$`], a: 1 },
+      { q: R`$\left(e^{3x^2}\right)'=$`, o: [R`$e^{3x^2}$`, R`$6x\,e^{3x^2}$`, R`$3x^2e^{3x^2-1}$`, R`$6x\,e^{6x}$`], a: 1 },
+      { q: R`$\big(\ln(x^2+1)\big)'=$`, o: [R`$\frac1{x^2+1}$`, R`$\frac{2x}{x^2+1}$`, R`$\frac{2}{x^2+1}$`, R`$2x\ln(x^2+1)$`], a: 1 },
+      { q: R`$(x\,e^x)'=$`, o: [R`$e^x$`, R`$x\,e^x$`, R`$e^x(1+x)$`, R`$e^{x}+x$`], a: 2, w: 'Regla del producto.' },
+      { q: R`$(2^x)'=$`, o: [R`$x\,2^{x-1}$`, R`$2^x$`, R`$2^x\ln2$`, R`$\frac{2^x}{\ln2}$`], a: 2 },
+      { q: R`$(\cos 3x)'=$`, o: [R`$3\sin3x$`, R`$-3\sin3x$`, R`$-\sin3x$`, R`$\sin 3x$`], a: 1 },
+      { q: R`Si $f'(x)>0$ en $(a,b)$, entonces en $(a,b)$ la función…`, o: ['es convexa', 'es creciente', 'tiene un máximo', 'es positiva'], a: 1, w: 'El signo de f′ da la monotonía, no el signo de f.' },
+      { q: R`$f'(2)=0$ y $f''(2)=-3$. En $x=2$ hay…`, o: ['un mínimo', 'un máximo', 'un punto de inflexión', 'no se puede saber'], a: 1 },
+      { q: R`$f(x)=x^3$ en $x=0$:`, o: ['tiene un mínimo', 'tiene un máximo', R`$f'(0)=0$ pero no hay extremo`, 'no es derivable'], a: 2 },
+      { q: R`Si $f''>0$ en un intervalo, la función es…`, o: [R`convexa ($\cup$)`, R`cóncava ($\cap$)`, 'creciente', 'decreciente'], a: 0 },
+      { q: R`$\displaystyle\lim_{x\to0}\frac{\sin x}{x}=$`, o: ['$0$', '$1$', R`$\infty$`, 'No existe'], a: 1, w: R`L'Hôpital: $\frac{\cos x}{1}\to1$.` },
+      { q: R`$M(t)=0{,}05t^2+0{,}1t+3{,}4$ ppm. Ritmo de cambio en $t=1$ año:`, o: ['3,55 ppm', '0,2 ppm/año', '0,15 ppm/año', '0,1 ppm/año'], a: 1, w: R`$M'(t)=0{,}1t+0{,}1$, $M'(1)=0{,}2$.` },
+      { q: R`En un problema de optimización, la ligadura sirve para…`, o: ['comprobar que es un mínimo', 'dejar la función en una sola variable', 'calcular la segunda derivada', 'nada, se puede ignorar'], a: 1 },
+    ],
+    match: [
+      { t: 'Función y derivada', p: [[R`$\sqrt x$`, R`$\frac{1}{2\sqrt x}$`], [R`$\ln x$`, R`$\frac1x$`], [R`$a^x$`, R`$a^x\ln a$`], [R`$\tan x$`, R`$\frac1{\cos^2x}$`], [R`$\arctan x$`, R`$\frac{1}{1+x^2}$`], [R`$\cos x$`, R`$-\sin x$`]] },
+      { t: 'Signo y significado', p: [[R`$f'>0$`, 'creciente'], [R`$f'<0$`, 'decreciente'], [R`$f''>0$`, R`convexa $\cup$`], [R`$f''<0$`, R`cóncava $\cap$`], [R`$f'$ cambia de $+$ a $-$`, 'máximo'], [R`$f''$ cambia de signo`, 'inflexión']] },
+    ],
+    order: [
+      { t: 'Estudiar la monotonía de una función', i: ['Calcular el dominio', R`Derivar: $f'(x)$`, R`Factorizar $f'$ y hallar sus ceros`, 'Poner en la recta los ceros y los puntos fuera del dominio', R`Tabla de signos de $f'$`, 'Leer crecimiento, decrecimiento, máximos y mínimos', 'Calcular el valor de f en los extremos'] },
+      { t: 'Problema de optimización', i: ['Dibujar y nombrar las variables', 'Escribir la función a optimizar', 'Usar la ligadura para dejar una variable', 'Derivar e igualar a 0', 'Comprobar que es máximo o mínimo', 'Responder con unidades'] },
+      { t: 'Derivabilidad de una función a trozos', i: ['Ver que cada trozo es derivable en su intervalo', 'Estudiar la continuidad en cada punto de cambio', 'Si es continua, calcular las derivadas laterales', 'Comparar: iguales → derivable; distintas → pico'] },
+    ],
+    ex: [
+      // Cálculo de derivadas (hoja aparte)
+      der(1, 1, R`3x+\dfrac{x^3}{2}+(\pi+2)^3`, [R`$(\pi+2)^3$ es un número: su derivada es $0$.`, R`$f'(x)=3+\dfrac{3x^2}{2}$.`], R`$f'(x)=3+\frac32x^2$`),
+      der(2, 1, R`\dfrac x3+\dfrac3x`, [R`Escribimos $\frac3x=3x^{-1}$.`, R`$f'(x)=\frac13+3\cdot(-1)x^{-2}=\frac13-\frac3{x^2}$.`], R`$f'(x)=\frac13-\frac{3}{x^2}$`),
+      der(3, 1, R`\sqrt{2x}+\sqrt{4x}`, [R`Cadena: $(\sqrt{2x})'=\dfrac{2}{2\sqrt{2x}}=\dfrac1{\sqrt{2x}}$.`, R`$\sqrt{4x}=2\sqrt x$, así que $(\sqrt{4x})'=\dfrac{2}{2\sqrt x}=\dfrac1{\sqrt x}$.`, R`Juntando: $f'(x)=\dfrac1{\sqrt{2x}}+\dfrac1{\sqrt x}=\dfrac{\sqrt2+2}{2\sqrt x}$.`], R`$f'(x)=\frac{1}{\sqrt{2x}}+\frac{1}{\sqrt x}$`),
+      der(4, 2, R`\dfrac{3x-1}{x+2}+\dfrac{x}{x^2+1}`, [R`Cociente: $\left(\dfrac{3x-1}{x+2}\right)'=\dfrac{3(x+2)-(3x-1)}{(x+2)^2}=\dfrac{7}{(x+2)^2}$.`, R`Cociente: $\left(\dfrac{x}{x^2+1}\right)'=\dfrac{(x^2+1)-x\cdot2x}{(x^2+1)^2}=\dfrac{1-x^2}{(x^2+1)^2}$.`], R`$f'(x)=\frac{7}{(x+2)^2}+\frac{1-x^2}{(x^2+1)^2}$`),
+      der(5, 2, R`x(1-2x)^3`, [R`Producto y cadena: $f'(x)=1\cdot(1-2x)^3+x\cdot3(1-2x)^2\cdot(-2)$.`, R`Sacamos factor común $(1-2x)^2$: $(1-2x)^2\big[(1-2x)-6x\big]$.`], R`$f'(x)=(1-2x)^2(1-8x)$`),
+      der(6, 2, R`\dfrac{1}{2x+3}-\dfrac{1}{(2x+3)^2}`, [R`Como potencias: $f(x)=(2x+3)^{-1}-(2x+3)^{-2}$.`, R`$f'(x)=-(2x+3)^{-2}\cdot2+2(2x+3)^{-3}\cdot2=-\dfrac{2}{(2x+3)^2}+\dfrac{4}{(2x+3)^3}$.`, R`Denominador común: $\dfrac{-2(2x+3)+4}{(2x+3)^3}=\dfrac{-4x-2}{(2x+3)^3}$.`], R`$f'(x)=-\frac{2(2x+1)}{(2x+3)^3}$`),
+      der(7, 2, R`x\sqrt{6-x}`, [R`Producto: $f'(x)=\sqrt{6-x}+x\cdot\dfrac{-1}{2\sqrt{6-x}}$.`, R`Denominador común: $\dfrac{2(6-x)-x}{2\sqrt{6-x}}=\dfrac{12-3x}{2\sqrt{6-x}}$.`], R`$f'(x)=\frac{3(4-x)}{2\sqrt{6-x}}$`),
+      der(8, 1, R`2^x+\ln x`, [R`$(a^x)'=a^x\ln a$ y $(\ln x)'=\frac1x$.`], R`$f'(x)=2^x\ln2+\frac1x$`),
+      der(9, 2, R`\dfrac{3^{2x+1}}{\ln 3}`, [R`$\ln3$ es una constante: $f'(x)=\dfrac{1}{\ln3}\big(3^{2x+1}\big)'$.`, R`Cadena: $\big(3^{2x+1}\big)'=3^{2x+1}\ln3\cdot2$.`, R`El $\ln3$ se simplifica: $f'(x)=2\cdot3^{2x+1}$.`], R`$f'(x)=2\cdot3^{2x+1}$`),
+      der(10, 2, R`\sin(2-x^2)\cos(3x)`, [R`Producto: $f'=\big(\sin(2-x^2)\big)'\cos(3x)+\sin(2-x^2)\big(\cos(3x)\big)'$.`, R`Cadenas: $\big(\sin(2-x^2)\big)'=\cos(2-x^2)\cdot(-2x)$ y $\big(\cos3x\big)'=-3\sin3x$.`], R`$f'(x)=-2x\cos(2-x^2)\cos(3x)-3\sin(2-x^2)\sin(3x)$`),
+      der(11, 2, R`\cos\left(\dfrac{\pi x}{2}\right)\sin(\pi x)`, [R`Producto: $f'=\big(\cos\frac{\pi x}2\big)'\sin\pi x+\cos\frac{\pi x}2\big(\sin\pi x\big)'$.`, R`Cadenas: $\big(\cos\frac{\pi x}2\big)'=-\frac\pi2\sin\frac{\pi x}2$ y $(\sin\pi x)'=\pi\cos\pi x$.`], R`$f'(x)=-\frac\pi2\sin\frac{\pi x}{2}\sin(\pi x)+\pi\cos\frac{\pi x}{2}\cos(\pi x)$`),
+      der(12, 2, R`\ln(x^2-2x+1)`, [R`$(\ln u)'=\frac{u'}u$: $f'(x)=\dfrac{2x-2}{x^2-2x+1}$.`, R`$x^2-2x+1=(x-1)^2$, así que $\dfrac{2(x-1)}{(x-1)^2}=\dfrac{2}{x-1}$ ($x\neq1$).`, R`(Otra forma: $\ln(x-1)^2=2\ln|x-1|$, cuya derivada es $\frac{2}{x-1}$.)`], R`$f'(x)=\frac{2}{x-1}$`),
+      der(13, 2, R`2^{-x^3+x^2-3}`, [R`$(a^u)'=a^u\ln a\cdot u'$ con $u=-x^3+x^2-3$ y $u'=-3x^2+2x$.`], R`$f'(x)=2^{-x^3+x^2-3}\ln2\,(2x-3x^2)$`),
+      { id: 'T1', set: TG, n: '1', lvl: 1, t: 'Campana en a = 1', q: R`Recta tangente a $f(x)=e^{-x^2}$ en $a=1$.`,
+        s: [R`Punto: $f(1)=e^{-1}=\frac1e$.`, R`Pendiente: $f'(x)=-2x\,e^{-x^2}$, $\;f'(1)=-\frac2e$.`, R`$y=\frac1e-\frac2e(x-1)$.`], a: R`$y=\dfrac{3-2x}{e}$`,
+        plot: { fns: [{ f: x => Math.exp(-x * x), lbl: 'f(x)' }, { f: x => (3 - 2 * x) / Math.E, lbl: 'tangente', c: 2, dash: true }], x: [-2.5, 2.5], y: [-0.5, 1.5], h: 260, pts: [[1, 1 / Math.E, false]] } },
+      { id: 'T2', set: TG, n: '2', lvl: 1, t: 'Polinomio en a = 1', q: R`Recta tangente a $f(x)=2x^5-x^4-3x^2+x-2$ en $a=1$.`,
+        s: [R`Punto: $f(1)=2-1-3+1-2=-3$.`, R`Pendiente: $f'(x)=10x^4-4x^3-6x+1$, $\;f'(1)=10-4-6+1=1$.`, R`$y=-3+1\cdot(x-1)$.`], a: R`$y=x-4$`,
+        plot: { fns: [{ f: x => 2 * x ** 5 - x ** 4 - 3 * x * x + x - 2, lbl: 'f(x)' }, { f: x => x - 4, lbl: 'tangente', c: 2, dash: true }], x: [-1, 2], y: [-6, 4], h: 260, pts: [[1, -3, false]] } },
+      { id: 'T3', set: TG, n: '3', lvl: 1, t: 'Logaritmo en a = 2', q: R`Recta tangente a $f(x)=\ln(x+1)$ en $a=2$.`,
+        s: [R`Punto: $f(2)=\ln3$.`, R`Pendiente: $f'(x)=\frac1{x+1}$, $\;f'(2)=\frac13$.`], a: R`$y=\ln3+\dfrac{x-2}{3}$`,
+        plot: { fns: [{ f: x => Math.log(x + 1), lbl: 'f(x)' }, { f: x => Math.log(3) + (x - 2) / 3, lbl: 'tangente', c: 2, dash: true }], x: [-1, 6], y: [-2, 3], h: 260, pts: [[2, Math.log(3), false]] } },
+      // Relación 3: estudio de funciones
+      { id: 'R1', set: RF, n: '1', lvl: 2, t: 'Cúbica con máximo y mínimo', q: R`Intervalos de crecimiento, máximos y mínimos de $f(x)=x^3-\frac{15}{2}x^2+18x-12$. Dibuja la gráfica (dominio, cortes, simetría, asíntotas).`,
+        s: [R`<strong>Dominio</strong> $\R$ (polinomio). Ni par ni impar (tiene potencias pares e impares). <strong>Sin asíntotas</strong>: un polinomio de grado 3 no tiene ($f(x)/x\to\infty$).`,
+          R`<strong>Cortes.</strong> Eje Y: $(0,-12)$. Eje X: $2x^3-15x^2+36x-24=0$ no tiene raíces racionales. Como $f(1)=-\frac12<0$ y $f(2)=2>0$, por Bolzano hay un corte en $(1,2)$: $x\approx1{,}089$. Es el único, porque a partir de ahí el valor más bajo es el mínimo $f(3)=\frac32>0$.`,
+          R`<strong>Derivada:</strong> $f'(x)=3x^2-15x+18=3(x^2-5x+6)=3(x-2)(x-3)$.`,
+          mono([R`(-\infty,2)`, '(2,3)', R`(3,+\infty)`], [[R`$f'$`, ['+', '-', '+']]], ['+', '-', '+']),
+          R`Crece en $(-\infty,2)\cup(3,+\infty)$ y decrece en $(2,3)$. <strong>Máximo</strong> en $(2,f(2))=(2,2)$; <strong>mínimo</strong> en $(3,f(3))=\left(3,\frac32\right)$.`,
+          R`Extra (curvatura): $f''(x)=6x-15$; inflexión en $x=\frac52$, $f\left(\frac52\right)=\frac74$; cóncava antes, convexa después.`],
+        a: R`Crece en $(-\infty,2)\cup(3,+\infty)$, decrece en $(2,3)$; máx $(2,2)$, mín $(3,\frac32)$.`,
+        plot: { fns: [{ f: x => x ** 3 - 7.5 * x * x + 18 * x - 12, lbl: 'f(x)' }], x: [0.5, 4.2], y: [-5, 6], pts: [[2, 2, false, 'máx'], [3, 1.5, false, 'mín'], [2.5, 1.75, false, 'infl.'], [1.0892, 0, false]] } },
+      { id: 'R2', set: RF, n: '2', lvl: 2, t: 'Cúbica con tres raíces', q: R`Intervalos de crecimiento, máximos y mínimos de $f(x)=x^3-2x^2-x+2$. Dibuja la gráfica (dominio, cortes, simetría, asíntotas).`,
+        s: [R`<strong>Dominio</strong> $\R$, sin asíntotas, ni par ni impar.`,
+          R`<strong>Cortes.</strong> Eje Y: $(0,2)$. Eje X: agrupando, $x^2(x-2)-(x-2)=(x-2)(x^2-1)=(x-2)(x-1)(x+1)$: $x=-1$, $x=1$, $x=2$.`,
+          R`<strong>Derivada:</strong> $f'(x)=3x^2-4x-1=0\iff x=\dfrac{4\pm\sqrt{28}}{6}=\dfrac{2\pm\sqrt7}{3}$, es decir $x_1\approx-0{,}215$ y $x_2\approx1{,}549$.`,
+          mono([R`(-\infty,x_1)`, R`(x_1,x_2)`, R`(x_2,+\infty)`], [[R`$f'$`, ['+', '-', '+']]], ['+', '-', '+']),
+          R`<strong>Máximo</strong> en $x_1=\frac{2-\sqrt7}3$: $f(x_1)=\frac{20+14\sqrt7}{27}\approx2{,}113$. <strong>Mínimo</strong> en $x_2=\frac{2+\sqrt7}3$: $f(x_2)=\frac{20-14\sqrt7}{27}\approx-0{,}631$.`,
+          R`Extra: $f''(x)=6x-4$, inflexión en $\left(\frac23,\frac{20}{27}\right)$.`],
+        a: R`Crece en $\left(-\infty,\frac{2-\sqrt7}3\right)\cup\left(\frac{2+\sqrt7}3,+\infty\right)$, decrece entre ellos; máx $\approx(-0{,}215;\,2{,}113)$, mín $\approx(1{,}549;\,-0{,}631)$.`,
+        plot: { fns: [{ f: x => x ** 3 - 2 * x * x - x + 2, lbl: 'f(x)' }], x: [-2, 3], y: [-4, 4], pts: [[-0.21525, 2.11261, false, 'máx'], [1.54858, -0.63113, false, 'mín'], [-1, 0, false], [1, 0, false], [2, 0, false], [0, 2, false]] } },
+      { id: 'R3', set: RF, n: '3', lvl: 2, t: 'Bicuadrada', q: R`Intervalos de crecimiento, máximos y mínimos de $f(x)=x^4-2x^2-3$. Dibuja la gráfica (dominio, cortes, simetría, asíntotas).`,
+        s: [R`<strong>Dominio</strong> $\R$, sin asíntotas. <strong>Par</strong>: $f(-x)=f(x)$ (simétrica respecto al eje Y).`,
+          R`<strong>Cortes.</strong> Eje Y: $(0,-3)$. Eje X: con $t=x^2$, $t^2-2t-3=0\Rightarrow t=3$ o $t=-1$ (no vale). $x=\pm\sqrt3$.`,
+          R`<strong>Derivada:</strong> $f'(x)=4x^3-4x=4x(x-1)(x+1)$, ceros en $-1$, $0$, $1$.`,
+          mono([R`(-\infty,-1)`, '(-1,0)', '(0,1)', R`(1,+\infty)`], [[R`$4x$`, ['-', '-', '+', '+']], [R`$x-1$`, ['-', '-', '-', '+']], [R`$x+1$`, ['-', '+', '+', '+']], [R`$f'$`, ['-', '+', '-', '+']]], ['-', '+', '-', '+']),
+          R`<strong>Mínimos</strong> en $(-1,-4)$ y $(1,-4)$; <strong>máximo</strong> en $(0,-3)$.`,
+          R`Extra: $f''(x)=12x^2-4$, inflexiones en $x=\pm\frac1{\sqrt3}$, con $f=-\frac{32}9$.`],
+        a: R`Decrece en $(-\infty,-1)\cup(0,1)$, crece en $(-1,0)\cup(1,+\infty)$; mín $(\pm1,-4)$, máx $(0,-3)$.`,
+        plot: { fns: [{ f: x => x ** 4 - 2 * x * x - 3, lbl: 'f(x)' }], x: [-2.4, 2.4], y: [-5, 4], pts: [[-1, -4, false, 'mín'], [1, -4, false, 'mín'], [0, -3, false, 'máx'], [-S3, 0, false], [S3, 0, false]] } },
+      { id: 'R4', set: RF, n: '4', lvl: 3, t: 'Racional con un máximo', q: R`Intervalos de crecimiento, máximos y mínimos de $f(x)=\dfrac{4x-12}{(x-2)^2}$. Dibuja la gráfica (dominio, cortes, simetría, asíntotas).`,
+        s: [R`<strong>Dominio</strong> $\R\setminus\{2\}$. Ni par ni impar.`,
+          R`<strong>Cortes.</strong> Eje X: $4x-12=0\Rightarrow(3,0)$. Eje Y: $f(0)=\frac{-12}{4}=-3$: $(0,-3)$.`,
+          R`<strong>Signo:</strong> el denominador es positivo, así que el de $4x-12$: negativa si $x<3$ ($x\neq2$), positiva si $x>3$.`,
+          R`<strong>Asíntotas.</strong> Vertical $x=2$: el numerador tiende a $-4$ y el denominador a $0^+$ por los dos lados, $\lim_{x\to2}f=-\infty$. Horizontal $y=0$ (grado de arriba menor), en los dos lados. Sin oblicua.`,
+          R`<strong>Derivada</strong> (cociente, y simplificando un $(x-2)$): $f'(x)=\dfrac{4(x-2)^2-(4x-12)\,2(x-2)}{(x-2)^4}=\dfrac{4(x-2)-2(4x-12)}{(x-2)^3}=\dfrac{16-4x}{(x-2)^3}$.`,
+          mono([R`(-\infty,2)`, '(2,4)', R`(4,+\infty)`], [[R`$16-4x$`, ['+', '+', '-']], [R`$(x-2)^3$`, ['-', '+', '+']], [R`$f'$`, ['-', '+', '-']]], ['-', '+', '-']),
+          R`Decrece en $(-\infty,2)\cup(4,+\infty)$, crece en $(2,4)$. <strong>Máximo</strong> en $(4,f(4))=(4,1)$. Sin mínimos.`,
+          R`Extra: $f''(x)=\dfrac{8(x-5)}{(x-2)^4}$: cóncava en $(-\infty,2)\cup(2,5)$, convexa en $(5,+\infty)$, inflexión en $\left(5,\frac89\right)$.`],
+        a: R`Decrece en $(-\infty,2)\cup(4,+\infty)$, crece en $(2,4)$; máx $(4,1)$; asíntotas $x=2$ e $y=0$.`,
+        plot: { fns: [{ f: x => (4 * x - 12) / (x - 2) ** 2, lbl: 'f(x)' }], x: [-4, 14], y: [-8, 3], va: [2], ha: [0], pts: [[4, 1, false, 'máx'], [3, 0, false], [0, -3, false], [5, 8 / 9, false, 'infl.']] } },
+      { id: 'R5', set: RF, n: '5', lvl: 3, t: 'Impar con oblicua', q: R`Intervalos de crecimiento, máximos y mínimos de $f(x)=\dfrac{x^3}{x^2-1}$. Dibuja la gráfica (dominio, cortes, simetría, asíntotas).`,
+        s: [R`<strong>Dominio</strong> $\R\setminus\{-1,1\}$. <strong>Impar</strong>: $f(-x)=\frac{-x^3}{x^2-1}=-f(x)$ (simétrica respecto al origen). Corte: solo $(0,0)$.`,
+          R`<strong>Asíntotas.</strong> Verticales $x=\pm1$: en $x=1$, $\frac{1}{0^-}=-\infty$ por la izquierda y $+\infty$ por la derecha (en $x=-1$, lo simétrico). Sin horizontal. Oblicua: dividiendo, $f(x)=x+\frac{x}{x^2-1}$, así que $y=x$.`,
+          R`<strong>Derivada:</strong> $f'(x)=\dfrac{3x^2(x^2-1)-x^3\cdot2x}{(x^2-1)^2}=\dfrac{x^4-3x^2}{(x^2-1)^2}=\dfrac{x^2(x^2-3)}{(x^2-1)^2}$. Ceros: $x=0$ y $x=\pm\sqrt3$. Como $x^2\ge0$ y el denominador es positivo, el signo es el de $x^2-3$.`,
+          mono([R`(-\infty,-\sqrt3)`, R`(-\sqrt3,-1)`, '(-1,1)', R`(1,\sqrt3)`, R`(\sqrt3,+\infty)`], [[R`$f'$`, ['+', '-', '-', '-', '+']]], ['+', '-', '-', '-', '+']),
+          R`<strong>Máximo</strong> en $\left(-\sqrt3,-\frac{3\sqrt3}2\right)\approx(-1{,}73;\,-2{,}60)$ y <strong>mínimo</strong> en $\left(\sqrt3,\frac{3\sqrt3}2\right)$. En $x=0$, $f'(0)=0$ pero $f'$ no cambia de signo: no hay extremo (es un punto de inflexión con tangente horizontal).`,
+          R`Extra: $f''(x)=\dfrac{2x(x^2+3)}{(x^2-1)^3}$: convexa en $(-1,0)\cup(1,+\infty)$, cóncava en $(-\infty,-1)\cup(0,1)$.`],
+        a: R`Crece en $(-\infty,-\sqrt3)\cup(\sqrt3,+\infty)$, decrece en $(-\sqrt3,-1)\cup(-1,1)\cup(1,\sqrt3)$; máx $\left(-\sqrt3,-\frac{3\sqrt3}2\right)$, mín $\left(\sqrt3,\frac{3\sqrt3}2\right)$; asíntotas $x=\pm1$, $y=x$.`,
+        plot: { fns: [{ f: x => x ** 3 / (x * x - 1), lbl: 'f(x)' }], x: [-6, 6], y: [-9, 9], va: [-1, 1], ob: [[1, 0]], pts: [[-S3, -1.5 * S3, false, 'máx'], [S3, 1.5 * S3, false, 'mín'], [0, 0, false]] } },
+      { id: 'R6', set: RF, n: '6', lvl: 3, t: 'Logaritmo de un cociente', q: R`Estudia $f(x)=\ln\left(\dfrac{x+5}{x-5}\right)$: dominio, cortes, simetría, monotonía (máximos y mínimos) y asíntotas, y dibuja la gráfica.`,
+        s: [R`<strong>Dominio:</strong> $\frac{x+5}{x-5}>0$. Tabla de signos: positivo si $x<-5$ o $x>5$. $\;\mathrm{Dom}f=(-\infty,-5)\cup(5,+\infty)$.`,
+          R`<strong>Cortes.</strong> Eje Y: $0\notin\mathrm{Dom}$. Eje X: $\frac{x+5}{x-5}=1\iff x+5=x-5$, imposible. No corta los ejes.`,
+          R`<strong>Simetría:</strong> $f(-x)=\ln\frac{-x+5}{-x-5}=\ln\frac{x-5}{x+5}=-f(x)$: <strong>impar</strong>.`,
+          R`<strong>Signo:</strong> si $x>5$, el cociente es mayor que 1 y $f>0$; si $x<-5$, está entre 0 y 1 y $f<0$.`,
+          R`<strong>Derivada:</strong> como $\ln\frac ab=\ln a-\ln b$, $\;f'(x)=\dfrac1{x+5}-\dfrac1{x-5}=\dfrac{-10}{x^2-25}$. En el dominio $x^2>25$, así que $f'<0$: <strong>decreciente</strong> en $(-\infty,-5)$ y en $(5,+\infty)$. No hay máximos ni mínimos.`,
+          R`<strong>Asíntotas.</strong> Vertical $x=5$: $\frac{10}{0^+}\to+\infty$ y $\ln(+\infty)=+\infty$. Vertical $x=-5$: el cociente $\to0^+$ y $\ln0^+=-\infty$. Horizontal $y=0$ en los dos lados: el cociente $\to1$ y $\ln1=0$.`,
+          R`Extra: $f''(x)=\dfrac{20x}{(x^2-25)^2}$: cóncava en $(-\infty,-5)$, convexa en $(5,+\infty)$.`],
+        a: R`Dominio $(-\infty,-5)\cup(5,+\infty)$, impar, sin cortes; decreciente en cada trozo, sin extremos; asíntotas $x=-5$, $x=5$ e $y=0$.`,
+        plot: { fns: [{ f: x => Math.log((x + 5) / (x - 5)), lbl: 'f(x)' }], x: [-20, 20], y: [-4, 4], va: [-5, 5], ha: [0] } },
+      { id: 'R7', set: RF, n: '7', lvl: 2, t: 'Población de bacterias', q: R`La población (en millones) de un cultivo es $f(x)=\dfrac{2}{e^{x^2+1}}$, donde $x$ es la temperatura. (a) Represéntala: dominio, cortes, simetría, monotonía y asíntotas. (b) ¿Cuál es la tendencia de la población para temperaturas extremadamente altas o bajas?`,
+        s: [R`$f(x)=2e^{-(x^2+1)}$. <strong>Dominio</strong> $\R$. <strong>Par.</strong> Siempre positiva: no corta el eje X. Eje Y: $\left(0,\frac2e\right)\approx(0;\,0{,}736)$.`,
+          R`<strong>Derivada:</strong> $f'(x)=2e^{-(x^2+1)}\cdot(-2x)=-4x\,e^{-(x^2+1)}$. El signo es el de $-x$: crece en $(-\infty,0)$, decrece en $(0,+\infty)$. <strong>Máximo absoluto</strong> en $\left(0,\frac2e\right)$.`,
+          R`<strong>Asíntotas:</strong> horizontal $y=0$ en los dos lados ($e^{-\infty}=0$). Ni verticales ni oblicuas.`,
+          R`Extra: $f''(x)=4e^{-(x^2+1)}(4x^2-1)$, inflexiones en $x=\pm\frac12$ con $f=2e^{-5/4}\approx0{,}573$. Es una campana.`,
+          R`(b) $\lim_{x\to\pm\infty}f(x)=0$: con temperaturas muy altas o muy bajas la población <strong>tiende a desaparecer</strong>. La máxima, $\frac2e\approx0{,}74$ millones, se da a temperatura $x=0$.`],
+        a: R`Campana par con máximo $\left(0,\frac2e\right)$, crece en $(-\infty,0)$ y decrece en $(0,+\infty)$, asíntota $y=0$. (b) La población tiende a 0.`,
+        plot: { fns: [{ f: x => 2 * Math.exp(-(x * x + 1)), lbl: 'f(x)' }], x: [-3, 3], y: [-0.1, 0.9], ha: [0], pts: [[0, 2 / Math.E, false, 'máx'], [-0.5, 2 * Math.exp(-1.25), false], [0.5, 2 * Math.exp(-1.25), false]], xl: 'temperatura' } },
+      // Relación 3: continuidad, derivabilidad y ritmos de cambio
+      { id: 'R8', set: RC, n: '8', lvl: 3, t: 'Temperatura y medicamento', q: R`La temperatura tras ingerir una dosis $x$ es $T(x)=\begin{cases}37 & x\le1\\ ax^2+bx & 1<x<2\\ 38 & x\ge2\end{cases}$. ¿Depende la variación instantánea $T'(x)$ de forma continua de la cantidad de medicamento?`,
+        s: [R`La temperatura de una persona no salta, así que primero imponemos que $T$ sea <strong>continua</strong>: en $x=1$, $a+b=37$; en $x=2$, $4a+2b=38$.`,
+          R`Restando el doble de la primera a la segunda: $2a=38-74=-36\Rightarrow a=-18$, $b=55$. Así $T(x)=-18x^2+55x$ en $(1,2)$.`,
+          R`$T'(x)=\begin{cases}0 & x<1\\ -36x+55 & 1<x<2\\ 0 & x>2\end{cases}$`,
+          R`En $x=1$: $T'_-(1)=0$ y $T'_+(1)=-36+55=19$. En $x=2$: $T'_-(2)=-72+55=-17$ y $T'_+(2)=0$. Las laterales no coinciden: $T$ no es derivable en $x=1$ ni en $x=2$ y $T'$ da saltos.`,
+          R`¿Y con otros $a$, $b$? Para ser derivable en $x=1$ haría falta además $2a+b=0$, que con $a+b=37$ da $a=-37$, $b=74$; pero entonces $T(2)=-148+148=0\neq38$. Ningún par $(a,b)$ lo consigue.`],
+        a: R`No. Con $a=-18$, $b=55$ (los que hacen continua $T$), $T'$ salta en $x=1$ (de 0 a 19) y en $x=2$ (de −17 a 0).`,
+        plot: { fns: [{ f: x => x <= 1 ? 37 : x < 2 ? -18 * x * x + 55 * x : 38, lbl: 'T(x)' }], x: [0, 3], y: [35, 43], pts: [[1, 37, false, 'pico'], [2, 38, false, 'pico']], xl: 'dosis x' } },
+      { id: 'R9', set: RC, n: '9', lvl: 1, t: 'Monóxido de carbono', q: R`El nivel de CO dentro de $t$ años será $M(t)=0{,}05t^2+0{,}1t+3{,}4$ ppm. ¿Cuál será la tasa de variación con respecto al tiempo dentro de un año?`,
+        s: [R`La tasa de variación instantánea es la derivada: $M'(t)=0{,}1t+0{,}1$.`, R`$M'(1)=0{,}1+0{,}1=0{,}2$.`],
+        a: R`$0{,}2$ ppm por año (el nivel sube a ese ritmo dentro de un año).` },
+      { id: 'R10', set: RC, n: '10', lvl: 2, t: 'Un parámetro', q: R`$f(x)=\begin{cases}3-ax^2 & x\le1\\ \dfrac{2}{ax} & x>1\end{cases}$. ¿Para qué valores de $a$ es $f$ continua? ¿Y derivable?`,
+        s: [R`Hace falta $a\neq0$ para que exista el segundo trozo. Cada trozo es continuo y derivable en su intervalo ($ax\neq0$ si $x>1$). Solo hay que mirar $x=1$.`,
+          R`<strong>Continuidad:</strong> $f(1)=\lim_{x\to1^-}f=3-a$ y $\lim_{x\to1^+}\frac{2}{ax}=\frac2a$. $\;3-a=\frac2a\iff a^2-3a+2=0\iff a=1$ o $a=2$.`,
+          R`<strong>Derivabilidad</strong> (solo con $a=1$ o $a=2$): $f'_-(1)=-2a$ y $f'_+(1)=-\frac{2}{a}$. Iguales $\iff a^2=1$. De los dos, solo $a=1$.`,
+          R`Comprobación: $a=1$ da $-2=-2$ ✓; $a=2$ da $-4\neq-1$ ✗ (continua con un pico).`],
+        a: R`Continua en $\R$ si $a=1$ o $a=2$ (si no, en $\R\setminus\{1\}$). Derivable en $\R$ solo si $a=1$.`,
+        plot: { fns: p => [{ f: x => x <= 1 ? 3 - p.a * x * x : 2 / (p.a * x), lbl: 'f(x)' }], x: [-2, 4], y: [-4, 4], brk: [1], params: [{ k: 'a', lbl: '$a$', min: 0.5, max: 3, step: 0.5, v: 1 }] } },
+      { id: 'R11', set: RC, n: '11', lvl: 2, t: 'Cuatro trozos', q: R`Estudia la continuidad y derivabilidad de $f(x)=\begin{cases}2x+6 & x<-2\\ 2 & -2\le x<0\\ x-2 & 0\le x\le4\\ x^2-7x+14 & x>4\end{cases}$.`,
+        s: [R`Todos los trozos son polinomios: continuos y derivables en su intervalo. Miramos $x=-2$, $0$ y $4$.`,
+          R`<strong>$x=-2$:</strong> $\lim_{x\to-2^-}(2x+6)=2$ y $f(-2)=2$: continua. Derivadas: $f'_-(-2)=2$, $f'_+(-2)=0$: <strong>no derivable</strong> (pico).`,
+          R`<strong>$x=0$:</strong> $\lim_{x\to0^-}f=2$ y $f(0)=0-2=-2$: salto finito, <strong>no continua</strong> y por tanto no derivable.`,
+          R`<strong>$x=4$:</strong> $f(4)=2$ y $\lim_{x\to4^+}(x^2-7x+14)=16-28+14=2$: continua. Derivadas: $f'_-(4)=1$ y $f'_+(4)=2\cdot4-7=1$: <strong>derivable</strong>, con $f'(4)=1$.`],
+        a: R`Continua en $\R\setminus\{0\}$; derivable en $\R\setminus\{-2,0\}$.`,
+        plot: { fns: [{ f: x => x < -2 ? 2 * x + 6 : x < 0 ? 2 : x <= 4 ? x - 2 : x * x - 7 * x + 14, lbl: 'f(x)' }], x: [-5, 7], y: [-4, 8], brk: [0], pts: [[0, 2, true], [0, -2, false], [-2, 2, false, 'pico']] } },
+      { id: 'R12', set: RC, n: '12', lvl: 2, t: 'Dos parámetros', q: R`Estudia la continuidad y derivabilidad de $f(x)=\begin{cases}x^2+1 & x<0\\ ax+b & 0\le x\le3\\ x-5 & x>3\end{cases}$. ¿Resulta derivable en $x=3$?`,
+        s: [R`<strong>Continuidad en $x=0$:</strong> $\lim_{x\to0^-}(x^2+1)=1$ y $f(0)=b$: hace falta $b=1$.`,
+          R`<strong>Continuidad en $x=3$:</strong> $f(3)=3a+b$ y $\lim_{x\to3^+}(x-5)=-2$: $3a+b=-2$. Con $b=1$, $a=-1$.`,
+          R`Así, $f$ es continua en $\R$ solo si $a=-1$ y $b=1$.`,
+          R`<strong>Derivabilidad</strong> (con $a=-1$, $b=1$): en $x=0$, $f'_-(0)=2\cdot0=0$ y $f'_+(0)=a=-1$: no derivable. En $x=3$, $f'_-(3)=a=-1$ y $f'_+(3)=1$: <strong>no derivable</strong>.`,
+          R`Nota: para que fuese derivable en $x=3$ haría falta $a=1$ y (continuidad) $3+b=-2$, $b=-5$; pero entonces no es continua en $x=0$ ($b\neq1$).`],
+        a: R`Continua en $\R$ si $a=-1$, $b=1$; entonces es derivable en $\R\setminus\{0,3\}$. No es derivable en $x=3$ (pendientes $-1$ y $1$).`,
+        plot: { fns: [{ f: x => x < 0 ? x * x + 1 : x <= 3 ? -x + 1 : x - 5, lbl: 'f(x) con a = −1, b = 1' }], x: [-3, 7], y: [-4, 6], pts: [[0, 1, false, 'pico'], [3, -2, false, 'pico']] } },
+      { id: 'R13', set: RC, n: '13', lvl: 3, t: "Con L'Hôpital", q: R`Estudia, según $a$ y $b$, la continuidad de $f(x)=\begin{cases}\dfrac{6-6\cos x}{x^2} & x<0\\ 3x+a-b & 0\le x<100\\ 151a-1+\log x & x\ge100\end{cases}$ ($\log$ en base 10).`,
+        s: [R`Cada trozo es continuo en su intervalo ($x^2\neq0$ si $x<0$; $\log x$ existe si $x\ge100$).`,
+          R`<strong>En $x=0$:</strong> $\displaystyle\lim_{x\to0^-}\frac{6-6\cos x}{x^2}=\Big[\tfrac00\Big]\overset{\text{L'H}}{=}\lim\frac{6\sin x}{2x}=\Big[\tfrac00\Big]\overset{\text{L'H}}{=}\lim\frac{6\cos x}{2}=3$. Y $f(0)=a-b$. Continua $\iff a-b=3$.`,
+          R`<strong>En $x=100$:</strong> $\lim_{x\to100^-}(3x+a-b)=300+a-b$ y $f(100)=151a-1+\log100=151a+1$. Continua $\iff300+a-b=151a+1\iff150a+b=299$.`,
+          R`Las dos a la vez: sumando $a-b=3$ y $150a+b=299$, $151a=302$: $a=2$, $b=-1$.`,
+          R`<strong>Resumen:</strong> si $a=2$ y $b=-1$, continua en $\R$. Si $a-b=3$ pero no $150a+b=299$, discontinua (salto finito) solo en $x=100$. Si $150a+b=299$ pero $a-b\neq3$, solo en $x=0$. Si no se cumple ninguna, en $x=0$ y $x=100$.`],
+        a: R`Continua en todo $\R$ si y solo si $a=2$ y $b=-1$.` },
+      // Relación 3: optimización
+      { id: 'R14', set: RO, n: '14', lvl: 3, t: 'Depósito de aguas residuales', q: R`Depósito cubierto de base cuadrada y capacidad 1 000 000 litros. Coste: 10 €/m² el fondo, 4 €/m² los laterales y 17 €/m² la cubierta. Describe la opción más económica.`,
+        s: [R`1 000 000 L = 1000 m³. Lado de la base $x$, altura $y$ (en m). Ligadura: $x^2y=1000\Rightarrow y=\frac{1000}{x^2}$.`,
+          R`Coste: fondo $10x^2$, cubierta $17x^2$ y cuatro laterales $4\cdot4xy=16xy$. $\;C=27x^2+16xy=27x^2+\dfrac{16\,000}{x}$, con $x>0$.`,
+          R`$C'(x)=54x-\dfrac{16\,000}{x^2}=0\iff x^3=\dfrac{16\,000}{54}=\dfrac{8000}{27}\iff x=\dfrac{20}{3}\approx6{,}67$ m.`,
+          R`$C''(x)=54+\dfrac{32\,000}{x^3}>0$: es un mínimo.`,
+          R`$y=\dfrac{1000}{(20/3)^2}=\dfrac{9000}{400}=22{,}5$ m. Coste: $27\cdot\frac{400}{9}+16\,000\cdot\frac{3}{20}=1200+2400=3600$ €.`],
+        a: R`Base de $\frac{20}{3}\approx6{,}67$ m de lado y $22{,}5$ m de altura; cuesta 3600 €.`,
+        plot: { fns: [{ f: x => 27 * x * x + 16000 / x, lbl: 'C(x)' }], x: [1, 15], y: [0, 12000], pts: [[20 / 3, 3600, false, 'mín']], xl: 'x (m)' } },
+      { id: 'R15', set: RO, n: '15', lvl: 3, t: 'Ventana normanda', q: R`Una ventana es un rectángulo terminado en un semicírculo de diámetro igual a la base. El perímetro exterior mide 8 m. Halla las dimensiones que dejan pasar más luz.`,
+        s: [R`Radio del semicírculo $r$ (base $2r$) y altura del rectángulo $h$. Perímetro exterior: base + dos lados + semicircunferencia: $2r+2h+\pi r=8\Rightarrow h=\dfrac{8-(2+\pi)r}{2}$.`,
+          R`Luz = área: $A=2rh+\dfrac{\pi r^2}{2}=r\big(8-(2+\pi)r\big)+\dfrac{\pi r^2}2=8r-2r^2-\dfrac{\pi}{2}r^2$.`,
+          R`$A'(r)=8-4r-\pi r=0\iff r=\dfrac{8}{4+\pi}\approx1{,}12$ m. $\;A''=-(4+\pi)<0$: máximo.`,
+          R`$h=\dfrac{8-(2+\pi)\frac{8}{4+\pi}}{2}=\dfrac{8}{4+\pi}$: ¡la altura del rectángulo es igual al radio!`],
+        a: R`Base $\frac{16}{4+\pi}\approx2{,}24$ m, altura del rectángulo $\frac{8}{4+\pi}\approx1{,}12$ m (semicírculo de radio 1,12 m).`,
+        plot: { fns: [{ f: r => 8 * r - 2 * r * r - Math.PI / 2 * r * r, lbl: 'A(r)' }], x: [0, 1.6], y: [0, 5], pts: [[8 / (4 + Math.PI), 32 / (4 + Math.PI), false, 'máx']], xl: 'r (m)' } },
+      { id: 'R16', set: RO, n: '16', lvl: 2, t: 'Lata de un litro', q: R`Una lata cilíndrica con tapa tiene un litro (1 dm³) de capacidad. ¿Qué dimensiones gastan la mínima cantidad de metal?`,
+        s: [R`Radio $r$ y altura $h$ en dm. Ligadura: $\pi r^2h=1\Rightarrow h=\dfrac1{\pi r^2}$.`,
+          R`Metal = superficie total (dos tapas + lateral): $S=2\pi r^2+2\pi rh=2\pi r^2+\dfrac{2}{r}$.`,
+          R`$S'(r)=4\pi r-\dfrac{2}{r^2}=0\iff r^3=\dfrac{1}{2\pi}\iff r=\sqrt[3]{\dfrac1{2\pi}}\approx0{,}542$ dm. $\;S''=4\pi+\frac4{r^3}>0$: mínimo.`,
+          R`Como $r^3=\frac{1}{2\pi}$, es decir $\pi r^3=\frac12$: $\;h=\dfrac{1}{\pi r^2}=\dfrac{r}{\pi r^3}=2r$.`],
+        a: R`$r=\sqrt[3]{1/(2\pi)}\approx0{,}54$ dm y $h=2r\approx1{,}08$ dm: la altura igual al diámetro.` },
+      { id: 'R17', set: RO, n: '17', lvl: 2, t: 'Depósito de 1 m³', q: R`Depósito de base cuadrada y capacidad 1 m³. La base cuesta 10 €/m² y los laterales 5 €/m². ¿Qué dimensiones hacen mínimo el coste?`,
+        s: [R`Lado $x$, altura $y$: $x^2y=1\Rightarrow y=\frac1{x^2}$.`, R`$C=10x^2+5\cdot4xy=10x^2+\dfrac{20}{x}$.`, R`$C'(x)=20x-\dfrac{20}{x^2}=0\iff x^3=1\iff x=1$; $\;C''(1)=20+40>0$: mínimo.`, R`$y=1$; coste $10+20=30$ €.`],
+        a: R`Un cubo de 1 m de lado (coste 30 €).` },
+      { id: 'R18', set: RO, n: '18', lvl: 3, t: 'Canalón', q: R`Un canalón se fabrica curvando láminas de 1 m de ancho: fondo semicircular de radio $r$ y bordes verticales de altura $h$. Calcula $r$ y $h$ para el diseño óptimo (máxima capacidad).`,
+        s: [R`Ancho de la lámina: semicircunferencia + dos bordes: $\pi r+2h=1\Rightarrow h=\dfrac{1-\pi r}{2}$, con $0\le r\le\frac1\pi$ (para que $h\ge0$).`,
+          R`Capacidad ∝ área de la sección: rectángulo $2r\cdot h$ + semicírculo $\frac{\pi r^2}{2}$. $\;A(r)=r(1-\pi r)+\dfrac{\pi r^2}{2}=r-\dfrac{\pi r^2}{2}$.`,
+          R`$A'(r)=1-\pi r$, que se anula en $r=\frac1\pi$ y es positiva antes: $A$ crece en todo el intervalo $\left[0,\frac1\pi\right]$.`,
+          R`El máximo está en el extremo $r=\frac1\pi$, donde $h=0$. Área $A=\frac{1}{2\pi}\approx0{,}159$ m².`,
+          R`Interpretación: lo mejor es curvar toda la lámina en un semicírculo, sin bordes rectos.`],
+        a: R`$r=\frac1\pi\approx0{,}318$ m y $h=0$ (canalón semicircular).`,
+        plot: { fns: [{ f: r => r - Math.PI * r * r / 2, lbl: 'A(r)', dom: r => r >= 0 && r <= 1 / Math.PI }], x: [0, 0.4], y: [0, 0.2], pts: [[1 / Math.PI, 1 / (2 * Math.PI), false, 'máx (h = 0)']], xl: 'r (m)' } },
+      { id: 'R19', set: RO, n: '19', lvl: 3, t: 'Canal de riego', q: R`Un canal tiene base de $a$ metros y laterales de 1 m que forman un ángulo $\alpha$ con la vertical. Calcula $\alpha$ para que la capacidad (proporcional al área de la sección) sea máxima.`,
+        s: [R`La sección es un trapecio: altura $\cos\alpha$, base menor $a$ y base mayor $a+2\sin\alpha$.`,
+          R`$A(\alpha)=\dfrac{a+(a+2\sin\alpha)}{2}\cos\alpha=(a+\sin\alpha)\cos\alpha$, con $0\le\alpha\le\frac\pi2$.`,
+          R`$A'(\alpha)=\cos^2\alpha-(a+\sin\alpha)\sin\alpha=1-2\sin^2\alpha-a\sin\alpha$.`,
+          R`Con $s=\sin\alpha$: $2s^2+as-1=0\Rightarrow s=\dfrac{-a+\sqrt{a^2+8}}{4}$ (la otra raíz es negativa).`,
+          R`Es máximo: $A'(0)=1>0$ y $A'\left(\frac\pi2\right)=-1-a<0$, y $A'$ solo se anula una vez.`,
+          R`Por ejemplo, con $a=1$: $s=\frac{-1+3}{4}=\frac12$, $\alpha=30^\circ$.`],
+        a: R`$\alpha=\arcsin\dfrac{\sqrt{a^2+8}-a}{4}$ (si $a=1$, $\alpha=30^\circ$).`,
+        plot: { fns: p => [{ f: t => (p.a + Math.sin(t * Math.PI / 180)) * Math.cos(t * Math.PI / 180), lbl: 'A(α)' }], x: [0, 90], y: [0, 3], params: [{ k: 'a', lbl: '$a$', min: 0, max: 2, step: 0.1, v: 1 }], xl: 'α (grados)' } },
+    ],
+    prac: ['derPunto', 'derRegla', 'tangente', 'extremos'],
+    links: [
+      { t: 'Khan Academy · Derivadas: definición y reglas básicas (español)', u: 'https://es.khanacademy.org/math/calculus-1/cs1-derivatives-definition-and-basic-rules', d: 'Vídeos y práctica autocorregida.' },
+      { t: 'Khan Academy · Aplicaciones de la derivada (español)', u: 'https://es.khanacademy.org/math/calculus-1/cs1-analyzing-functions', d: 'Crecimiento, extremos, concavidad y optimización.' },
+      { t: 'Calculadora gráfica GeoGebra', u: 'https://www.geogebra.org/graphing?lang=es', d: 'Escribe f(x) y Derivada(f) para comprobar la tabla de signos.' },
+      { t: 'Vídeos: derivadas paso a paso', u: 'https://www.youtube.com/results?search_query=derivadas+regla+de+la+cadena+unicoos', d: 'Búsqueda de vídeos en español.' },
+    ],
+  });
+
+  /* ===================================================================== */
   /*  TEMAS PENDIENTES                                                      */
   /* ===================================================================== */
-  T.push({ id: 'derivadas', group: 'temario', title: 'Tema 3 · Derivabilidad', short: 'Tema 3 · Derivadas', pending: true,
-    pendingText: R`<p><strong>Temario:</strong> derivada de una función en un punto; la tangente a la gráfica en un punto; criterio de crecimiento; máximos y mínimos; puntos de inflexión; cálculo de asíntotas oblicuas; regla de L'Hôpital para el cálculo de límites.</p><p>Se añadirá cuando tengas la relación de ejercicios. Con este tema podrás comprobar la monotonía de los ejercicios de la Relación 1.</p>`,
-    links: [{ t: 'Khan Academy · Cálculo 1 (español)', u: 'https://es.khanacademy.org/math/calculus-1', d: 'Unidades de derivadas, reglas de derivación y aplicaciones.' }] });
   T.push({ id: 'integrales', group: 'temario', title: 'Tema 4 · Integración', short: 'Tema 4 · Integrales', pending: true,
     pendingText: R`<p><strong>Temario:</strong> cálculo de primitivas; integrales inmediatas; cambio de variable; integración por partes; integración de funciones racionales con raíces simples en el denominador; integral definida y regla de Barrow; cálculo de áreas, volúmenes de cuerpos de revolución y algunas longitudes.</p>`,
     links: [{ t: 'Khan Academy · Cálculo integral (español)', u: 'https://es.khanacademy.org/math/integral-calculus', d: 'Primitivas, técnicas de integración y aplicaciones.' }] });
@@ -1663,6 +2167,47 @@ $$\tfrac00\quad\tfrac\infty\infty\quad\infty-\infty\quad0\cdot\infty\quad1^\inft
     const n = b + a * d;
     return { q: 'Asíntota oblicua $y=mx+n$ de $f(x)=\\dfrac{' + U.poly([a, b, e]) + '}{' + U.poly([1, -d]) + '}$', kind: 'seq', a: [a, n], tol: 1e-6, ad: '$y=' + U.poly([a, n]) + '$', ph: 'm; n',
       s: ['$m=\\lim\\frac{f(x)}{x}=' + a + '$ (cociente de coeficientes principales).', '$n=\\lim\\big(f(x)-' + a + 'x\\big)=\\lim\\dfrac{' + U.poly([n, e]) + '}{' + U.poly([1, -d]) + '}=' + n + '$.', 'Asíntota: $y=' + U.poly([a, n]) + '$.'] };
+  } };
+
+  /* ---------- Tema 3 · Derivadas ---------- */
+  G.derPunto = { t: 'Derivada de un polinomio en un punto', d: 'Escribe el valor de la derivada.', make() {
+    const a = U.nz(-3, 3), b = U.int(-5, 5), c = U.int(-6, 6), d = U.int(-9, 9), x0 = U.int(-3, 3);
+    const v = 3 * a * x0 * x0 + 2 * b * x0 + c;
+    return { q: "Si $f(x)=" + U.poly([a, b, c, d]) + "$, calcula $f'(" + x0 + ")$", kind: 'num', a: v, tol: 1e-9, ad: '$' + v + '$',
+      s: ["$f'(x)=" + U.poly([3 * a, 2 * b, c]) + '$ (la constante se va).', "$f'(" + x0 + ')=' + (3 * a) + '\\cdot(' + x0 + ')^2' + sgn(2 * b) + '\\cdot(' + x0 + ')' + sgn(c) + '=' + v + '$.'] };
+  } };
+
+  G.derRegla = { t: 'Regla de la cadena', d: 'Elige la derivada correcta.', make() {
+    const k = U.pick([2, 3, 4, 5]), n = U.pick([3, 4, 5]);
+    const T3 = [
+      () => ({ f: '\\sin(' + k + 'x)', ok: k + '\\cos(' + k + 'x)', bad: ['\\cos(' + k + 'x)', '-' + k + '\\cos(' + k + 'x)', k + '\\sin(' + k + 'x)'], s: 'Fuera $\\sin u$ → $\\cos u$; dentro $' + k + 'x$ → $' + k + '$.' }),
+      () => ({ f: '\\cos(' + k + 'x)', ok: '-' + k + '\\sin(' + k + 'x)', bad: [k + '\\sin(' + k + 'x)', '-\\sin(' + k + 'x)', '\\sin(' + k + 'x)'], s: 'Fuera $\\cos u$ → $-\\sin u$; dentro $' + k + 'x$ → $' + k + '$.' }),
+      () => ({ f: 'e^{' + k + 'x^2}', ok: (2 * k) + 'x\\,e^{' + k + 'x^2}', bad: ['e^{' + k + 'x^2}', k + 'x^2e^{' + k + 'x^2-1}', (2 * k) + 'x\\,e^{' + (2 * k) + 'x}'], s: '$(e^u)\'=e^u\\,u\'$ con $u\'=' + (2 * k) + 'x$.' }),
+      () => ({ f: '\\ln(x^2+' + k + ')', ok: '\\dfrac{2x}{x^2+' + k + '}', bad: ['\\dfrac{1}{x^2+' + k + '}', '\\dfrac{2}{x^2+' + k + '}', '\\dfrac{2x}{\\ln(x^2+' + k + ')}'], s: '$(\\ln u)\'=\\frac{u\'}{u}$ con $u\'=2x$.' }),
+      () => ({ f: '(x^2+1)^{' + n + '}', ok: (2 * n) + 'x(x^2+1)^{' + (n - 1) + '}', bad: [n + '(x^2+1)^{' + (n - 1) + '}', n + 'x(x^2+1)^{' + (n - 1) + '}', '2x(x^2+1)^{' + n + '}'], s: '$(u^n)\'=nu^{n-1}u\'$ con $u\'=2x$.' }),
+      () => ({ f: '\\sqrt{x^2+' + k + '}', ok: '\\dfrac{x}{\\sqrt{x^2+' + k + '}}', bad: ['\\dfrac{1}{2\\sqrt{x^2+' + k + '}}', '\\dfrac{2x}{\\sqrt{x^2+' + k + '}}', '\\dfrac{x}{2\\sqrt{x^2+' + k + '}}'], s: '$(\\sqrt u)\'=\\frac{u\'}{2\\sqrt u}=\\frac{2x}{2\\sqrt{x^2+' + k + '}}$.' }),
+      () => ({ f: k + '^{3x}', ok: '3\\cdot' + k + '^{3x}\\ln ' + k, bad: ['3x\\cdot' + k + '^{3x-1}', k + '^{3x}\\ln ' + k, '\\dfrac{' + k + '^{3x}}{\\ln ' + k + '}'], s: '$(a^u)\'=a^u\\ln a\\;u\'$ con $u\'=3$.' }),
+    ];
+    const c = U.pick(T3)(); const m = mc('$' + c.ok + '$', c.bad.map(x => '$' + x + '$'));
+    return { q: 'Derivada de $f(x)=' + c.f + '$', kind: 'mc', o: m.o, a: m.a, s: [c.s, "$f'(x)=" + c.ok + '$'] };
+  } };
+
+  G.tangente = { t: 'Recta tangente', d: 'Escribe m y n de y = mx + n separados por punto y coma, por ejemplo 2; -1.', make() {
+    const a = U.nz(-2, 2), b = U.int(-4, 4), c = U.int(-5, 5), x0 = U.int(-2, 2);
+    const y0 = a * x0 * x0 + b * x0 + c, m = 2 * a * x0 + b, n = y0 - m * x0;
+    return { q: 'Recta tangente a $f(x)=' + U.poly([a, b, c]) + '$ en $x_0=' + x0 + '$', kind: 'seq', a: [m, n], tol: 1e-9, ad: '$y=' + U.poly([m, n]) + '$', ph: 'm; n',
+      s: ['Punto: $f(' + x0 + ')=' + y0 + '$.', "Pendiente: $f'(x)=" + U.poly([2 * a, b]) + "$, así que $f'(" + x0 + ')=' + m + '$.', '$y=' + y0 + (m ? sgn(m) + U.lin(x0) : '') + '$, es decir, $y=' + U.poly([m, n]) + '$.'] };
+  } };
+
+  G.extremos = { t: 'Máximo y mínimo de una cúbica', d: 'Escribe la x del máximo y la x del mínimo separadas por punto y coma, por ejemplo -1; 3.', make() {
+    const p = U.int(-4, 2), q = p + 2 * U.int(1, 3), s0 = U.pick([1, -1]), d = U.int(-6, 6);
+    // f'(x) = 3·s0·(x − p)(x − q)  →  f(x) = s0·(x³ − 3(p+q)/2·x² + 3pq·x) + d
+    const f = U.poly([s0, -s0 * 3 * (p + q) / 2, s0 * 3 * p * q, d]);
+    const mx = s0 > 0 ? p : q, mn = s0 > 0 ? q : p;
+    return { q: 'Halla el máximo y el mínimo relativos de $f(x)=' + f + '$', kind: 'seq', a: [mx, mn], tol: 1e-9, ad: 'máximo en $x=' + mx + '$, mínimo en $x=' + mn + '$', ph: 'x máx; x mín',
+      s: ["$f'(x)=" + U.poly([3 * s0, -3 * s0 * (p + q), 3 * s0 * p * q]) + '=' + (s0 > 0 ? '3' : '-3') + U.lin(p) + U.lin(q) + '$, que se anula en $x=' + p + '$ y $x=' + q + '$.',
+        "Signo de $f'$: " + (s0 > 0 ? '$+$, $-$, $+$' : '$-$, $+$, $-$') + ' en los tres intervalos.',
+        "Máximo donde $f'$ pasa de $+$ a $-$: $x=" + mx + '$. Mínimo donde pasa de $-$ a $+$: $x=' + mn + '$.'] };
   } };
 
   /* ===================================================================== */
