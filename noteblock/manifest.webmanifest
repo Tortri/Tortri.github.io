@@ -1,0 +1,28 @@
+{
+  "name": "Scratchpad",
+  "short_name": "Scratchpad",
+  "id": "/noteblock/",
+  "start_url": "/noteblock/",
+  "scope": "/noteblock/",
+  "display": "standalone",
+  "background_color": "#475569",
+  "theme_color": "#475569",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
